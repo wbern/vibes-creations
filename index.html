@@ -1,31 +1,190 @@
+
 <!doctype html>
 <html lang="sv">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Vibes Creations</title>
-  <meta name="robots" content="index,follow">
-  <style>
-    :root { color-scheme: light dark; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-      max-width: 36rem;
-      margin: 4rem auto;
-      padding: 0 1.25rem;
-      line-height: 1.55;
-    }
-    h1 { font-size: 2.5rem; margin-bottom: 0.25rem; }
-    p.lead { color: #666; margin-top: 0; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vibe Coding · barnens verk</title>
+<meta name="description" content="Verk skapade i Airenes vibe coding-verkstad.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🎨</text></svg>">
+<style>
+  :root {
+    --bg: #fdf6ee;
+    --ink: #2b2218;
+    --muted: #6b5b4a;
+    --accent: #c0461a;
+    --card: #fffaf3;
+    --shadow: 0 1px 2px rgba(43, 34, 24, .08), 0 4px 14px rgba(43, 34, 24, .06);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  header.page-header {
+    padding: 2.5rem 1.25rem 1.5rem;
+    text-align: center;
+  }
+  header.page-header h1 {
+    margin: 0 0 .25em;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    letter-spacing: -.01em;
+  }
+  header.page-header p.tagline {
+    margin: 0 auto;
+    max-width: 38rem;
+    color: var(--muted);
+  }
+  main { max-width: 80rem; margin: 0 auto; padding: 0 1rem 4rem; }
+  section.cohort { margin-top: 2.5rem; }
+  section.cohort h2 {
+    margin: 0 0 1rem;
+    font-size: 1.25rem;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: .25rem;
+  }
+  .cards {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+  a.card {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    background: var(--card);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  a.card:hover, a.card:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(43,34,24,.1), 0 8px 24px rgba(43,34,24,.12);
+    outline: none;
+  }
+  a.card .thumb-wrap {
+    aspect-ratio: 1200 / 630;
+    background: #eee;
+    overflow: hidden;
+  }
+  a.card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  a.card .body {
+    padding: .75rem .9rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+  }
+  a.card .name {
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+  a.card .meta {
+    color: var(--muted);
+    font-size: .85rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-block;
+    padding: 0 .5em;
+    border-radius: 999px;
+    font-size: .75rem;
+    line-height: 1.6;
+    background: #ecd9c1;
+    color: #6b5b4a;
+  }
+  .badge-kladd    { background: #f7d6b1; color: #6c3a0d; }
+  .badge-clay     { background: #d6e4d0; color: #355c2c; }
+  .badge-claudina { background: #d3e2f0; color: #234f7a; }
+  .badge-claude   { background: #ece6dc; color: #4a4233; }
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 4rem 1rem;
+  }
+  footer.page-footer {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 3rem;
+    color: var(--muted);
+    font-size: .9rem;
+    text-align: center;
+    border-top: 1px solid #e2d4bf;
+  }
+  footer.page-footer a { color: var(--accent); }
+</style>
 </head>
 <body>
-  <h1>Vibes Creations</h1>
-  <p class="lead">Galleriet är på väg. / The gallery is on its way.</p>
-  <p>
-    När barnen i Airenes workshop <em>Vibe Coding: Bygg &amp; Lär</em>
-    publicerar sina första kreationer hamnar de här. Se
-    <a href="https://github.com/wbern/vibes-creations">repot på GitHub</a>
-    under tiden.
+
+<header class="page-header">
+  <h1>🎨 Vibe Coding · barnens verk</h1>
+  <p class="tagline">
+    Hemsidor skapade av barn i Airenes vibe coding-verkstad.
+    Webpages built by kids in Airene's vibe coding workshop.
   </p>
+</header>
+
+<main>
+    
+    
+    
+        
+        
+            
+            <section class="cohort">
+                <h2>pilot</h2>
+                <div class="cards">
+                    
+                        <a class="card" href="students/pilot/vakna-larkan/">
+                            <div class="thumb-wrap">
+                                
+                                    <img loading="lazy"
+                                         alt="student08 – förhandsvisning"
+                                         src="students/pilot/vakna-larkan/_thumbnail.webp">
+                                
+                            </div>
+                            <div class="body">
+                                <div class="name">student08</div>
+                                <div class="meta">
+                                    
+                                        <span class="badge badge-kladd" title="persona: kladd">kladd</span>
+                                    
+                                    
+                                        <span title="2026-05-15T10:49:43Z">2026-05-15</span>
+                                    
+                                </div>
+                            </div>
+                        </a>
+                    
+                </div>
+            </section>
+        
+    
+
+    
+</main>
+
+<footer class="page-footer">
+  <p>
+    Hemsidor skapade av barn 9-13 i Airenes vibe coding-pilot.
+    Innehåll under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+  </p>
+  <p>
+    Vill du att något ska tas bort? Mejla <a href="mailto:william@bernting.se">william@bernting.se</a>.
+  </p>
+</footer>
+
 </body>
 </html>
