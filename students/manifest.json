@@ -3,20 +3,7 @@
   "cohorts": {
     "pilot": {
       "display_name": "pilot",
-      "published": [
-        {
-          "slug": "vakna-larkan",
-          "display_name": "student08",
-          "persona": "kladd",
-          "archived_at": "2026-05-15T06:57:43Z",
-          "published_at": "2026-05-15T10:49:43Z",
-          "thumbnail": "students/pilot/vakna-larkan/_thumbnail.webp",
-          "scan": {
-            "scanner": "gitleaks",
-            "finding_count": 0
-          }
-        }
-      ]
+      "published": []
     }
   }
 }
