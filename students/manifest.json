@@ -5,6 +5,18 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "ivriga-oxen",
+          "display_name": "port2f6532",
+          "persona": "kladd",
+          "archived_at": "2026-05-15T07:11:24Z",
+          "published_at": "2026-05-15T14:47:42Z",
+          "thumbnail": "students/pilot/ivriga-oxen/thumbnail.webp",
+          "scan": {
+            "scanner": "gitleaks",
+            "finding_count": 0
+          }
+        },
+        {
           "slug": "yviga-muslan",
           "display_name": "port1db3e2",
           "persona": "kladd",
