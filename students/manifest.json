@@ -5,6 +5,18 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "yviga-muslan",
+          "display_name": "port1db3e2",
+          "persona": "kladd",
+          "archived_at": "2026-05-15T08:01:57Z",
+          "published_at": "2026-05-15T11:21:41Z",
+          "thumbnail": "students/pilot/yviga-muslan/thumbnail.webp",
+          "scan": {
+            "scanner": "gitleaks",
+            "finding_count": 0
+          }
+        },
+        {
           "slug": "roliga-tukanen",
           "display_name": "port209e46",
           "persona": "kladd",
