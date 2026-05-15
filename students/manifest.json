@@ -5,6 +5,18 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "roliga-tukanen",
+          "display_name": "port209e46",
+          "persona": "kladd",
+          "archived_at": "2026-05-15T08:02:05Z",
+          "published_at": "2026-05-15T11:20:37Z",
+          "thumbnail": "students/pilot/roliga-tukanen/thumbnail.webp",
+          "scan": {
+            "scanner": "gitleaks",
+            "finding_count": 0
+          }
+        },
+        {
           "slug": "kvicka-domherren",
           "display_name": "student08",
           "persona": "kladd",
