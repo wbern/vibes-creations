@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Sidan finns inte · Vibes Creations</title>
+  <title>Sidan laddar… · Vibes Creations</title>
   <style>
     :root { color-scheme: light dark; }
     body {
@@ -16,17 +16,121 @@
     h1 { font-size: 2.5rem; margin-bottom: 0.25rem; }
     p.lead { color: #666; margin-top: 0; }
     a { color: inherit; }
+    .panel {
+      display: none;
+      margin-top: 1.5rem;
+      padding: 1rem 1.25rem;
+      background: rgba(127, 127, 127, 0.12);
+      border-radius: 0.5rem;
+    }
+    .panel--active { display: block; }
+    .dot {
+      display: inline-block;
+      width: 0.6rem;
+      height: 0.6rem;
+      border-radius: 50%;
+      background: #efa080;
+      margin-right: 0.4rem;
+      vertical-align: middle;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.85); }
+      50%      { opacity: 1;   transform: scale(1.1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .dot { animation: none; opacity: 0.7; }
+    }
+    .panel__sub { font-size: 0.9rem; opacity: 0.75; margin: 0.5rem 0 0; }
   </style>
 </head>
 <body>
-  <h1>Hoppsan!</h1>
-  <p class="lead">Den här sidan finns inte (längre).</p>
-  <p>
+  <h1 id="title">Hoppsan!</h1>
+  <p class="lead" id="lead">Den här sidan finns inte (längre).</p>
+
+  <!-- Loading panel only shown when the URL looks like a freshly-published
+       student page; the auto-reload script flips it on. -->
+  <div class="panel" id="loading-panel" role="status" aria-live="polite">
+    <p><span class="dot" aria-hidden="true"></span><strong>Din sida laddas just nu…</strong></p>
+    <p class="panel__sub" id="loading-sub">
+      GitHub bygger om sidan — det kan ta upp till en minut första gången.
+      Sidan laddas om automatiskt när den är klar. Du behöver inte göra något.
+    </p>
+  </div>
+
+  <p id="fallback">
     Kanske letar du efter någon av kreationerna från en av Airenes
     vibe-coding-workshops? Hoppa till
     <a href="/">startsidan</a> och bläddra bland alla bidrag.
   </p>
   <hr>
   <p><small>This page does not exist. Try the <a href="/">gallery landing page</a>.</small></p>
+
+  <script>
+    // Auto-reload for freshly-published student pages.
+    //
+    // When a kid in the workshop hits "Publicera", the SPA shows them the
+    // final URL ~1s after the safety scan passes — but GitHub Pages then
+    // needs another ~30-60s to finish the build. If the kid (or someone
+    // scanning their QR) opens the URL during that window they land on
+    // this 404. Kids aged 9-13 don't read 404 pages — they refresh once,
+    // see the same thing, and give up.
+    //
+    // So: if the URL path matches a published-page shape (/students/<c>/<s>/),
+    // we silently HEAD-poll the current URL every few seconds and reload
+    // the moment GitHub stops returning 404. Hard cap on poll attempts
+    // so a truly-missing page doesn't burn battery forever.
+    (function () {
+      var p = window.location.pathname || "";
+      var looksLikePublishedPage = /^\/students\/[^/]+\/[^/]+\/?$/.test(p);
+      if (!looksLikePublishedPage) return;
+
+      var panel = document.getElementById("loading-panel");
+      var fallback = document.getElementById("fallback");
+      var title = document.getElementById("title");
+      var lead = document.getElementById("lead");
+      var sub = document.getElementById("loading-sub");
+
+      title.textContent = "Sidan laddar…";
+      lead.textContent = "Din publicerade sida förbereds.";
+      fallback.style.display = "none";
+      panel.classList.add("panel--active");
+
+      var POLL_MS = 3000;
+      var MAX_ATTEMPTS = 60; // ~3 minutes total
+      var attempts = 0;
+
+      function tryReload() {
+        attempts++;
+        if (attempts > MAX_ATTEMPTS) {
+          // Give up gracefully — re-show the original 404 message.
+          title.textContent = "Hoppsan!";
+          lead.textContent = "Sidan svarar inte just nu.";
+          sub.textContent = "Försök igen om en stund, eller gå tillbaka till startsidan.";
+          fallback.style.display = "";
+          return;
+        }
+        // Cache-bust so a stale 404 from the edge cache doesn't keep us
+        // looping forever. Same-origin only — no leak.
+        var bust = window.location.pathname + "?_pageloading=" + Date.now();
+        fetch(bust, { method: "GET", cache: "no-store", credentials: "omit" })
+          .then(function (resp) {
+            if (resp && resp.ok) {
+              // Reload the canonical URL (without the cache-bust param)
+              // so the user lands on the real page.
+              window.location.replace(window.location.pathname);
+              return;
+            }
+            window.setTimeout(tryReload, POLL_MS);
+          })
+          .catch(function () {
+            // Network blip — keep trying.
+            window.setTimeout(tryReload, POLL_MS);
+          });
+      }
+
+      window.setTimeout(tryReload, POLL_MS);
+    })();
+  </script>
 </body>
 </html>
