@@ -1,0 +1,2992 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Skjutspelet</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #0a0a1a;
+      font-family: system-ui, sans-serif;
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    /* Varje "sida" i spelet */
+    .screen { display: none; position: absolute; inset: 0; }
+    .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+    /* ── Meny ── */
+    #screen-menu {
+      background: linear-gradient(160deg, #0a0a2e, #1a1a4e);
+      gap: 1.5rem; padding: 2rem;
+    }
+    #screen-menu h1 {
+      color: #fff; font-size: clamp(2rem, 8vw, 3.5rem);
+      font-weight: 900; text-align: center; margin: 0 0 .25rem;
+      text-shadow: 0 0 30px rgba(255,200,0,.7);
+    }
+    #screen-menu p { color: #aaa; margin: 0; text-align: center; font-size: clamp(.9rem,3vw,1.1rem); }
+    .level-grid { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; max-width: 600px; }
+    .level-card {
+      width: clamp(130px,38vw,175px);
+      border: 3px solid rgba(255,255,255,.25);
+      border-radius: 22px; padding: 1.2rem 1rem;
+      text-align: center; cursor: pointer; color: #fff;
+      transition: transform 120ms, box-shadow 120ms;
+      box-shadow: 0 8px 0 rgba(0,0,0,.4);
+      position: relative; overflow: hidden;
+    }
+    .level-card:active { transform: scale(.93) translateY(6px); box-shadow: 0 2px 0 rgba(0,0,0,.4); }
+    /* Per-bana bakgrundsfärger */
+    .level-card.vatten { background: linear-gradient(160deg,#0055cc,#003388); border-color:#44aaff; }
+    .level-card.skog   { background: linear-gradient(160deg,#1a6e1a,#0a3a0a); border-color:#66dd44; }
+    .level-card.rymd   { background: linear-gradient(160deg,#1a0a3a,#0a0520); border-color:#aa66ff; }
+    .level-card .icon { font-size: 3.5rem; display: block; margin-bottom: .4rem;
+                        filter: drop-shadow(0 0 8px rgba(255,255,255,.4)); }
+    .level-card .name { font-size: 1.1rem; font-weight: 900; letter-spacing:.02em; }
+    .level-card .desc { font-size: .8rem; color: #cce; margin-top: .25rem; }
+    /* Liten "glow" i hörnet */
+    .level-card::before {
+      content:''; position:absolute; top:-30px; right:-30px;
+      width:80px; height:80px; border-radius:50%;
+      background: radial-gradient(rgba(255,255,255,.18),transparent 70%);
+    }
+
+    /* ── Spelskärm ── */
+    #screen-game { background: #000; justify-content: flex-start; }
+    #game-canvas { display: block; touch-action: none; cursor: none; }
+    #hud {
+      position: absolute; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .5rem 1rem; background: rgba(0,0,0,.55);
+      color: #fff; font-size: clamp(1rem,4vw,1.25rem); font-weight: 800;
+      pointer-events: none; z-index: 10; gap: .5rem;
+    }
+    #btn-back {
+      background: rgba(255,255,255,.18); border: none; border-radius: 10px;
+      color: #fff; font-size: .85rem; font-weight: 700;
+      padding: .35rem .8rem; cursor: pointer; pointer-events: auto;
+      margin-left: auto;   /* knuffar knappen till höger i flex-raden */
+      white-space: nowrap;
+    }
+
+    /* ── Game over ── */
+    #screen-gameover {
+      background: rgba(0,0,0,.88);
+      gap: 1.2rem; text-align: center; color: #fff;
+    }
+    #screen-gameover h2 { font-size: clamp(2rem,7vw,3rem); margin: 0; }
+    .final-score { font-size: clamp(1.6rem,6vw,2.4rem); color: #ffd700; font-weight: 900; }
+    .btn-big {
+      background: #ff5500; border: none; border-radius: 16px;
+      color: #fff; font-size: 1.15rem; font-weight: 900;
+      padding: .9rem 2.2rem; cursor: pointer;
+      box-shadow: 0 6px 0 #aa3300;
+      transition: transform 80ms, box-shadow 80ms;
+    }
+    .btn-big:active { transform: translateY(6px); box-shadow: none; }
+    .btn-replay { background: #2255cc; box-shadow: 0 6px 0 #113388; }
+
+    /* ── Hemlig vakt ── */
+    #guard-corner {
+      position: absolute; top: .7rem; right: .8rem;
+      font-size: 1.6rem; cursor: pointer; opacity: .18;
+      transition: opacity .3s; z-index: 5;
+      user-select: none;
+    }
+    #guard-corner:hover { opacity: .45; }
+    #guard-corner.lured #guard-emoji { display: none; }
+    #guard-corner.lured { opacity: .8; }
+    #guard-dialog {
+      position: absolute; top: 3.5rem; right: .8rem;
+      background: #fff; color: #222; border-radius: 14px;
+      padding: .5rem .9rem; font-size: .85rem; font-weight: 700;
+      max-width: 220px; display: none; z-index: 20;
+      box-shadow: 0 4px 12px rgba(0,0,0,.4);
+    }
+    #guard-dialog.show { display: block; }
+
+    /* ── Restaurang ── */
+    #screen-restaurant {
+      background: linear-gradient(160deg,#1a0a00,#2a1200);
+      flex-direction: column; align-items: stretch;
+      justify-content: flex-start; padding: 0; gap: 0;
+    }
+    #r-header {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .6rem 1rem; background: rgba(0,0,0,.5);
+      color: #fff; font-weight: 800; font-size: 1rem;
+      flex-shrink: 0;
+    }
+    #r-header span:first-child { font-size: 1.2rem; flex: 1; }
+    #r-dining {
+      flex: 1; display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .7rem; padding: .7rem;
+      overflow-y: auto;
+    }
+    .r-table {
+      background: rgba(255,220,150,.08);
+      border: 2px solid rgba(255,200,100,.2);
+      border-radius: 18px; padding: .7rem;
+      cursor: pointer; transition: border-color 120ms, background 120ms;
+      min-height: 110px; display: flex; flex-direction: column; align-items: center; gap: .35rem;
+    }
+    .r-table.selected { border-color: #ffd700; background: rgba(255,215,0,.12); }
+    .r-table.empty    { justify-content: center; opacity: .4; cursor: default; }
+    .r-guest-face     { font-size: 2.2rem; line-height: 1; }
+    .r-bubble {
+      background: #fff; color: #222; border-radius: 12px;
+      padding: .2rem .55rem; font-size: 1.1rem; font-weight: 700;
+      position: relative;
+    }
+    .r-bubble::after {
+      content:''; position:absolute; bottom:-7px; left:50%; transform:translateX(-50%);
+      border:7px solid transparent; border-top-color:#fff; border-bottom:0;
+    }
+    .r-think { font-size:.9rem; color:#aaa; font-style:italic; }
+    .r-patience-wrap { width:100%; background:rgba(255,255,255,.12); border-radius:8px; height:7px; }
+    .r-patience-bar  { height:7px; border-radius:8px; background:#44ff88; transition:width .1s; }
+    .r-happy { font-size:1.4rem; }
+    /* Serveringsfönster */
+    #r-servering {
+      background: rgba(255,180,50,.08);
+      border-top: 2px solid rgba(255,180,50,.25);
+      border-bottom: 2px solid rgba(255,180,50,.25);
+      padding: .45rem .8rem; flex-shrink: 0;
+      display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+    }
+    #r-servering-label { color: #ffcc66; font-size: .8rem; font-weight: 700; white-space: nowrap; }
+    #r-ready-dishes    { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .r-ready-dish {
+      font-size: 1.8rem; background: rgba(255,255,255,.1);
+      border: 2px solid rgba(255,255,255,.2); border-radius: 12px;
+      width: 52px; height: 52px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer;
+      transition: transform 80ms, border-color 100ms;
+    }
+    .r-ready-dish:active      { transform: scale(.88); }
+    .r-ready-dish.r-dish-sel  { border-color: #ffd700; background: rgba(255,215,0,.2); }
+    /* Kokgryta */
+    #r-pot-area {
+      display: flex; align-items: center; gap: .6rem;
+      background: rgba(255,255,255,.06); border-radius: 14px; padding: .45rem .8rem;
+    }
+    #r-pot-icon { font-size: 1.6rem; }
+    /* Köket */
+    #r-kitchen {
+      background: #111; border-top: 2px solid #333;
+      padding: .7rem 1rem; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: .55rem;
+    }
+    #r-plate-area {
+      display: flex; align-items: center; gap: .6rem;
+      background: rgba(255,255,255,.06); border-radius: 14px; padding: .5rem .8rem;
+    }
+    #r-plate-display { font-size: 1.5rem; min-width: 60px; letter-spacing: 2px; }
+    #r-plate-label   { color: #aaa; font-size: .8rem; flex: 1; }
+    #r-ing-row {
+      display: flex; flex-wrap: wrap; gap: .45rem;
+    }
+    .r-ing-btn {
+      font-size: 1.6rem; background: rgba(255,255,255,.1);
+      border: 2px solid rgba(255,255,255,.15); border-radius: 12px;
+      width: 52px; height: 52px; cursor: pointer;
+      transition: transform 80ms, background 100ms;
+    }
+    .r-ing-btn:active { transform: scale(.88); background: rgba(255,255,255,.25); }
+    #r-action-row { display: flex; gap: .5rem; }
+    .r-btn {
+      flex: 1; border: none; border-radius: 14px; font-weight: 900;
+      font-size: 1rem; padding: .6rem; cursor: pointer;
+    }
+    .r-btn-serve  { background: #22aa55; color: #fff; box-shadow: 0 4px 0 #116633; }
+    .r-btn-serve:active { transform: translateY(4px); box-shadow: none; }
+    .r-btn-clear  { background: #555; color: #ccc; }
+    .r-btn-clear:active { filter: brightness(.8); }
+
+    /* Vapenkort i butiken */
+    .gun-card {
+      background: rgba(255,255,255,.08);
+      border: 2px solid rgba(255,255,255,.15);
+      border-radius: 16px; padding: .9rem 1rem;
+      color: #fff; display: flex; align-items: center; gap: .9rem;
+    }
+    .gun-card.owned   { border-color: #44ff88; background: rgba(68,255,136,.1); }
+    .gun-card.active  { border-color: #ffd700; background: rgba(255,215,0,.12); }
+    .gun-info { flex: 1; }
+    .gun-name { font-size: 1.05rem; font-weight: 800; }
+    .gun-desc { font-size: .8rem; color: #bbb; margin-top: .15rem; }
+    .gun-stats { font-size: .75rem; color: #88ccff; margin-top: .2rem; }
+    .btn-buy {
+      border: none; border-radius: 12px; font-weight: 800;
+      font-size: .9rem; padding: .5rem 1rem; cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-buy.can-buy  { background: #22aa55; color: #fff; box-shadow: 0 4px 0 #116633; }
+    .btn-buy.no-money { background: #555; color: #888; cursor: default; }
+    .btn-buy.equip    { background: #ffd700; color: #222; box-shadow: 0 4px 0 #aa9000; }
+    .btn-buy.equipped { background: #333; color: #ffd700; cursor: default; }
+  </style>
+</head>
+<body>
+
+<!-- MENY -->
+<div id="screen-menu" class="screen active">
+  <!-- Hemlig vakt uppe i hörnet -->
+  <div id="guard-corner" onclick="tryLureGuard()" title="???">
+    <span id="guard-emoji">💂</span><span id="guard-door">🚪</span>
+  </div>
+  <!-- Vakts pratbubbla -->
+  <div id="guard-dialog"></div>
+
+  <h1>🎯 Skjutspelet</h1>
+  <p>Välj en bana för att börja!</p>
+  <div style="display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center">
+    <button class="btn-big" style="background:#22aa55;box-shadow:0 6px 0 #116633;font-size:1rem;padding:.7rem 1.8rem" onclick="openShop()">🛒 Butik &nbsp;<span id="menu-coins">0 🪙</span></button>
+    <button class="btn-big" style="background:#cc6600;box-shadow:0 6px 0 #884400;font-size:1rem;padding:.7rem 1.8rem" onclick="openRestaurant()">🍽️ Restaurang</button>
+  </div>
+  <div class="level-grid">
+    <div class="level-card vatten" onclick="startLevel('vatten')">
+      <span class="icon">🌊</span>
+      <div class="name">Vattenbanan</div>
+      <div class="desc">Hajar · Kräftor · Sjöhästar</div>
+    </div>
+    <div class="level-card skog" onclick="startLevel('skog')">
+      <span class="icon">🌲</span>
+      <div class="name">Skogsbanan</div>
+      <div class="desc">Örnar · Sparvar · Fjärilar</div>
+    </div>
+    <div class="level-card rymd" onclick="startLevel('rymd')">
+      <span class="icon">🚀</span>
+      <div class="name">Rymdbanan</div>
+      <div class="desc">Asteroider · UFO:n · Satelliter</div>
+    </div>
+  </div>
+</div>
+
+<!-- SPEL -->
+<div id="screen-game" class="screen">
+  <canvas id="game-canvas"></canvas>
+  <div id="hud">
+    <span id="hud-level">Bana</span>
+    <span id="hud-gun" style="font-size:.85em;opacity:.8;">🔫 Pistol</span>
+    <span id="hud-score">Poäng: 0</span>
+    <span id="hud-ammo">🔴 8</span>
+    <span id="hud-time">⏱ 30</span>
+    <button id="btn-back" onclick="goMenu()">✕ Meny</button>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div id="screen-gameover" class="screen">
+  <h2>⏰ Tid ute!</h2>
+  <div class="final-score" id="final-score-text">0 poäng</div>
+  <div id="coins-earned-text" style="color:#ffd700;font-size:1.3rem;font-weight:800;">+0 🪙</div>
+  <div id="ing-earned-text" style="font-size:1.1rem;background:rgba(255,255,255,.08);border-radius:14px;padding:.6rem 1.2rem;min-width:200px;text-align:center;color:#fff;"></div>
+  <div style="display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;">
+    <button class="btn-big btn-replay" onclick="replayLevel()">🔄 Spela igen</button>
+    <button class="btn-big" style="background:#22aa55;box-shadow:0 6px 0 #116633" onclick="openShop()">🛒 Butik</button>
+    <button class="btn-big" onclick="goMenu()">🏠 Välj bana</button>
+  </div>
+</div>
+
+<!-- STORY MODE -->
+<div id="screen-story" class="screen" style="background:#111;flex-direction:column;padding:0;justify-content:flex-start;">
+  <div id="story-hud" style="display:flex;align-items:center;gap:.8rem;padding:.5rem 1rem;background:rgba(0,0,0,.7);color:#fff;font-size:1rem;font-weight:800;flex-shrink:0;z-index:10;">
+    <span id="story-room-txt">Rum 1</span>
+    <span id="story-hearts">❤️❤️❤️</span>
+    <span id="story-gun-txt" style="color:#aaddff;font-size:.85rem;"></span>
+    <div id="story-boss-bar-wrap" style="display:none;flex:1;height:14px;background:#333;border-radius:8px;overflow:hidden;">
+      <div id="story-boss-bar" style="height:100%;background:#ff2222;width:100%;transition:width .2s;border-radius:8px;"></div>
+    </div>
+    <span id="story-boss-label" style="display:none;color:#ff6666">👹 Boss</span>
+    <button style="margin-left:auto;background:rgba(255,255,255,.15);border:none;border-radius:10px;color:#fff;font-weight:700;padding:.3rem .8rem;cursor:pointer" onclick="exitStory()">✕</button>
+  </div>
+  <canvas id="story-canvas" style="display:block;touch-action:none;cursor:none;flex:1;"></canvas>
+</div>
+
+<!-- RESTAURANG -->
+<div id="screen-restaurant" class="screen">
+  <div id="r-header">
+    <span>🍽️ Restaurangen</span>
+    <span id="r-coins">0 🪙</span>
+    <button class="btn-big" style="padding:.35rem .9rem;font-size:.85rem;background:#555;box-shadow:none" onclick="closeRestaurant()">✕ Stäng</button>
+  </div>
+
+  <!-- Matsalen — 4 bord visas här dynamiskt -->
+  <div id="r-dining"></div>
+
+  <!-- Serveringsfönster — färdiglagad mat väntar här -->
+  <div id="r-servering">
+    <div id="r-servering-label">🪟 Serveringsfönster</div>
+    <div id="r-ready-dishes"></div>
+  </div>
+
+  <!-- Köket — längst ner -->
+  <div id="r-kitchen">
+    <!-- Kokgrytan -->
+    <div id="r-pot-area">
+      <div id="r-pot-icon">🥘</div>
+      <div id="r-pot-ing" style="font-size:1.3rem;letter-spacing:3px;min-width:60px">—</div>
+      <div id="r-cook-wrap" style="flex:1">
+        <div id="r-cook-bar" style="height:8px;background:#ff6600;border-radius:8px;width:0%;transition:width .1s"></div>
+      </div>
+    </div>
+    <div id="r-action-row">
+      <button class="r-btn r-btn-serve" onclick="cookFood()">🔥 Laga!</button>
+      <button class="r-btn r-btn-clear" onclick="rClearPlate()">🗑️ Rensa</button>
+    </div>
+    <div id="r-ing-row"></div>
+  </div>
+</div>
+
+<!-- BUTIK -->
+<div id="screen-shop" class="screen" style="background:linear-gradient(160deg,#0a0a2e,#1a1a4e);gap:1rem;padding:1.5rem;overflow-y:auto;">
+  <h2 style="color:#ffd700;margin:0;font-size:clamp(1.5rem,6vw,2.5rem);">🛒 Vapenbutik</h2>
+  <div id="shop-coins" style="color:#fff;font-size:1.1rem;font-weight:700;">Mynt: 0 🪙</div>
+  <div id="gun-cards" style="display:flex;flex-direction:column;gap:.8rem;width:100%;max-width:480px;"></div>
+  <button class="btn-big" style="background:#555;box-shadow:0 6px 0 #333;margin-top:.5rem" onclick="goMenu()">← Tillbaka</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  SKJUTSPELET — spelmotor
+// ═══════════════════════════════════════════
+
+const canvas = document.getElementById('game-canvas');
+const ctx    = canvas.getContext('2d');
+
+// Banornas inställningar
+const LEVELS = {
+  vatten: { name:'🌊 Vattenbanan', bgTop:'#003399', bgBot:'#001155', makeTgt: makeFish },
+  skog:   { name:'🌲 Skogsbanan',  bgTop:'#145214', bgBot:'#0a2a0a', makeTgt: makeBird },
+  rymd:   { name:'🚀 Rymdbanan',   bgTop:'#05050f', bgBot:'#020208', makeTgt: makeRock },
+};
+
+// Dekorationspartiklar (bubblor, löv, stjärnfall)
+let decos = [];
+
+function initDecos() {
+  decos = [];
+  if (currentLevel === 'vatten') {
+    // Bubblor som stiger upp
+    for (let i = 0; i < 18; i++) {
+      decos.push({ kind:'bubbla', x: Math.random()*canvas.width,
+        y: canvas.height + Math.random()*canvas.height,
+        r: 3 + Math.random()*10, speed: 0.4 + Math.random()*0.8 });
+    }
+  } else if (currentLevel === 'skog') {
+    // Löv som faller snett
+    for (let i = 0; i < 22; i++) {
+      decos.push({ kind:'löv', x: Math.random()*canvas.width,
+        y: -20 - Math.random()*canvas.height,
+        size: 6 + Math.random()*12, speed: 0.5 + Math.random()*1,
+        drift: (Math.random()-.5)*0.8, rot: Math.random()*Math.PI*2, rotV: (Math.random()-.5)*0.06,
+        color: ['#88cc44','#aadd55','#ffcc22','#dd8822'][Math.floor(Math.random()*4)] });
+    }
+  } else if (currentLevel === 'rymd') {
+    // Stjärnfall (meteorer)
+    for (let i = 0; i < 10; i++) {
+      decos.push({ kind:'meteor', x: Math.random()*canvas.width*1.5,
+        y: -Math.random()*canvas.height,
+        len: 40 + Math.random()*80, speed: 3 + Math.random()*4,
+        alpha: 0.3 + Math.random()*0.5 });
+    }
+  }
+}
+
+function drawDecos() {
+  for (const d of decos) {
+    if (d.kind === 'bubbla') {
+      d.y -= d.speed;
+      if (d.y < -d.r) d.y = canvas.height + d.r;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(180,220,255,0.5)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+      ctx.stroke();
+      // Liten glans
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.beginPath();
+      ctx.arc(d.x - d.r*.3, d.y - d.r*.3, d.r*.3, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+
+    } else if (d.kind === 'löv') {
+      d.y += d.speed;
+      d.x += d.drift;
+      d.rot += d.rotV;
+      if (d.y > canvas.height + 20) { d.y = -20; d.x = Math.random()*canvas.width; }
+      ctx.save();
+      ctx.translate(d.x, d.y);
+      ctx.rotate(d.rot);
+      ctx.fillStyle = d.color;
+      ctx.globalAlpha = 0.75;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, d.size, d.size*.5, 0, 0, Math.PI*2);
+      ctx.fill();
+      // Bladnerv
+      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-d.size, 0); ctx.lineTo(d.size, 0);
+      ctx.stroke();
+      ctx.restore();
+
+    } else if (d.kind === 'meteor') {
+      d.x -= d.speed * 1.2;
+      d.y += d.speed;
+      if (d.y > canvas.height + 20 || d.x < -100) {
+        d.x = canvas.width + Math.random()*200;
+        d.y = -Math.random()*canvas.height*.5;
+      }
+      ctx.save();
+      ctx.globalAlpha = d.alpha;
+      const grad = ctx.createLinearGradient(d.x, d.y, d.x + d.len*1.2, d.y - d.len);
+      grad.addColorStop(0, '#fff');
+      grad.addColorStop(1, 'transparent');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(d.x, d.y);
+      ctx.lineTo(d.x + d.len*1.2, d.y - d.len);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
+// Hemliga mål — syns knappt, ger stor bonus
+let secrets = [];
+let secretTimer = 0;
+
+function spawnSecret() {
+  if (currentLevel === 'vatten') {
+    // Gömmer sig vid botten, samma färg som sanden
+    secrets.push({
+      kind: 'v_secret', pts: 750,
+      x: 60 + Math.random() * (canvas.width - 120),
+      y: canvas.height - 50,
+      life: 280, maxLife: 280,
+    });
+  } else if (currentLevel === 'skog') {
+    // Sitter bland löven/träden
+    secrets.push({
+      kind: 's_secret', pts: 600,
+      x: 40 + Math.random() * (canvas.width - 80),
+      y: canvas.height - 90 - Math.random() * 80,
+      life: 260, maxLife: 260,
+      phase: Math.random() * Math.PI * 2,
+    });
+  } else if (currentLevel === 'rymd') {
+    // Flyter bland stjärnorna
+    secrets.push({
+      kind: 'r_secret', pts: 900,
+      x: 80 + Math.random() * (canvas.width - 160),
+      y: 80 + Math.random() * (canvas.height * 0.6),
+      life: 300, maxLife: 300,
+      phase: 0,
+    });
+  }
+}
+
+function drawAndUpdateSecrets() {
+  secrets = secrets.filter(s => {
+    s.life--;
+    s.phase = (s.phase || 0) + 0.04;
+    // Pulsar svagt i slutet av sin tid
+    const fade = Math.min(1, s.life / 40);
+
+    if (s.kind === 'v_secret') {
+      // Kista som nästan smälter in i sanden
+      const alpha = 0.35 + Math.sin(s.phase) * 0.12;
+      ctx.save();
+      ctx.globalAlpha = alpha * fade;
+      ctx.fillStyle = '#c8a227';
+      ctx.beginPath();
+      ctx.roundRect(s.x - 18, s.y - 12, 36, 22, 4);
+      ctx.fill();
+      ctx.fillStyle = '#8b6914';
+      ctx.fillRect(s.x - 18, s.y - 4, 36, 4);
+      ctx.fillStyle = '#c8a227';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y - 4, 4, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+
+    } else if (s.kind === 's_secret') {
+      // Kameleon-form, grönbrun, nästan osynlig
+      const alpha = 0.32 + Math.sin(s.phase) * 0.10;
+      ctx.save();
+      ctx.globalAlpha = alpha * fade;
+      ctx.fillStyle = '#4a6e22';
+      ctx.beginPath();
+      ctx.ellipse(s.x, s.y, 20, 9, 0.2, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(s.x + 18, s.y - 4, 9, 6, -0.3, 0, Math.PI*2); ctx.fill();
+      // Öga
+      ctx.fillStyle = '#1a2e08';
+      ctx.beginPath();
+      ctx.arc(s.x + 24, s.y - 5, 3, 0, Math.PI*2); ctx.fill();
+      // Ringsvans
+      ctx.strokeStyle = '#4a6e22'; ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(s.x - 18, s.y + 8, 10, 0, Math.PI*1.5); ctx.stroke();
+      ctx.restore();
+
+    } else if (s.kind === 'r_secret') {
+      // Glöder nästan ingenting mot den mörka rymden
+      const alpha = 0.28 + Math.sin(s.phase * 1.3) * 0.12;
+      ctx.save();
+      ctx.globalAlpha = alpha * fade;
+      // Litet alienansikte
+      ctx.fillStyle = '#113322';
+      ctx.beginPath();
+      ctx.ellipse(s.x, s.y, 16, 20, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#00ff88';
+      ctx.beginPath();
+      ctx.ellipse(s.x - 6, s.y - 4, 5, 7, -0.2, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(s.x + 6, s.y - 4, 5, 7,  0.2, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#001a0a';
+      ctx.beginPath();
+      ctx.arc(s.x - 6, s.y - 4, 2.5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(s.x + 6, s.y - 4, 2.5, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+
+    return s.life > 0;
+  });
+}
+
+function checkSecretHit(cx, cy) {
+  for (let i = secrets.length - 1; i >= 0; i--) {
+    const s  = secrets[i];
+    const dx = cx - s.x, dy = cy - s.y;
+    if (Math.sqrt(dx*dx + dy*dy) < 28) {
+      const gun = GUNS[currentGun];
+      const pts = Math.round(s.pts * gun.pointMult);
+      score += pts;
+      flashMsg  = `🔥 HEMLIG! +${pts}`;
+      flashTimer = 60; flashX = cx; flashY = cy;
+      secrets.splice(i, 1);
+      document.getElementById('hud-score').textContent = `Poäng: ${score}`;
+      return true;
+    }
+  }
+  return false;
+}
+
+// ══ POPUP-SYSTEM (krabba / mullvad / fallande stjärna) ══
+let popups      = [];
+let popupTimer  = 0;
+let holePos     = [];   // hålets position per bana
+
+function initPopups() {
+  popups = [];
+  popupTimer = 4000 + Math.random() * 3000;
+  holePos = [];
+  if (currentLevel === 'vatten') {
+    const n = 5;
+    for (let i = 0; i < n; i++)
+      holePos.push({ x: Math.round((i+1)*canvas.width/(n+1)), y: canvas.height - 44 });
+  } else if (currentLevel === 'skog') {
+    const n = 4;
+    for (let i = 0; i < n; i++)
+      holePos.push({ x: Math.round((i+1)*canvas.width/(n+1)), y: canvas.height - 52 });
+  }
+}
+
+function drawHoles() {
+  // Mörka ellipser i marken som djuren kikar upp ur
+  const col = currentLevel === 'vatten' ? '#1a0d00' : '#0d0700';
+  for (const h of holePos) {
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.ellipse(h.x, h.y + 6, 17, 8, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function spawnPopup() {
+  if (currentLevel === 'vatten') {
+    const free = holePos.filter(h => !popups.find(p => p.hx === h.x));
+    if (!free.length) return;
+    const h = free[Math.floor(Math.random()*free.length)];
+    popups.push({ kind:'krabba', x:h.x, y:h.y, hx:h.x,
+      off:0, state:'rising', stayT:110, pts:30 });
+  } else if (currentLevel === 'skog') {
+    const free = holePos.filter(h => !popups.find(p => p.hx === h.x));
+    if (!free.length) return;
+    const h = free[Math.floor(Math.random()*free.length)];
+    popups.push({ kind:'mullvad', x:h.x, y:h.y, hx:h.x,
+      off:0, state:'rising', stayT:90, pts:30 });
+  } else if (currentLevel === 'rymd') {
+    const left = Math.random() < 0.5;
+    popups.push({ kind:'stjärna',
+      x: left ? -60 : canvas.width+60,
+      y: 80 + Math.random()*canvas.height*.5,
+      vx: left ? 5+Math.random()*3 : -(5+Math.random()*3),
+      vy: 1.5+Math.random()*2, life:90, pts:50 });
+  }
+}
+
+function drawAndUpdatePopups() {
+  const dead = [];
+  for (let i = 0; i < popups.length; i++) {
+    const p = popups[i];
+
+    if (p.kind === 'krabba' || p.kind === 'mullvad') {
+      // Animera upp/ner
+      if      (p.state==='rising')  { p.off=Math.min(1,p.off+0.055); if(p.off>=1) p.state='up'; }
+      else if (p.state==='up')      { p.stayT--; if(p.stayT<=0) p.state='sinking'; }
+      else if (p.state==='sinking') { p.off=Math.max(0,p.off-0.055); if(p.off<=0){dead.push(i);continue;} }
+
+      const showH = p.off * (p.kind==='krabba' ? 40 : 44);
+      const drawY = p.y - showH + 12;
+
+      // Klipp så djuret verkar komma upp ur hålet
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(p.x-50, -9999, 100, p.y+14+9999);
+      ctx.clip();
+      ctx.translate(p.x, drawY);
+
+      if (p.kind === 'krabba') {
+        // Kropp
+        ctx.fillStyle='#cc4400';
+        ctx.beginPath(); ctx.ellipse(0,0,16,11,0,0,Math.PI*2); ctx.fill();
+        // Skalmönster
+        ctx.strokeStyle='#aa3300'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.arc(0,-2,8,0.4,Math.PI-0.4); ctx.stroke();
+        // Klor
+        ctx.fillStyle='#dd5500';
+        for (const sx of [-1,1]) {
+          ctx.save(); ctx.scale(sx,1);
+          ctx.beginPath();
+          ctx.moveTo(14,0); ctx.lineTo(26,-10); ctx.lineTo(23,-3); ctx.closePath(); ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(14,0); ctx.lineTo(26,-3); ctx.lineTo(22,5); ctx.closePath(); ctx.fill();
+          ctx.restore();
+        }
+        // Ögonstjälkar
+        ctx.strokeStyle='#cc4400'; ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.moveTo(-5,-10); ctx.lineTo(-7,-20);
+        ctx.moveTo( 5,-10); ctx.lineTo( 7,-20); ctx.stroke();
+        ctx.fillStyle='#111';
+        ctx.beginPath(); ctx.arc(-7,-21,4,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc( 7,-21,4,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#fff';
+        ctx.beginPath(); ctx.arc(-6,-22,1.5,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc( 8,-22,1.5,0,Math.PI*2); ctx.fill();
+
+      } else { // mullvad
+        // Kropp
+        ctx.fillStyle='#6b3a1f';
+        ctx.beginPath(); ctx.ellipse(0,2,18,22,0,0,Math.PI*2); ctx.fill();
+        // Ansikte
+        ctx.fillStyle='#8b5a2b';
+        ctx.beginPath(); ctx.ellipse(0,-4,14,16,0,0,Math.PI*2); ctx.fill();
+        // Nos
+        ctx.fillStyle='#ffaaaa';
+        ctx.beginPath(); ctx.ellipse(0,6,7,5,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#cc8888';
+        ctx.beginPath(); ctx.arc(-2.5,6,1.5,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc( 2.5,6,1.5,0,Math.PI*2); ctx.fill();
+        // Ögon
+        ctx.fillStyle='#111';
+        ctx.beginPath(); ctx.arc(-6,-6,3.5,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc( 6,-6,3.5,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#fff';
+        ctx.beginPath(); ctx.arc(-5,-7,1.2,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc( 7,-7,1.2,0,Math.PI*2); ctx.fill();
+        // Tassar
+        ctx.fillStyle='#5a3018';
+        ctx.beginPath(); ctx.ellipse(-20,10,8,5,-0.5,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse( 20,10,8,5, 0.5,0,Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+
+    } else if (p.kind === 'stjärna') {
+      p.x += p.vx; p.y += p.vy; p.life--;
+      if (p.life<=0 || p.x<-120 || p.x>canvas.width+120) { dead.push(i); continue; }
+
+      // Svans (gradient-linje)
+      const tx = p.x - Math.sign(p.vx)*70, ty = p.y - p.vy*12;
+      const gr = ctx.createLinearGradient(p.x,p.y,tx,ty);
+      gr.addColorStop(0,'rgba(255,255,180,.95)');
+      gr.addColorStop(1,'transparent');
+      ctx.save();
+      ctx.strokeStyle=gr; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(tx,ty); ctx.stroke();
+      // Stjärn-huvud
+      ctx.fillStyle='#ffffaa';
+      ctx.shadowColor='#ffff00'; ctx.shadowBlur=18;
+      ctx.beginPath(); ctx.arc(p.x,p.y,9,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur=0;
+      ctx.restore();
+    }
+  }
+  for (let i=dead.length-1; i>=0; i--) popups.splice(dead[i],1);
+}
+
+function checkPopupHit(cx, cy) {
+  for (let i=popups.length-1; i>=0; i--) {
+    const p = popups[i];
+    let hit = false;
+    if (p.kind==='krabba'||p.kind==='mullvad') {
+      if (p.state==='sinking'&&p.off<0.2) continue;
+      const showH = p.off*(p.kind==='krabba'?40:44);
+      const dy2 = p.y - showH + 12;
+      hit = Math.sqrt((cx-p.x)**2+(cy-dy2)**2) < 26;
+    } else if (p.kind==='stjärna') {
+      hit = Math.sqrt((cx-p.x)**2+(cy-p.y)**2) < 22;
+    }
+    if (hit) {
+      sndPopHit();
+      earnIngredient(p.kind);   // popup-djur ger ingrediens
+      const pts = Math.round(p.pts * GUNS[currentGun].pointMult);
+      score += pts;
+      flashMsg=`+${pts}`; flashTimer=40; flashX=cx; flashY=cy;
+      popups.splice(i,1);
+      document.getElementById('hud-score').textContent=`Poäng: ${score}`;
+      return true;
+    }
+  }
+  return false;
+}
+
+// Spelstatus
+let targets = [], score = 0, timeLeft = 30;
+let running = false, timerID = null;
+let mouseX = 0, mouseY = 0;
+let currentLevel = 'vatten';
+let spawnTimer = 0;
+let flashMsg = '', flashTimer = 0, flashX = 0, flashY = 0;
+
+// ══ LJUD-SYSTEM (Web Audio — inga filer, allt syntetiserat) ══
+let _ac = null;
+function ac() {
+  if (!_ac) _ac = new (window.AudioContext || window.webkitAudioContext)();
+  // iOS kräver att AudioContext startas i en user-gesture — det sker automatiskt
+  // första gången spelaren trycker.
+  if (_ac.state === 'suspended') _ac.resume();
+  return _ac;
+}
+
+// Hjälp: koppla noder och spela
+function play(nodes, stopAt) {
+  const a = ac();
+  for (let i = 0; i < nodes.length-1; i++) nodes[i].connect(nodes[i+1]);
+  nodes[nodes.length-1].connect(a.destination);
+  nodes[0].start?.();
+  nodes[0].stop?.(a.currentTime + stopAt);
+}
+
+// ── Skott-ljud (varierar per vapen) ──
+function sndShoot(gunKey) {
+  const a = ac(), t = a.currentTime;
+  const osc  = a.createOscillator();
+  const gain = a.createGain();
+
+  if (gunKey === 'maskinpistol') {
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(900, t);
+    osc.frequency.exponentialRampToValueAtTime(350, t+0.07);
+    gain.gain.setValueAtTime(0.12, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t+0.09);
+    play([osc, gain], 0.1);
+  } else if (gunKey === 'hagelgevär') {
+    // Tre snabba brak
+    for (let i = 0; i < 3; i++) {
+      const o2 = a.createOscillator(), g2 = a.createGain();
+      o2.type = 'sawtooth';
+      o2.frequency.setValueAtTime(300-i*40, t+i*0.04);
+      o2.frequency.exponentialRampToValueAtTime(60, t+i*0.04+0.12);
+      g2.gain.setValueAtTime(0.18, t+i*0.04);
+      g2.gain.exponentialRampToValueAtTime(0.001, t+i*0.04+0.14);
+      o2.connect(g2); g2.connect(a.destination);
+      o2.start(t+i*0.04); o2.stop(t+i*0.04+0.15);
+    }
+  } else if (gunKey === 'prickskytte') {
+    // Djup "boom"
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, t);
+    osc.frequency.exponentialRampToValueAtTime(35, t+0.35);
+    gain.gain.setValueAtTime(0.35, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t+0.4);
+    play([osc, gain], 0.42);
+  } else if (gunKey === 'revolver') {
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(500, t);
+    osc.frequency.exponentialRampToValueAtTime(120, t+0.18);
+    gain.gain.setValueAtTime(0.28, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t+0.22);
+    play([osc, gain], 0.24);
+  } else {
+    // Pistol — klassisk "pew"
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(650, t);
+    osc.frequency.exponentialRampToValueAtTime(180, t+0.16);
+    gain.gain.setValueAtTime(0.22, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t+0.18);
+    play([osc, gain], 0.2);
+  }
+}
+
+// ── Träff-ljud (kort brus-smäll) ──
+function sndHit() {
+  const a = ac(), t = a.currentTime;
+  const buf  = a.createBuffer(1, Math.ceil(a.sampleRate*0.12), a.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random()*2-1) * (1 - i/data.length);
+  const src  = a.createBufferSource();
+  src.buffer = buf;
+  const flt  = a.createBiquadFilter();
+  flt.type   = 'bandpass'; flt.frequency.value = 900;
+  const gain = a.createGain();
+  gain.gain.setValueAtTime(0.3, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t+0.12);
+  src.connect(flt); flt.connect(gain); gain.connect(a.destination);
+  src.start(); src.stop(t+0.15);
+}
+
+// ── Krabba / mullvad träff — "boing" ──
+function sndPopHit() {
+  const a = ac(), t = a.currentTime;
+  const osc  = a.createOscillator();
+  const gain = a.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(300, t);
+  osc.frequency.exponentialRampToValueAtTime(700, t+0.08);
+  osc.frequency.exponentialRampToValueAtTime(200, t+0.25);
+  gain.gain.setValueAtTime(0.3, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t+0.28);
+  play([osc, gain], 0.3);
+}
+
+// ── Laddar om klar — "ding-ding" ──
+function sndReloadDone() {
+  const a = ac(), t = a.currentTime;
+  for (const [freq, delay] of [[880,0],[1100,0.12]]) {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.2, t+delay);
+    g.gain.exponentialRampToValueAtTime(0.001, t+delay+0.18);
+    o.connect(g); g.connect(a.destination);
+    o.start(t+delay); o.stop(t+delay+0.2);
+  }
+}
+
+// ── Tom — klick ──
+function sndEmpty() {
+  const a = ac(), t = a.currentTime;
+  const osc = a.createOscillator(), gain = a.createGain();
+  osc.type = 'square'; osc.frequency.value = 120;
+  gain.gain.setValueAtTime(0.1, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t+0.06);
+  play([osc, gain], 0.07);
+}
+
+// ── Game over — nedåtgående toner ──
+function sndGameOver() {
+  const a = ac(), t = a.currentTime;
+  for (const [freq, delay] of [[440,0],[330,0.2],[220,0.4],[110,0.65]]) {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = 'sawtooth'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.18, t+delay);
+    g.gain.exponentialRampToValueAtTime(0.001, t+delay+0.28);
+    o.connect(g); g.connect(a.destination);
+    o.start(t+delay); o.stop(t+delay+0.3);
+  }
+}
+
+// ══ VAPEN-DEFINITIONER (alla balanserade på olika sätt) ══
+// Varje vapen har styrkor OCH svagheter.
+const GUNS = {
+  pistol: {
+    name: '🔫 Pistol',
+    desc: 'Startpistol. Bra allround.',
+    ammo: 8, cooldown: 500, reload: 2250,
+    pointMult: 1,      // normal poäng
+    spread: false,     // ett skott i taget
+    bulletColor: '#ffee33',
+    cost: 0,           // gratis från start
+  },
+  revolver: {
+    name: '🤠 Revolver',
+    desc: 'Snabbare skott, +50% poäng — men längre laddning.',
+    ammo: 6, cooldown: 250, reload: 3500,
+    pointMult: 1.5,
+    spread: false,
+    bulletColor: '#ff8800',
+    cost: 50,
+  },
+  hagelgevär: {
+    name: '💥 Hagelgevär',
+    desc: 'Tre skott på en gång i ett spridningsmönster!',
+    ammo: 3, cooldown: 900, reload: 1800,
+    pointMult: 1,
+    spread: true,      // träffar flera mål i ett område
+    bulletColor: '#ff4444',
+    cost: 80,
+  },
+  maskinpistol: {
+    name: '⚡ Maskinpistol',
+    desc: 'Massor av skott, supersnabb — men lång laddning.',
+    ammo: 20, cooldown: 150, reload: 5000,
+    pointMult: 0.7,    // lite sämre poäng
+    spread: false,
+    bulletColor: '#44ffff',
+    cost: 120,
+  },
+  prickskytte: {
+    name: '🎯 Prickskyttegevär',
+    desc: 'Bara 2 skott men ger 3× poäng per träff!',
+    ammo: 2, cooldown: 2000, reload: 1000,
+    pointMult: 3, spread: false,
+    bulletColor: '#ff00ff', cost: 150,
+  },
+  potatiskanon: {
+    name: '🥔 Potatiskanon',
+    desc: '???  Hemligt vapen. Min skapare sa: varje bug är en potatis i förklädnad.',
+    ammo: 99, cooldown: 90, reload: 300,
+    pointMult: 1, spread: false,
+    bulletColor: '#8B4513', cost: 0,
+    secret: true,   // syns bara i butiken om upplåst
+  },
+};
+
+// Skott-system — startar med pistolen
+let currentGun   = 'pistol';   // aktivt vapen
+let ownedGuns    = ['pistol']; // ägda vapen
+let coins        = 0;          // sparade mynt
+
+// Dessa sätts om vid varje levels start utifrån currentGun
+let MAX_AMMO      = 8;
+let SHOT_COOLDOWN = 500;
+let RELOAD_TIME   = 2250;
+
+let ammo         = MAX_AMMO;
+let lastShotTime = -9999;
+let bullets      = [];
+let reloading    = false;
+let reloadStart  = 0;
+
+// Ändra canvasstorlek så den täcker hela fönstret
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+// ── MÅL-FABRIK: VATTEN ──
+// Stor (>45px) = haj, liten = kräfta eller sjöhäst
+function makeFish() {
+  const size  = 20 + Math.random() * 60;       // 20–80 px
+  const speed = 1 + (70 / size) * 1.5;         // liten → snabb
+  const left  = Math.random() < 0.5;
+
+  // Välj sort beroende på storlek
+  let kind;
+  if (size > 48) {
+    kind = 'haj';           // stor → haj
+  } else {
+    kind = Math.random() < 0.5 ? 'krafta' : 'sjohast';  // liten → kräfta eller sjöhäst
+  }
+
+  return {
+    x: left ? -size*2 : canvas.width + size*2,
+    y: 60 + Math.random() * (canvas.height - 140),
+    size, vx: left ? speed : -speed,
+    vy: (Math.random() - 0.5) * 1.0,
+    pts: Math.max(5, Math.round(700 / size)),
+    kind, flip: left,
+    legT: 0,  // animationsklocka för kräftklo och sjöhäst-fena
+  };
+}
+
+// ── MÅL-FABRIK: SKOG ──
+// Stor (>42px) = örn, liten = fjäril eller sparv
+function makeBird() {
+  const size  = 18 + Math.random() * 55;
+  const speed = 1.2 + (60 / size) * 1.4;
+  const left  = Math.random() < 0.5;
+
+  let kind;
+  if (size > 42) {
+    kind = 'orn';
+  } else {
+    kind = Math.random() < 0.5 ? 'fjäril' : 'sparv';
+  }
+
+  return {
+    x: left ? -size*2 : canvas.width + size*2,
+    y: 50 + Math.random() * (canvas.height * 0.65),
+    size, vx: left ? speed : -speed,
+    vy: 0, wingT: 0,
+    pts: Math.max(5, Math.round(600 / size)),
+    kind, flip: left,
+  };
+}
+
+// ── MÅL-FABRIK: RYMD ──
+// Stor (>42px) = asteroid, liten = UFO eller satellit
+function makeRock() {
+  const size  = 15 + Math.random() * 55;
+  const speed = 1.2 + (65 / size) * 1.3;
+  // Välj vilken kant asteroiden kommer från
+  const edge = Math.floor(Math.random() * 4); // 0=topp 1=höger 2=botten 3=vänster
+  let x, y;
+  if (edge === 0) { x = Math.random() * canvas.width;  y = -size; }
+  else if (edge === 1) { x = canvas.width + size;       y = Math.random() * canvas.height; }
+  else if (edge === 2) { x = Math.random() * canvas.width;  y = canvas.height + size; }
+  else                 { x = -size;                     y = Math.random() * canvas.height; }
+  // Riktning mot ett slumpmässigt område nära mitten
+  const tx  = canvas.width/2  + (Math.random()-.5) * canvas.width  * 0.4;
+  const ty  = canvas.height/2 + (Math.random()-.5) * canvas.height * 0.4;
+  const dx  = tx - x, dy = ty - y;
+  const len = Math.sqrt(dx*dx + dy*dy);
+  return {
+    x, y,
+    vx: dx/len * speed, vy: dy/len * speed,
+    size, rot: 0, rotV: (Math.random()-.5) * 0.06,
+    pts: Math.max(5, Math.round(650 / size)),
+    kind: size > 42 ? 'asteroid' : (Math.random() < 0.5 ? 'ufo' : 'satellit'),
+    legT: 0,
+  };
+}
+
+// ── RITA BAKGRUND ──
+function drawBG() {
+  const lvl  = LEVELS[currentLevel];
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, lvl.bgTop);
+  grad.addColorStop(1, lvl.bgBot);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (currentLevel === 'vatten') {
+    // ── Ljusstrålar uppifrån ──
+    ctx.save();
+    const t = performance.now() * 0.0004;
+    for (let i = 0; i < 7; i++) {
+      const sx = (i * 180 + Math.sin(t + i) * 40) % canvas.width;
+      const grad = ctx.createLinearGradient(sx, 0, sx + 50, canvas.height * .75);
+      grad.addColorStop(0, 'rgba(100,200,255,.18)');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(sx, 0); ctx.lineTo(sx + 30, 0);
+      ctx.lineTo(sx + 90, canvas.height*.75); ctx.lineTo(sx + 60, canvas.height*.75);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+
+    // ── Sjögräs / kelp i bakgrunden ──
+    for (let i = 0; i < 12; i++) {
+      const kx  = (i * 139 + 50) % canvas.width;
+      const kh  = 60 + (i * 37) % 80;
+      const kw  = 6 + (i % 3) * 3;
+      const sway = Math.sin(performance.now() * 0.001 + i) * 12;
+      ctx.strokeStyle = `rgba(0,${130 + i*8},${60 + i*5},.55)`;
+      ctx.lineWidth   = kw;
+      ctx.lineCap     = 'round';
+      ctx.beginPath();
+      ctx.moveTo(kx, canvas.height - 70);
+      ctx.quadraticCurveTo(kx + sway, canvas.height - 70 - kh/2, kx + sway*1.5, canvas.height - 70 - kh);
+      ctx.stroke();
+    }
+
+    // Rörliga våglinjer
+    ctx.strokeStyle = 'rgba(0,150,255,.18)';
+    ctx.lineWidth = 2;
+    for (let y = 80; y < canvas.height; y += 45) {
+      ctx.beginPath();
+      for (let x = 0; x <= canvas.width; x += 20) {
+        const wy = Math.sin((x + performance.now() * 0.02) * 0.05) * 8;
+        x === 0 ? ctx.moveTo(x, y + wy) : ctx.lineTo(x, y + wy);
+      }
+      ctx.stroke();
+    }
+
+    // ── Havsbotten (sandfärg) ──
+    const sandy = ctx.createLinearGradient(0, canvas.height - 70, 0, canvas.height);
+    sandy.addColorStop(0, '#8b6914');
+    sandy.addColorStop(1, '#6b4f0e');
+    ctx.fillStyle = sandy;
+    ctx.fillRect(0, canvas.height - 70, canvas.width, 70);
+
+    // ── Stenar på botten ──
+    for (let i = 0; i < 9; i++) {
+      const rx = (i * 211 + 60) % canvas.width;
+      const rw = 22 + (i * 37) % 45;
+      const rh = 14 + (i * 19) % 22;
+      ctx.fillStyle = i % 2 === 0 ? '#556' : '#445';
+      ctx.beginPath();
+      ctx.ellipse(rx, canvas.height - 38, rw, rh, 0, 0, Math.PI*2);
+      ctx.fill();
+      // skugga
+      ctx.fillStyle = 'rgba(0,0,0,.2)';
+      ctx.beginPath();
+      ctx.ellipse(rx + 4, canvas.height - 28, rw * .8, rh * .4, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // ── Koraller ──
+    const coralColors = ['#ff4488','#ff6622','#ff2244','#ff88aa','#ffaa00'];
+    for (let i = 0; i < 7; i++) {
+      const cx2 = (i * 173 + 90) % canvas.width;
+      const cy2 = canvas.height - 55;
+      const col  = coralColors[i % coralColors.length];
+      ctx.strokeStyle = col;
+      ctx.lineWidth   = 5;
+      ctx.lineCap     = 'round';
+      // Stam
+      ctx.beginPath();
+      ctx.moveTo(cx2, cy2 + 20);
+      ctx.lineTo(cx2, cy2 - 30);
+      ctx.stroke();
+      // Grenar
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx2, cy2 - 10); ctx.lineTo(cx2 - 18, cy2 - 35);
+      ctx.moveTo(cx2, cy2 - 10); ctx.lineTo(cx2 + 18, cy2 - 35);
+      ctx.moveTo(cx2, cy2 - 22); ctx.lineTo(cx2 - 10, cy2 - 44);
+      ctx.moveTo(cx2, cy2 - 22); ctx.lineTo(cx2 + 10, cy2 - 44);
+      ctx.stroke();
+      // Blomma-toppar (cirklar)
+      ctx.fillStyle = col;
+      ctx.lineWidth = 0;
+      for (const [ox, oy] of [[-18,-35],[18,-35],[-10,-44],[10,-44],[0,-30]]) {
+        ctx.beginPath();
+        ctx.arc(cx2+ox, cy2+oy, 5, 0, Math.PI*2); ctx.fill();
+      }
+    }
+
+  } else if (currentLevel === 'rymd') {
+    // Statiska stjärnor
+    ctx.fillStyle = 'rgba(255,255,255,.7)';
+    for (let i = 0; i < 100; i++) {
+      ctx.beginPath();
+      ctx.arc((i*137.5)%canvas.width, (i*97.3)%canvas.height, i%4===0?2:1, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // ── Planeter i bakgrunden ──
+    const planets = [
+      { xi:0.15, yi:0.30, r:55, c1:'#cc6633', c2:'#884422', ring:false },
+      { xi:0.78, yi:0.18, r:38, c1:'#6688cc', c2:'#334488', ring:true  },
+      { xi:0.55, yi:0.75, r:28, c1:'#88cc44', c2:'#446622', ring:false },
+      { xi:0.90, yi:0.60, r:18, c1:'#dd4444', c2:'#882222', ring:false },
+    ];
+    for (const p of planets) {
+      const px = p.xi * canvas.width;
+      const py = p.yi * canvas.height;
+      // Glöd
+      const glow = ctx.createRadialGradient(px, py, p.r*.3, px, py, p.r*1.6);
+      glow.addColorStop(0, p.c1 + '44');
+      glow.addColorStop(1, 'transparent');
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(px, py, p.r*1.6, 0, Math.PI*2); ctx.fill();
+      // Planet-kropp
+      const pg = ctx.createRadialGradient(px-p.r*.3, py-p.r*.3, p.r*.1, px, py, p.r);
+      pg.addColorStop(0, p.c1);
+      pg.addColorStop(1, p.c2);
+      ctx.fillStyle = pg;
+      ctx.beginPath(); ctx.arc(px, py, p.r, 0, Math.PI*2); ctx.fill();
+      // Band (ränder)
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.ellipse(px, py + p.r*.15, p.r*.9, p.r*.12, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(px, py - p.r*.2, p.r*.7, p.r*.09, 0, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+      // Ring (saturnus-stil)
+      if (p.ring) {
+        ctx.save();
+        ctx.globalAlpha = 0.45;
+        ctx.strokeStyle = '#aabbdd';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.ellipse(px, py, p.r*1.7, p.r*.45, -0.3, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+  } else if (currentLevel === 'skog') {
+
+    // ── Berg i bakgrunden (längst bak) ──
+    ctx.fillStyle = 'rgba(20,40,20,.55)';
+    for (let i = 0; i < 5; i++) {
+      const mx = (i * 290 - 60) % (canvas.width + 200) - 100;
+      const mh = 180 + (i * 73) % 140;
+      const mw = 160 + (i * 51) % 100;
+      ctx.beginPath();
+      ctx.moveTo(mx, canvas.height);
+      ctx.lineTo(mx + mw/2, canvas.height - mh);
+      ctx.lineTo(mx + mw, canvas.height);
+      ctx.closePath(); ctx.fill();
+      // Snö-topp
+      ctx.fillStyle = 'rgba(220,240,220,.3)';
+      ctx.beginPath();
+      ctx.moveTo(mx + mw/2, canvas.height - mh);
+      ctx.lineTo(mx + mw/2 - 22, canvas.height - mh + 50);
+      ctx.lineTo(mx + mw/2 + 22, canvas.height - mh + 50);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(20,40,20,.55)';
+    }
+
+    // ── Baklager träd (små, mörka, långt bort) ──
+    for (let tx = -20; tx < canvas.width + 40; tx += 55) {
+      const th = 80 + (tx * 7) % 60;
+      const tw = 36 + (tx * 3) % 24;
+      ctx.fillStyle = 'rgba(10,40,10,.5)';
+      // Barrträd (3 lager trianglar)
+      for (let lay = 0; lay < 3; lay++) {
+        const ly = canvas.height - th + lay * (th/4);
+        const lw = tw * (1 - lay * 0.22);
+        ctx.beginPath();
+        ctx.moveTo(tx + tw/2, ly - th/3 + lay*8);
+        ctx.lineTo(tx + tw/2 - lw/2, ly + th/5);
+        ctx.lineTo(tx + tw/2 + lw/2, ly + th/5);
+        ctx.closePath(); ctx.fill();
+      }
+    }
+
+    // ── Mellanskikt träd (med stammar, grönare) ──
+    for (let i = 0; i < 8; i++) {
+      const tx = (i * 173 + 30) % canvas.width;
+      const th = 120 + (i * 41) % 80;
+      const tw = 55 + (i * 17) % 35;
+      const col = ['#1a5e1a','#225522','#1e661e','#2a6e2a'][i%4];
+      // Stam
+      ctx.fillStyle = '#3d2510';
+      ctx.fillRect(tx + tw/2 - 7, canvas.height - 55, 14, 55);
+      // Tre lager trianglar (barrträd)
+      for (let lay = 0; lay < 3; lay++) {
+        const lyY = canvas.height - th + lay * (th * 0.28);
+        const lw  = tw * (1 - lay * 0.2);
+        ctx.fillStyle = lay === 0 ? col : (lay === 1 ? '#2a7a2a' : '#33aa33');
+        ctx.beginPath();
+        ctx.moveTo(tx + tw/2, lyY - th * 0.25 + lay*5);
+        ctx.lineTo(tx + tw/2 - lw/2, lyY + th * 0.18);
+        ctx.lineTo(tx + tw/2 + lw/2, lyY + th * 0.18);
+        ctx.closePath(); ctx.fill();
+      }
+      // Lite snö på toppen
+      ctx.fillStyle = 'rgba(220,255,220,.25)';
+      ctx.beginPath();
+      ctx.moveTo(tx + tw/2, canvas.height - th);
+      ctx.lineTo(tx + tw/2 - 12, canvas.height - th + 22);
+      ctx.lineTo(tx + tw/2 + 12, canvas.height - th + 22);
+      ctx.closePath(); ctx.fill();
+    }
+
+    // ── Solstrålar genom lövverket ──
+    ctx.save();
+    ctx.globalAlpha = 0.06;
+    for (let i = 0; i < 5; i++) {
+      const sx = (i * 220 + 80) % canvas.width;
+      const grad = ctx.createLinearGradient(sx, 0, sx + 60, canvas.height);
+      grad.addColorStop(0, '#ffffaa');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(sx, 0); ctx.lineTo(sx + 40, 0);
+      ctx.lineTo(sx + 100, canvas.height); ctx.lineTo(sx + 60, canvas.height);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+
+    // ── Markskikt (gräs) ──
+    const grass = ctx.createLinearGradient(0, canvas.height-55, 0, canvas.height);
+    grass.addColorStop(0, '#2a5e1a');
+    grass.addColorStop(1, '#1a3e0a');
+    ctx.fillStyle = grass;
+    ctx.fillRect(0, canvas.height - 55, canvas.width, 55);
+
+    // ── Stenar på marken ──
+    for (let i = 0; i < 7; i++) {
+      const rx = (i * 233 + 80) % canvas.width;
+      const rw = 18 + (i * 29) % 36;
+      const rh = 10 + (i * 13) % 16;
+      ctx.fillStyle = i % 2 === 0 ? '#667' : '#556';
+      ctx.beginPath();
+      ctx.ellipse(rx, canvas.height - 28, rw, rh, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // ── Små växter/buskar ──
+    for (let i = 0; i < 10; i++) {
+      const px2 = (i * 157 + 40) % canvas.width;
+      const py2 = canvas.height - 50;
+      const ph  = 20 + (i * 11) % 28;
+      const pc  = ['#44aa22','#55cc33','#33881a','#88cc44'][i%4];
+      // Stjälk
+      ctx.strokeStyle = '#2a5e0a'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(px2, py2+10); ctx.lineTo(px2, py2-ph+10); ctx.stroke();
+      // Löv-boll
+      ctx.fillStyle = pc;
+      ctx.beginPath(); ctx.arc(px2, py2-ph+10, 10 + (i%3)*4, 0, Math.PI*2); ctx.fill();
+      // Liten extra kvist
+      ctx.strokeStyle = pc; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px2, py2-ph*.4); ctx.lineTo(px2-12, py2-ph*.6);
+      ctx.moveTo(px2, py2-ph*.4); ctx.lineTo(px2+12, py2-ph*.6);
+      ctx.stroke();
+    }
+
+    // Grässtjälkar längs kanten
+    ctx.strokeStyle = '#55cc33'; ctx.lineWidth = 2;
+    for (let i = 0; i < 30; i++) {
+      const gx = (i * 89 + 20) % canvas.width;
+      const gh = 8 + (i * 7) % 18;
+      const gb = Math.sin(i * 1.3) * 4;
+      ctx.beginPath();
+      ctx.moveTo(gx, canvas.height - 55);
+      ctx.quadraticCurveTo(gx + gb, canvas.height - 55 - gh/2, gx + gb, canvas.height - 55 - gh);
+      ctx.stroke();
+    }
+  }
+}
+
+// ── RITA ETT MÅL ──
+function drawTarget(t) {
+  ctx.save();
+  ctx.translate(t.x, t.y);
+
+  if (t.kind === 'haj') {
+    // ── HAJ ──
+    if (!t.flip) ctx.scale(-1, 1);
+    const s = t.size;
+    // Mage (ljusare)
+    ctx.fillStyle = '#dde8f0';
+    ctx.beginPath();
+    ctx.ellipse(0, s*.06, s*.62, s*.18, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Kropp (grå)
+    ctx.fillStyle = '#5a7a8a';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s*.65, s*.24, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Ryggfena (triangel uppåt)
+    ctx.fillStyle = '#4a6a7a';
+    ctx.beginPath();
+    ctx.moveTo(s*.05, -s*.22);
+    ctx.lineTo(s*.28,  -s*.52);
+    ctx.lineTo(s*.45, -s*.22);
+    ctx.closePath(); ctx.fill();
+    // Stjärtfena
+    ctx.fillStyle = '#4a6a7a';
+    ctx.beginPath();
+    ctx.moveTo(-s*.6, 0);
+    ctx.lineTo(-s*.95, -s*.28);
+    ctx.lineTo(-s*.75,  s*.02);
+    ctx.lineTo(-s*.95,  s*.28);
+    ctx.closePath(); ctx.fill();
+    // Nos
+    ctx.fillStyle = '#5a7a8a';
+    ctx.beginPath();
+    ctx.ellipse(s*.68, s*.04, s*.14, s*.1, 0.3, 0, Math.PI*2);
+    ctx.fill();
+    // Mun (elak)
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(s*.62, s*.12, s*.12, 0.1, 0.9);
+    ctx.stroke();
+    // Öga (svart, litet)
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.arc(s*.42, -s*.04, s*.055, 0, Math.PI*2);
+    ctx.fill();
+
+  } else if (t.kind === 'krafta') {
+    // ── KRÄFTA ──
+    t.legT = (t.legT || 0) + 0.15;
+    if (!t.flip) ctx.scale(-1, 1);
+    const s = t.size;
+    const clawWave = Math.sin(t.legT) * s * 0.12;
+    // Kropp (oval, röd)
+    ctx.fillStyle = '#cc2200';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s*.42, s*.28, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Huvud (lite framför)
+    ctx.fillStyle = '#dd3300';
+    ctx.beginPath();
+    ctx.ellipse(s*.38, 0, s*.22, s*.2, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Stor klo (höger)
+    ctx.strokeStyle = '#cc2200'; ctx.lineWidth = s*.12; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(s*.55, 0);
+    ctx.lineTo(s*.9 + clawWave, -s*.15);
+    ctx.stroke();
+    ctx.fillStyle = '#cc2200';
+    ctx.beginPath();
+    ctx.arc(s*.92 + clawWave, -s*.16, s*.14, 0, Math.PI*2);
+    ctx.fill();
+    // Stor klo (vänster)
+    ctx.beginPath();
+    ctx.moveTo(s*.55, 0);
+    ctx.lineTo(s*.9 - clawWave, s*.15);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(s*.92 - clawWave, s*.16, s*.14, 0, Math.PI*2);
+    ctx.fill();
+    // Antenner
+    ctx.strokeStyle = '#ee4400'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(s*.55, -s*.08); ctx.lineTo(s*.95, -s*.38);
+    ctx.moveTo(s*.55,  s*.08); ctx.lineTo(s*.95,  s*.38);
+    ctx.stroke();
+    // Ögon
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(s*.48, -s*.1, s*.06, 0, Math.PI*2);
+    ctx.arc(s*.48,  s*.1, s*.06, 0, Math.PI*2);
+    ctx.fill();
+
+  } else if (t.kind === 'sjohast') {
+    // ── SJÖHÄST ──
+    t.legT = (t.legT || 0) + 0.08;
+    const s = t.size;
+    if (!t.flip) ctx.scale(-1, 1);
+    const sway = Math.sin(t.legT) * s * 0.05;
+    // Kropp (böjd, lila-lila)
+    ctx.fillStyle = '#aa55cc';
+    ctx.beginPath();
+    ctx.ellipse(sway, 0, s*.2, s*.38, 0.2, 0, Math.PI*2);
+    ctx.fill();
+    // Huvud/nos
+    ctx.fillStyle = '#bb66dd';
+    ctx.beginPath();
+    ctx.ellipse(s*.22 + sway, -s*.32, s*.18, s*.12, -0.6, 0, Math.PI*2);
+    ctx.fill();
+    // Krona-tagg
+    ctx.fillStyle = '#cc77ee';
+    ctx.beginPath();
+    ctx.moveTo(s*.16 + sway, -s*.44);
+    ctx.lineTo(s*.1  + sway, -s*.62);
+    ctx.lineTo(s*.28 + sway, -s*.44);
+    ctx.closePath(); ctx.fill();
+    // Ryggfena (liten vinge)
+    ctx.fillStyle = '#9944bb';
+    ctx.beginPath();
+    ctx.moveTo(s*.04 + sway, -s*.1);
+    ctx.lineTo(-s*.22 + sway, -s*.18 + Math.sin(t.legT*2)*s*.06);
+    ctx.lineTo(s*.04 + sway,  s*.08);
+    ctx.closePath(); ctx.fill();
+    // Svansskrull (liten snurrig svans)
+    ctx.strokeStyle = '#9944bb'; ctx.lineWidth = s*.1; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(s*.04 + sway, s*.42, s*.18, 0.3, Math.PI*1.8);
+    ctx.stroke();
+    // Öga
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(s*.3 + sway, -s*.34, s*.08, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.arc(s*.32 + sway, -s*.34, s*.045, 0, Math.PI*2); ctx.fill();
+
+  } else if (t.kind === 'orn') {
+    // ── ÖRN ──
+    t.wingT += 0.12;
+    if (!t.flip) ctx.scale(-1, 1);
+    const s = t.size;
+    const flap = Math.sin(t.wingT) * s * 0.45;
+    // Vänster vinge
+    ctx.fillStyle = '#5c3a1e';
+    ctx.beginPath();
+    ctx.ellipse(-s*.55, flap, s*.55, s*.18, -0.25, 0, Math.PI*2);
+    ctx.fill();
+    // Höger vinge
+    ctx.beginPath();
+    ctx.ellipse(s*.15, flap*0.6, s*.42, s*.15, 0.2, 0, Math.PI*2);
+    ctx.fill();
+    // Kropp
+    ctx.fillStyle = '#3d2510';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s*.3, s*.2, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Vitt huvud
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(s*.28, -s*.05, s*.16, 0, Math.PI*2);
+    ctx.fill();
+    // Gul näbb (krokig)
+    ctx.fillStyle = '#ffcc00';
+    ctx.beginPath();
+    ctx.moveTo(s*.42, -s*.04);
+    ctx.lineTo(s*.62,  s*.02);
+    ctx.lineTo(s*.44,  s*.12);
+    ctx.closePath(); ctx.fill();
+    // Öga
+    ctx.fillStyle = '#ff8800';
+    ctx.beginPath();
+    ctx.arc(s*.36, -s*.08, s*.065, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(s*.37, -s*.08, s*.035, 0, Math.PI*2); ctx.fill();
+
+  } else if (t.kind === 'fjäril') {
+    // ── FJÄRIL ──
+    t.wingT += 0.14;
+    const s = t.size;
+    const flap = Math.sin(t.wingT) * s * 0.5;
+    // Övre vingar
+    ctx.fillStyle = '#ff6699';
+    ctx.beginPath();
+    ctx.ellipse(-s*.35, flap*0.4 - s*.05, s*.35, s*.22, -0.5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse( s*.35, flap*0.4 - s*.05, s*.35, s*.22,  0.5, 0, Math.PI*2);
+    ctx.fill();
+    // Undre vingar (lite mindre)
+    ctx.fillStyle = '#ff99bb';
+    ctx.beginPath();
+    ctx.ellipse(-s*.28, flap*0.3 + s*.18, s*.26, s*.18, 0.4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse( s*.28, flap*0.3 + s*.18, s*.26, s*.18, -0.4, 0, Math.PI*2);
+    ctx.fill();
+    // Vingmönster (gula fläckar)
+    ctx.fillStyle = '#ffee44';
+    ctx.beginPath();
+    ctx.arc(-s*.3, flap*0.4, s*.08, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    ctx.arc( s*.3, flap*0.4, s*.08, 0, Math.PI*2); ctx.fill();
+    // Kropp
+    ctx.fillStyle = '#222';
+    ctx.beginPath();
+    ctx.ellipse(0, s*.05, s*.06, s*.28, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Antenner
+    ctx.strokeStyle = '#222'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-s*.04, -s*.2); ctx.lineTo(-s*.18, -s*.48);
+    ctx.moveTo( s*.04, -s*.2); ctx.lineTo( s*.18, -s*.48);
+    ctx.stroke();
+    // Antenn-bollar
+    ctx.fillStyle = '#ff6699';
+    ctx.beginPath();
+    ctx.arc(-s*.19, -s*.5, s*.05, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    ctx.arc( s*.19, -s*.5, s*.05, 0, Math.PI*2); ctx.fill();
+
+  } else if (t.kind === 'sparv') {
+    // ── SPARV ──
+    t.wingT += 0.22;
+    if (!t.flip) ctx.scale(-1, 1);
+    const s = t.size;
+    const flap = Math.sin(t.wingT) * s * 0.38;
+    // Vinge
+    ctx.fillStyle = '#886644';
+    ctx.beginPath();
+    ctx.ellipse(-s*.1, flap*.5, s*.45, s*.16, -0.35, 0, Math.PI*2);
+    ctx.fill();
+    // Kropp
+    ctx.fillStyle = '#aa8855';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s*.35, s*.2, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Huvud (mörkare)
+    ctx.fillStyle = '#664422';
+    ctx.beginPath();
+    ctx.arc(s*.3, -s*.06, s*.16, 0, Math.PI*2); ctx.fill();
+    // Näbb
+    ctx.fillStyle = '#ffcc44';
+    ctx.beginPath();
+    ctx.moveTo(s*.44, -s*.06);
+    ctx.lineTo(s*.6,  -s*.02);
+    ctx.lineTo(s*.44,  s*.06);
+    ctx.closePath(); ctx.fill();
+    // Öga
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(s*.36, -s*.1, s*.05, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(s*.37, -s*.11, s*.02, 0, Math.PI*2); ctx.fill();
+
+  } else if (t.kind === 'asteroid') {
+    ctx.rotate(t.rot);
+    ctx.fillStyle = '#777'; ctx.strokeStyle = '#444'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2;
+      const r = t.size * (.7 + Math.sin(i * 2.3) * .28);
+      i === 0 ? ctx.moveTo(Math.cos(a)*r, Math.sin(a)*r)
+              : ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+    }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // Krater
+    ctx.fillStyle = '#555';
+    ctx.beginPath();
+    ctx.arc(-t.size*.2, -t.size*.2, t.size*.18, 0, Math.PI*2);
+    ctx.fill();
+
+  } else if (t.kind === 'ufo') {
+    // ── UFO ──
+    t.legT = (t.legT || 0) + 0.06;
+    const s = t.size;
+    // Glöd under UFO
+    ctx.save();
+    ctx.globalAlpha = 0.25 * Math.abs(Math.sin(t.legT));
+    ctx.fillStyle = '#00ffaa';
+    ctx.beginPath();
+    ctx.ellipse(0, s*.12, s*.55, s*.3, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+    // Tallrik
+    ctx.fillStyle = '#888eaa';
+    ctx.beginPath();
+    ctx.ellipse(0, s*.08, s*.55, s*.2, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Kupol (grön-blå)
+    ctx.fillStyle = '#33dd99';
+    ctx.beginPath();
+    ctx.ellipse(0, -s*.08, s*.3, s*.24, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Blinkande lampor längs kanten
+    const lampColors = ['#ff4444','#ffff44','#44ff44','#44aaff'];
+    for (let i = 0; i < 5; i++) {
+      const la = (i / 5) * Math.PI * 2 + t.legT;
+      ctx.fillStyle = lampColors[i % lampColors.length];
+      ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t.legT * 3 + i);
+      ctx.beginPath();
+      ctx.arc(Math.cos(la)*s*.48, s*.08 + Math.sin(la)*s*.1, s*.07, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    // Alien-ögon i kupolen
+    ctx.fillStyle = '#001a00';
+    ctx.beginPath();
+    ctx.arc(-s*.1, -s*.08, s*.08, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    ctx.arc( s*.1, -s*.08, s*.08, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath();
+    ctx.arc(-s*.1, -s*.08, s*.04, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    ctx.arc( s*.1, -s*.08, s*.04, 0, Math.PI*2); ctx.fill();
+
+  } else if (t.kind === 'satellit') {
+    // ── SATELLIT ──
+    ctx.rotate(t.rot);
+    const s = t.size;
+    // Solpaneler (blå rektanglar)
+    ctx.fillStyle = '#2244cc';
+    ctx.fillRect(-s*.85, -s*.12, s*.55, s*.24);
+    ctx.fillRect( s*.3,  -s*.12, s*.55, s*.24);
+    ctx.strokeStyle = '#4466ff'; ctx.lineWidth = 1;
+    ctx.strokeRect(-s*.85, -s*.12, s*.55, s*.24);
+    ctx.strokeRect( s*.3,  -s*.12, s*.55, s*.24);
+    // Mittenkropp (silver)
+    ctx.fillStyle = '#ccccdd';
+    ctx.beginPath();
+    ctx.roundRect(-s*.28, -s*.22, s*.56, s*.44, s*.08);
+    ctx.fill();
+    ctx.strokeStyle = '#aaa'; ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Antenn
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -s*.22); ctx.lineTo(0, -s*.52);
+    ctx.stroke();
+    ctx.fillStyle = '#ff4444';
+    ctx.beginPath();
+    ctx.arc(0, -s*.54, s*.06, 0, Math.PI*2); ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+// ── RITA HÅRKORS/SIKTE ──
+function drawCrosshair(x, y) {
+  const r = 18, gap = 5, arm = 12;
+  ctx.save();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
+  ctx.shadowColor = '#000'; ctx.shadowBlur = 5;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x, y - r - gap);       ctx.lineTo(x, y - r - gap - arm);
+  ctx.moveTo(x, y + r + gap);       ctx.lineTo(x, y + r + gap + arm);
+  ctx.moveTo(x - r - gap, y);       ctx.lineTo(x - r - gap - arm, y);
+  ctx.moveTo(x + r + gap, y);       ctx.lineTo(x + r + gap + arm, y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ── RITA TRÄFF-FLASH (poäng poppar upp) ──
+function drawFlash() {
+  if (flashTimer <= 0) return;
+  const alpha = flashTimer / 40;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle   = '#ffee00';
+  ctx.font        = `bold ${Math.round(22 + (1-alpha)*18)}px system-ui`;
+  ctx.textAlign   = 'center';
+  ctx.shadowColor = '#000'; ctx.shadowBlur = 6;
+  ctx.fillText(flashMsg, flashX, flashY - (1 - flashTimer/40) * 35);
+  ctx.restore();
+  flashTimer--;
+}
+
+// ── SPELLOOP (körs 60 gånger/sek) ──
+let lastTS = 0;
+function loop(ts) {
+  if (!running) return;
+  requestAnimationFrame(loop);
+  const dt = ts - lastTS; lastTS = ts;
+
+  drawBG();
+  drawHoles();               // hål i marken/sanden
+  drawDecos();               // bubblor / löv / meteorer
+  drawAndUpdateSecrets();    // hemliga mål
+  drawAndUpdatePopups();     // krabba / mullvad / stjärna
+
+  // Spawna nytt mål ungefär var 0.9 sek
+  spawnTimer -= dt;
+  if (spawnTimer <= 0) {
+    targets.push(LEVELS[currentLevel].makeTgt());
+    spawnTimer = 700 + Math.random() * 500;
+  }
+
+  // Spawna hemligt mål ungefär var 12 sek
+  secretTimer -= dt;
+  if (secretTimer <= 0) {
+    if (secrets.length < 1) spawnSecret();
+    secretTimer = 10000 + Math.random() * 6000;
+  }
+
+  // Spawna popup (krabba / mullvad / stjärna) ungefär var 5 sek
+  popupTimer -= dt;
+  if (popupTimer <= 0) {
+    spawnPopup();
+    popupTimer = 4000 + Math.random() * 3000;
+  }
+
+  // Flytta och rita alla mål, ta bort de som åkt utanför
+  targets = targets.filter(t => {
+    t.x += t.vx;
+    t.y += t.vy;
+    if (t.kind === 'asteroid' || t.kind === 'satellit') t.rot += t.rotV;
+    const margin = 150;
+    if (t.x < -margin || t.x > canvas.width + margin ||
+        t.y < -margin || t.y > canvas.height + margin) return false;
+    drawTarget(t);
+    return true;
+  });
+
+  // Rita skott-animationer (linje från gevär till träffpunkt)
+  bullets = bullets.filter(b => {
+    const alpha = b.life / 12;  // bleknar ut
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = b.color || '#ffee33';
+    ctx.lineWidth   = 3;
+    ctx.shadowColor = '#ffaa00';
+    ctx.shadowBlur  = 10;
+    ctx.beginPath();
+    ctx.moveTo(b.x1, b.y1);
+    ctx.lineTo(b.x2, b.y2);
+    ctx.stroke();
+    // Ljusglimt vid träffpunkten
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(b.x2, b.y2, 8 * alpha, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+    b.life--;
+    return b.life > 0;
+  });
+
+  // Auto-eld för maskinpistol (hållinne)
+  if (pointerHeld && (currentGun === 'maskinpistol' || currentGun === 'potatiskanon')) {
+    shoot(mouseX, mouseY);
+  }
+
+  drawFlash();
+  drawCrosshair(mouseX, mouseY);
+
+  const now = performance.now();
+
+  if (reloading) {
+    // ── Laddar om: stor ring runt hårkorset + text ──
+    const prog = Math.min((now - reloadStart) / RELOAD_TIME, 1);
+    const r    = 34;
+
+    // Bakgrundsring (grå)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,.25)';
+    ctx.lineWidth   = 6;
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, r, 0, Math.PI*2);
+    ctx.stroke();
+
+    // Framstegs-ring (gul → grön)
+    ctx.strokeStyle = prog > 0.7 ? '#44ff88' : '#ffcc00';
+    ctx.lineWidth   = 6;
+    ctx.lineCap     = 'round';
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, r, -Math.PI/2, -Math.PI/2 + Math.PI*2*prog);
+    ctx.stroke();
+    ctx.restore();
+
+    // Text: "LADDAR OM..."
+    ctx.save();
+    ctx.fillStyle = '#fff';
+    ctx.font      = 'bold 16px system-ui';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#000'; ctx.shadowBlur = 5;
+    ctx.fillText('LADDAR OM...', mouseX, mouseY + r + 20);
+    ctx.restore();
+
+    // Klar? → ge fullt magasin
+    if (prog >= 1) {
+      reloading = false;
+      ammo      = MAX_AMMO;
+      sndReloadDone();
+      document.getElementById('hud-ammo').textContent = `🔴 ${ammo}`;
+    }
+
+  } else {
+    // ── Cooldown-ring (liten, efter skott) ──
+    const sinceShot = now - lastShotTime;
+    if (sinceShot < SHOT_COOLDOWN) {
+      const prog = sinceShot / SHOT_COOLDOWN;
+      ctx.save();
+      ctx.strokeStyle = '#ff4400';
+      ctx.lineWidth   = 4;
+      ctx.beginPath();
+      ctx.arc(mouseX, mouseY, 26, -Math.PI/2, -Math.PI/2 + Math.PI*2*prog);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
+// ── LADDA OM ──
+function startReload() {
+  if (reloading || ammo === MAX_AMMO) return;  // redan laddar / redan fullt
+  reloading   = true;
+  reloadStart = performance.now();
+}
+
+// ── SKJUT-FUNKTION ──
+// Anropas vid klick — kollar ammo, cooldown, och träff
+function shoot(cx, cy) {
+  const now = performance.now();
+
+  // Håller på att ladda → ignorera klick
+  if (reloading) return;
+
+  // Tom — klick startar laddning
+  if (ammo <= 0) { sndEmpty(); startReload(); return; }
+
+  // Cooldown — max ett skott per halvsekund
+  if (now - lastShotTime < SHOT_COOLDOWN) return;
+
+  // Skjut-ljud
+  sndShoot(currentGun);
+
+  // Förbruka ett skott
+  ammo--;
+  lastShotTime = now;
+  document.getElementById('hud-ammo').textContent = `🔴 ${ammo}`;
+
+  // Auto-starta laddning direkt när magasinet är tomt
+  if (ammo === 0) startReload();
+
+  const gun = GUNS[currentGun];
+
+  function hitCheck(t, cx, cy, sc=1.0) {
+    const dx = cx - t.x, dy = cy - t.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (t.kind === 'haj')     return (dx*dx)/(t.size*t.size*.42*sc)+(dy*dy)/(t.size*t.size*.06*sc)<1;
+    if (t.kind === 'satellit') return Math.abs(dx)<t.size*.9*sc && Math.abs(dy)<t.size*.25*sc;
+    if (t.kind === 'krafta' || t.kind === 'sjohast' || t.kind === 'sparv') return dist < t.size*.55*sc;
+    if (t.kind === 'fjäril')  return dist < t.size*.5*sc;
+    if (t.kind === 'orn')     return dist < t.size*.65*sc;
+    if (t.kind === 'ufo')     return dist < t.size*.58*sc;
+    return dist < t.size*.75*sc;
+  }
+
+  // Kolla popup-mål och hemliga mål (gäller alltid oavsett vapen)
+  checkPopupHit(cx, cy);
+  checkSecretHit(cx, cy);
+
+  if (gun.spread) {
+    // HAGEL — tre skott, träffar allt inom ett område
+    [[-30,-15],[0,0],[30,-15]].forEach(([ox,oy]) =>
+      bullets.push({ x1: canvas.width/2, y1: canvas.height, x2: cx+ox, y2: cy+oy, life: 12, color: gun.bulletColor })
+    );
+    let anyHit = false;
+    for (let i = targets.length - 1; i >= 0; i--) {
+      const t = targets[i];
+      if (Math.sqrt((cx-t.x)**2+(cy-t.y)**2) < t.size*.8 + 55) {
+        earnIngredient(t.kind);  // hagelgevär ger också ingredienser
+        const pts = Math.round(t.pts * gun.pointMult);
+        score += pts; anyHit = true;
+        flashMsg = `+${pts}`; flashTimer = 40; flashX = cx; flashY = cy;
+        targets.splice(i, 1);
+      }
+    }
+    if (anyHit) { sndHit(); document.getElementById('hud-score').textContent = `Poäng: ${score}`; }
+  } else {
+    // ENKELT SKOTT
+    // Maskinpistol: lägg till slumpmässig spridning (svårare att träffa)
+    const spread = currentGun === 'maskinpistol' ? 28 : 0;
+    const aimX = cx + (Math.random() - 0.5) * spread * 2;
+    const aimY = cy + (Math.random() - 0.5) * spread * 2;
+    bullets.push({ x1: canvas.width/2, y1: canvas.height, x2: aimX, y2: aimY, life: 10, color: gun.bulletColor });
+
+    // Maskinpistol har också mindre träff-area
+    const hitScale = currentGun === 'maskinpistol' ? 0.55 : 1.0;
+
+    for (let i = targets.length - 1; i >= 0; i--) {
+      if (hitCheck(targets[i], aimX, aimY, hitScale)) {
+        sndHit();
+        earnIngredient(targets[i].kind);   // ge ingrediens för detta djur
+        const pts = Math.round(targets[i].pts * gun.pointMult);
+        score += pts;
+        flashMsg = `+${pts}`; flashTimer = 40; flashX = cx; flashY = cy;
+        targets.splice(i, 1);
+        document.getElementById('hud-score').textContent = `Poäng: ${score}`;
+        return;
+      }
+    }
+  }
+}
+
+// ── PEKHÄNDELSER ──
+let pointerHeld = false;
+
+canvas.addEventListener('pointermove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left;
+  mouseY = e.clientY - r.top;
+});
+canvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  pointerHeld = true;
+  const r = canvas.getBoundingClientRect();
+  shoot(e.clientX - r.left, e.clientY - r.top);
+});
+canvas.addEventListener('pointerup',     () => { pointerHeld = false; });
+canvas.addEventListener('pointercancel', () => { pointerHeld = false; });
+
+// ── STARTA EN NIVÅ ──
+function startLevel(key) {
+  currentLevel = key;
+  score = 0; timeLeft = 30;
+  targets = []; spawnTimer = 0; flashTimer = 0;
+  // Ladda in det valda vapnets stats
+  const g   = GUNS[currentGun];
+  MAX_AMMO      = g.ammo;
+  SHOT_COOLDOWN = g.cooldown;
+  RELOAD_TIME   = g.reload;
+
+  ammo = MAX_AMMO; lastShotTime = -9999; bullets = [];
+  reloading = false; reloadStart = 0;
+  secrets = []; secretTimer = 12000 + Math.random() * 5000;
+  levelIngEarned = {};   // nollställ bana-inventarie
+  showScreen('screen-game');
+  resizeCanvas();
+  initPopups();
+  initDecos();
+  running = true; lastTS = 0;
+
+  document.getElementById('hud-level').textContent  = LEVELS[key].name;
+  document.getElementById('hud-score').textContent  = 'Poäng: 0';
+  document.getElementById('hud-ammo').textContent   = `🔴 ${MAX_AMMO}`;
+  document.getElementById('hud-gun').textContent    = GUNS[currentGun].name;
+  document.getElementById('hud-time').textContent   = '⏱ 30';
+
+  requestAnimationFrame(loop);
+
+  clearInterval(timerID);
+  timerID = setInterval(() => {
+    timeLeft--;
+    document.getElementById('hud-time').textContent = `⏱ ${timeLeft}`;
+    if (timeLeft <= 0) endGame();
+  }, 1000);
+}
+
+function endGame() {
+  running = false;
+  clearInterval(timerID);
+  sndGameOver();
+
+  // Räkna ut mynt: ungefär score / 8, minst 5
+  const earned = Math.max(5, Math.round(score / 8));
+  coins += earned;
+
+  document.getElementById('final-score-text').textContent  = `${score} poäng! 🎉`;
+  document.getElementById('coins-earned-text').textContent = `+${earned} 🪙  (totalt: ${coins} 🪙)`;
+
+  // Visa vilka ingredienser som samlades under banan
+  const ingEl = document.getElementById('ing-earned-text');
+  const ingList = Object.entries(levelIngEarned).filter(([,n])=>n>0);
+  if (ingList.length) {
+    ingEl.innerHTML = '🧺 Ingredienser du fick:<br>' +
+      ingList.map(([ing,n]) => `${ing} ×${n}`).join('  ');
+  } else {
+    ingEl.textContent = '🧺 Inga ingredienser den här gången.';
+  }
+
+  showScreen('screen-gameover');
+}
+
+// ── BUTIK ──
+function openShop() {
+  // Uppdatera mynt-räknaren i menyn också
+  const mc = document.getElementById('menu-coins');
+  if (mc) mc.textContent = `${coins} 🪙`;
+  renderShop();
+  showScreen('screen-shop');
+}
+
+function renderShop() {
+  document.getElementById('shop-coins').textContent = `Mynt: ${coins} 🪙`;
+  const container = document.getElementById('gun-cards');
+  container.innerHTML = '';
+
+  for (const [key, g] of Object.entries(GUNS)) {
+    // Göm hemliga vapen tills de är upplåsta
+    if (g.secret && !secretWeaponUnlocked) continue;
+
+    const owned    = ownedGuns.includes(key);
+    const isActive = currentGun === key;
+
+    // Statistik-rad
+    const stats = `Ammo: ${g.ammo}  •  Cooldown: ${g.cooldown/1000}s  •  Laddar: ${g.reload/1000}s  •  Poäng ×${g.pointMult}${g.spread ? '  •  HAGEL' : ''}`;
+
+    // Knapp-text och klass
+    let btnText, btnClass;
+    if (isActive)        { btnText = '✅ Vald';    btnClass = 'equipped'; }
+    else if (owned)      { btnText = 'Välj';       btnClass = 'equip'; }
+    else if (coins >= g.cost) { btnText = `Köp ${g.cost}🪙`; btnClass = 'can-buy'; }
+    else                 { btnText = `${g.cost}🪙`;  btnClass = 'no-money'; }
+
+    const card = document.createElement('div');
+    card.className = `gun-card ${isActive ? 'active' : owned ? 'owned' : ''}`;
+    card.innerHTML = `
+      <div class="gun-info">
+        <div class="gun-name">${g.name}</div>
+        <div class="gun-desc">${g.desc}</div>
+        <div class="gun-stats">${stats}</div>
+      </div>
+      <button class="btn-buy ${btnClass}" onclick="gunAction('${key}')">${btnText}</button>`;
+    container.appendChild(card);
+  }
+}
+
+function gunAction(key) {
+  const g = GUNS[key];
+  if (currentGun === key) return;          // redan vald
+  if (ownedGuns.includes(key)) {
+    currentGun = key;                       // byt till detta vapen
+    renderShop();
+    return;
+  }
+  if (coins < g.cost) return;              // inte råd
+  coins -= g.cost;
+  ownedGuns.push(key);
+  currentGun = key;
+  renderShop();
+}
+
+function replayLevel() { startLevel(currentLevel); }
+
+function goMenu() {
+  running = false;
+  clearInterval(timerID);
+  showScreen('screen-menu');
+}
+
+// ══ INGREDIENS-INVENTARIE ══
+// Varje djur du skjuter ger en specifik ingrediens
+const CREATURE_DROP = {
+  'haj':      '🦈',
+  'krafta':   '🦀',
+  'sjohast':  '🐟',
+  'orn':      '🥬',
+  'sparv':    '🧂',
+  'fjäril':   '🍋',
+  'asteroid': '🍅',
+  'ufo':      '🧀',
+  'satellit': '🥣',
+  'krabba':   '🦞',
+  'mullvad':  '🥬',
+  'stjärna':  '🍋',
+};
+const ALL_ING = ['🦈','🦀','🐟','🦞','🥬','🍋','🍅','🧀','🥣','🧂'];
+let inventory = {};
+for (const i of ALL_ING) inventory[i] = 0;
+let levelIngEarned = {};  // vad som samlades under pågående bana
+
+function earnIngredient(kind) {
+  const ing = CREATURE_DROP[kind];
+  if (!ing) return;
+  inventory[ing]++;
+  levelIngEarned[ing] = (levelIngEarned[ing] || 0) + 1;
+  flashMsg   = `+${ing}`;
+  flashTimer = 38;
+}
+
+// ══════════════════════════════════════════
+//  RESTAURANG
+// ══════════════════════════════════════════
+
+const R_DISHES = [
+  { id:'ksoppa',  name:'Krabbasoppa', emoji:'🍲', ing:['🦀','🥣'], coins:80  },
+  { id:'fsoppa',  name:'Fisksoppa',   emoji:'🐠', ing:['🐟','🥣'], coins:60  },
+  { id:'kraftsk', name:'Kräftskiva',  emoji:'🦞', ing:['🦞','🧂'], coins:100 },
+  { id:'pizza',   name:'Rymdpizza',   emoji:'🍕', ing:['🍅','🧀'], coins:70  },
+  { id:'sallad',  name:'Grönsallad',  emoji:'🥗', ing:['🥬','🍋'], coins:40  },
+  { id:'haj',     name:'Hajbiff',     emoji:'🥩', ing:['🦈','🧂'], coins:120 },
+];
+const R_ING  = ['🦀','🐟','🦞','🥣','🥬','🍅','🧀','🍋','🧂','🦈'];
+const R_FACES = ['😊','😄','🙂','😋','🤩','😎'];
+const MAX_TABLES = 4;
+
+let rGuests  = [];      // aktiva gäster
+let rPlate   = [];      // ingredienser på tallriken
+let rSel     = null;    // valt gäst-id
+let rSpawnT  = 3000;    // ms till nästa gäst
+let rActive  = false;
+let rGuestId = 0;
+let rInterval = null;
+
+function openRestaurant() {
+  rGuests=[]; rPlate=[]; rSel=null; rSpawnT=2000; rActive=true;
+  rCooking=null; rReadyDishes=[]; rSelDish=null;
+  document.getElementById('r-coins').textContent=`${coins} 🪙`;
+  // Bygg ingrediens-knappar en gång
+  const row=document.getElementById('r-ing-row');
+  row.innerHTML='';
+  for(const ing of ALL_ING){
+    const b=document.createElement('button');
+    b.className='r-ing-btn';
+    b.innerHTML=`${ing}<span style="font-size:.6rem;display:block;margin-top:-2px;color:#aaa">${inventory[ing]||0}</span>`;
+    b.onclick=()=>rAddIng(ing);
+    b.style.opacity=(inventory[ing]||0)>0?'1':'0.35';
+    row.appendChild(b);
+  }
+  showScreen('screen-restaurant');
+  clearInterval(rInterval);
+  rInterval=setInterval(rTick,100);
+  rRender();
+}
+
+function closeRestaurant(){
+  rActive=false;
+  clearInterval(rInterval);
+  showScreen('screen-menu');
+}
+
+function rTick(){
+  if(!rActive) return;
+  // Spawna ny gäst
+  rSpawnT-=100;
+  if(rSpawnT<=0 && rGuests.filter(g=>g.state!=='leaving').length < MAX_TABLES){
+    rSpawnGuest();
+    rSpawnT=7000+Math.random()*5000;
+  }
+  // Uppdatera gäst-timers
+  let changed=false;
+  for(const g of rGuests){
+    if(g.state==='thinking'){
+      g.thinkT-=100;
+      if(g.thinkT<=0){ g.state='ordering'; g.patience=75000; }
+      changed=true;
+    } else if(g.state==='ordering'){
+      g.patience-=100;
+      if(g.patience<=0){
+        g.state='leaving'; g.leaveT=1200; g.happy=false;
+        coins=Math.max(0,coins-15);          // straffavdrag
+        if(rSel===g.id) rSel=null;
+        changed=true;
+      }
+    } else if(g.state==='leaving'){
+      g.leaveT-=100;
+      if(g.leaveT<=0){ rGuests=rGuests.filter(x=>x.id!==g.id); }
+      changed=true;
+    }
+  }
+  // Uppdatera kokning
+  if(rCooking){
+    rCooking.timer+=100;
+    if(rCooking.timer>=rCooking.maxTimer){
+      // Rätten är klar! Finn vilken dish det är
+      const ingKey=[...rCooking.ings].sort().join(',');
+      const dish=R_DISHES.find(d=>[...d.ing].sort().join(',')===ingKey);
+      rReadyDishes.push({ id:rDishIdCtr++, dish:dish||null, ings:rCooking.ings });
+      rCooking=null;
+      sndReloadDone(); // "ding" när maten är klar
+    }
+    changed=true;
+  }
+
+  if(changed) rRender();
+}
+
+function rSpawnGuest(){
+  const dish=R_DISHES[Math.floor(Math.random()*R_DISHES.length)];
+  const used=rGuests.map(g=>g.slot);
+  const free=[0,1,2,3].filter(s=>!used.includes(s));
+  if(!free.length) return;
+  const slot=free[Math.floor(Math.random()*free.length)];
+  rGuests.push({
+    id:rGuestId++, slot, dish,
+    state:'thinking',
+    thinkT:4000,            // 4 sekunder att tänka
+    patience:14000,
+    face:R_FACES[Math.floor(Math.random()*R_FACES.length)],
+    happy:true,
+  });
+}
+
+function rSelectGuest(id){
+  rSel=(rSel===id)?null:id;
+  rRender();
+}
+
+// Ny kokstatus
+let rCooking    = null;   // { ings, timer, maxTimer } eller null
+let rReadyDishes = [];    // [{id, dish, ings}] — klara rätter i serveringsfönstret
+let rSelDish    = null;   // id på vald färdig rätt
+let rDishIdCtr  = 0;
+
+function rAddIng(ing){
+  if(rCooking) return;                        // kan inte ändra medan det kokar
+  if(rPlate.length>=2) return;                // max 2 ingredienser
+  if((inventory[ing]||0)<=0){ sndEmpty(); return; }
+  inventory[ing]--;
+  rPlate.push(ing);
+  rRender();
+}
+
+function rClearPlate(){
+  if(rCooking) return;
+  for(const ing of rPlate) inventory[ing]=(inventory[ing]||0)+1;
+  rPlate=[]; rRender();
+}
+
+function cookFood(){
+  if(rCooking) return;            // redan på gång
+  if(rPlate.length<2){ sndEmpty(); return; }
+  if(rReadyDishes.length>=3){ sndEmpty(); return; } // serveringsfönster fullt
+  rCooking = { ings:[...rPlate], timer:0, maxTimer:2500 };
+  rPlate = [];
+  rRender();
+}
+
+function pickupDish(id){
+  rSelDish = (rSelDish===id) ? null : id;
+  rRender();
+}
+
+function discardDish(id){
+  rReadyDishes = rReadyDishes.filter(d=>d.id!==id);
+  if(rSelDish===id) rSelDish=null;
+  sndEmpty();
+  rRender();
+}
+
+function serveGuest(gid){
+  if(rSelDish===null) return;
+  const g = rGuests.find(x=>x.id===gid);
+  if(!g||g.state!=='ordering') return;
+  const dish = rReadyDishes.find(d=>d.id===rSelDish);
+  if(!dish) return;
+  const need = [...g.dish.ing].sort().join(',');
+  const have = [...dish.ings].sort().join(',');
+  if(need===have){
+    sndPopHit();
+    coins += 20; // fast belöning per servering
+    document.getElementById('r-coins').textContent=`${coins} 🪙`;
+    document.getElementById('menu-coins').textContent=`${coins} 🪙`;
+    g.state='leaving'; g.leaveT=1400; g.happy=true;
+    rReadyDishes = rReadyDishes.filter(d=>d.id!==rSelDish);
+    rSelDish=null;
+  } else {
+    // Fel rätt — blinka
+    const rd=document.getElementById('r-ready-dishes');
+    if(rd){rd.style.background='rgba(255,60,60,.3)';setTimeout(()=>rd.style.background='',350);}
+    sndEmpty();
+  }
+  rRender();
+}
+
+function rRender(){
+  document.getElementById('r-coins').textContent=`${coins} 🪙`;
+
+  // Ingrediens-knappar
+  const row=document.getElementById('r-ing-row');
+  if(row) row.querySelectorAll('.r-ing-btn').forEach((b,i)=>{
+    const ing=ALL_ING[i];
+    b.querySelector('span').textContent=inventory[ing]||0;
+    b.style.opacity=(inventory[ing]||0)>0?'1':'0.35';
+  });
+
+  // Kokgryta
+  const potIng=document.getElementById('r-pot-ing');
+  const cookBar=document.getElementById('r-cook-bar');
+  if(rCooking){
+    potIng.textContent=rCooking.ings.join(' ');
+    const pct=Math.round((rCooking.timer/rCooking.maxTimer)*100);
+    cookBar.style.width=pct+'%';
+  } else {
+    potIng.textContent=rPlate.length?rPlate.join(' '):'—';
+    cookBar.style.width='0%';
+  }
+
+  // Serveringsfönster
+  const ready=document.getElementById('r-ready-dishes');
+  ready.innerHTML='';
+  for(const d of rReadyDishes){
+    const wrap=document.createElement('div');
+    wrap.style.cssText='position:relative;display:inline-flex;flex-direction:column;align-items:center;';
+    const btn=document.createElement('div');
+    btn.className='r-ready-dish'+(rSelDish===d.id?' r-dish-sel':'');
+    btn.textContent=d.dish?d.dish.emoji:'🍽️';
+    btn.title=d.dish?d.dish.name:'';
+    btn.onclick=()=>pickupDish(d.id);
+    // Liten × knapp för att kasta bort rätten
+    const del=document.createElement('button');
+    del.textContent='×';
+    del.title='Kasta bort';
+    del.style.cssText='position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:#cc3333;color:#fff;font-weight:900;font-size:13px;cursor:pointer;line-height:1;padding:0;z-index:5;';
+    del.onclick=(e)=>{ e.stopPropagation(); discardDish(d.id); };
+    wrap.appendChild(btn);
+    wrap.appendChild(del);
+    ready.appendChild(wrap);
+  }
+  if(!rReadyDishes.length){
+    ready.innerHTML='<span style="color:#666;font-size:.8rem">Tom — laga mat nedan!</span>';
+  }
+
+  // Matsalen
+  const dining=document.getElementById('r-dining');
+  dining.innerHTML='';
+  for(let slot=0;slot<MAX_TABLES;slot++){
+    const g=rGuests.find(x=>x.slot===slot);
+    const div=document.createElement('div');
+    if(!g){
+      div.className='r-table empty';
+      div.innerHTML='<div style="font-size:2rem">🪑</div><div style="color:#666;font-size:.8rem">Ledigt</div>';
+    } else {
+      div.className='r-table'+(rSelDish!==null&&g.state==='ordering'?' selected':'');
+      if(g.state==='thinking'){
+        div.innerHTML=`<div class="r-bubble">💭 ...</div>
+          <div class="r-guest-face">${g.face}</div>
+          <div class="r-think">Tänker… ${Math.ceil(g.thinkT/1000)}s</div>`;
+      } else if(g.state==='ordering'){
+        const pct=Math.round((g.patience/75000)*100);
+        const barCol=pct>50?'#44ff88':pct>25?'#ffcc00':'#ff4444';
+        div.innerHTML=`<div class="r-bubble">${g.dish.emoji} ${g.dish.name}</div>
+          <div class="r-guest-face">${g.face}</div>
+          <div class="r-patience-wrap"><div class="r-patience-bar" style="width:${pct}%;background:${barCol}"></div></div>
+          <div style="font-size:.7rem;color:#aaa">Behöver: ${g.dish.ing.join(' + ')}</div>`;
+        div.onclick=()=>{ if(rSelDish!==null) serveGuest(g.id); };
+      } else if(g.state==='leaving'){
+        div.innerHTML=`<div class="r-happy">${g.happy?'😁 Tack!':'😠 Hej då!'}</div>`;
+      }
+    }
+    dining.appendChild(div);
+  }
+}
+
+// ══════════════════════════════════════════
+//  HEMLIG VAKT & STORY MODE
+// ══════════════════════════════════════════
+
+let guardLured = false;
+let secretWeaponUnlocked = false;
+
+function hasAllIngredients() {
+  return ALL_ING.every(ing => (inventory[ing]||0) >= 1);
+}
+
+function tryLureGuard() {
+  if (guardLured) { openStoryMode(); return; }
+  const dlg = document.getElementById('guard-dialog');
+  if (!hasAllIngredients()) {
+    dlg.textContent = '💂 STOPPA! Du får inte passera! (Ledtråd: du behöver en av varje ingrediens...)';
+    dlg.style.color = '#cc2200';
+  } else {
+    dlg.textContent = '💂 Va?! Är det en POTATIS?! Jag MÅSTE ha den... *rusar iväg* 💨';
+    dlg.style.color = '#116600';
+    setTimeout(() => {
+      guardLured = true;
+      document.getElementById('guard-corner').classList.add('lured');
+      document.getElementById('guard-door').textContent = '🚪✨';
+    }, 1800);
+  }
+  dlg.classList.add('show');
+  setTimeout(() => dlg.classList.remove('show'), 3000);
+}
+
+// ── Story-canvas ──
+const sc   = document.getElementById('story-canvas');
+const sctx = sc.getContext('2d');
+
+// ── Story-spelstatus ──
+let sActive  = false;
+let sLoopGen = 0; // ökas varje ny körning så gamla loopar dör direkt
+let sRoom    = 1;
+let sHealth  = 3;
+let sMonsters = [];
+let sMId     = 0;
+let sState   = 'playing'; // playing | doorOpen | weaponReveal | boss | won | dead
+let sDoorAnim = 0;        // 0→1 door opening progress
+let sSpawnQ  = [];        // monsters waiting to spawn
+let sSpawnT  = 0;
+let sBossHP  = 0, sBossMaxHP = 80;
+let sMX = 0, sMY = 0;    // story mouse
+let sLastShot = -9999;
+const S_COOLDOWN = 350;   // story mode shot cooldown
+
+// Wave definitions per room
+// Varje objekt skapas färskt med en funktion för att undvika delade referenser
+function makeWave(n, def) { return Array.from({length:n}, () => ({...def})); }
+const S_WAVES = [
+  makeWave(8,  {kind:'blob',  hp:1, spd:0.55, r:26, col:'#44cc44'}),  // Rum 1
+  makeWave(12, {kind:'ghost', hp:1, spd:0.85, r:22, col:'#aaaaee'}),  // Rum 2
+  makeWave(7,  {kind:'shell', hp:3, spd:0.38, r:34, col:'#999988'}),  // Rum 3
+  makeWave(20, {kind:'wasp',  hp:1, spd:1.6,  r:14, col:'#ffcc00'}),  // Rum 4
+  [{kind:'boss', hp:80, spd:0.18, r:70, col:'#cc2200'}],              // Rum 5 – Boss
+];
+
+function openStoryMode() {
+  if (!guardLured) return;
+  sActive = true; sRoom = 1; sHealth = 3;
+  sMonsters = []; sState = 'playing'; sDoorAnim = 0; sMId = 0;
+  sc.width  = window.innerWidth;
+  sc.height = window.innerHeight - document.getElementById('story-hud').offsetHeight;
+  sPlayerX = sc.width / 2;
+  sPlayerY = sc.height / 2;
+  document.getElementById('story-boss-bar-wrap').style.display = 'none';
+  document.getElementById('story-boss-label').style.display    = 'none';
+  updateStoryHUD();
+  showScreen('screen-story');
+  loadRoom(1);
+  sLoopGen++; // avbryt eventuell gammal loop
+  const myGen = sLoopGen;
+  requestAnimationFrame(ts => sLoop(ts, myGen));
+}
+
+function exitStory() {
+  sActive = false;
+  showScreen('screen-menu');
+}
+
+function loadRoom(r) {
+  sRoom = r; sMonsters = [];
+  sSpawnQ = [...S_WAVES[r-1]]; sSpawnT = 0;
+  sState  = 'playing';
+  updateStoryHUD();
+  if (r === 5) {
+    sBossHP = sBossMaxHP = 80;
+    document.getElementById('story-boss-bar-wrap').style.display = 'flex';
+    document.getElementById('story-boss-label').style.display    = 'inline';
+  }
+}
+
+function updateStoryHUD() {
+  document.getElementById('story-room-txt').textContent =
+    sRoom < 5 ? `Rum ${sRoom} / 4` : '👹 Boss!';
+  document.getElementById('story-hearts').textContent =
+    '❤️'.repeat(sHealth) + '🖤'.repeat(Math.max(0, 3-sHealth));
+  const gunLabel = sRoom === 5 ? '🥔 Potatiskanon' : GUNS[currentGun].name;
+  document.getElementById('story-gun-txt').textContent = gunLabel;
+}
+
+// ── Spawn monster från slumpmässig kant, rör sig mot spelaren ──
+function spawnMonster(def) {
+  const edge = Math.floor(Math.random() * 4);
+  let x, y;
+  if (edge === 0) { x = Math.random() * sc.width;  y = -def.r - 10; }              // topp
+  else if (edge === 1) { x = sc.width + def.r + 10; y = Math.random() * sc.height; } // höger
+  else if (edge === 2) { x = Math.random() * sc.width;  y = sc.height + def.r + 10; } // botten
+  else { x = -def.r - 10; y = Math.random() * sc.height; }                           // vänster
+
+  // Riktning mot spelaren (normaliserad vektor)
+  const dx = sPlayerX - x, dy = sPlayerY - y;
+  const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+
+  sMonsters.push({
+    id: sMId++,
+    kind: def.kind, hp: def.hp, maxHp: def.hp,
+    spd: def.spd * 1.8, // lite snabbare för att det är en större arena
+    r: def.r, col: def.col,
+    x, y,
+    dx: dx/dist, dy: dy/dist, // rörelseriktning
+    bobT: Math.random() * Math.PI * 2,
+    hitFlash: 0,
+  });
+}
+
+// ── Story shoot ──
+function sShoot(cx, cy) {
+  const now = performance.now();
+  // Bossrummet = alltid potatiskanon. Annars används din köpta pistol!
+  const isBossRoom = sRoom === 5;
+  const gun = isBossRoom ? GUNS.potatiskanon : GUNS[currentGun];
+  const cd  = gun.cooldown;
+  if (now - sLastShot < cd) return;
+  sLastShot = now;
+  sndShoot(isBossRoom ? 'potatiskanon' : currentGun);
+
+  // Skjut en eller flera kulor (hagelgevär = spridning)
+  const shots = gun.spread ? 5 : 1;
+  for (let s = 0; s < shots; s++) {
+    const spread = gun.spread ? (Math.random() - 0.5) * 80 : 0;
+    const spreadY = gun.spread ? (Math.random() - 0.5) * 80 : 0;
+    sBullets.push({
+      x: sPlayerX, y: sPlayerY,
+      tx: cx + spread, ty: cy + spreadY,
+      life: 14,
+      color: gun.bulletColor,
+    });
+  }
+
+  // Träffkoll (närmaste monster inom radius)
+  const hitR = gun.spread ? 0.75 : 1.1; // hagelgevär lite svårare att träffa exakt
+  for (let i = sMonsters.length-1; i >= 0; i--) {
+    const m = sMonsters[i];
+    if (Math.sqrt((cx-m.x)**2 + (cy-m.y)**2) < m.r * hitR) {
+      m.hp--;
+      m.hitFlash = 12;
+      sndHit();
+      if (m.hp <= 0) {
+        sMonsters.splice(i, 1);
+        if (m.kind === 'boss') { sBossHP = 0; onBossKilled(); }
+      } else if (m.kind === 'boss') {
+        sBossHP = m.hp;
+        const pct = (sBossHP / sBossMaxHP) * 100;
+        document.getElementById('story-boss-bar').style.width = pct + '%';
+      }
+      return;
+    }
+  }
+}
+
+let sBullets = [];
+let sPlayerX = 0, sPlayerY = 0; // spelarens position (mitten av canvas)
+
+// ── Story event handlers ──
+sc.addEventListener('pointermove', e => {
+  const r = sc.getBoundingClientRect();
+  sMX = e.clientX - r.left; sMY = e.clientY - r.top;
+});
+sc.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  if (sState !== 'playing') return;
+  const r = sc.getBoundingClientRect();
+  sPointerHeld = true;
+  sShoot(e.clientX - r.left, e.clientY - r.top);
+});
+sc.addEventListener('pointerup',     () => { sPointerHeld = false; });
+sc.addEventListener('pointercancel', () => { sPointerHeld = false; });
+
+// ── Boss killed ──
+function onBossKilled() {
+  sState = 'won';
+  secretWeaponUnlocked = true;
+  ownedGuns.push('potatiskanon');
+  // Show weapon reveal overlay then victory
+}
+
+// ── Bakgrund för story mode (grottan) ──
+function drawCorridor() {
+  const w = sc.width, h = sc.height;
+  const t = performance.now() * 0.001;
+
+  // Bakgrundsgradient – lila grotta
+  const bg = sctx.createLinearGradient(0, 0, 0, h);
+  bg.addColorStop(0, '#0d0820');
+  bg.addColorStop(1, '#1c0f35');
+  sctx.fillStyle = bg; sctx.fillRect(0, 0, w, h);
+
+  // Mark
+  const groundY = h * 0.88;
+  sctx.fillStyle = '#241540';
+  sctx.fillRect(0, groundY, w, h - groundY);
+  sctx.strokeStyle = '#3a2060'; sctx.lineWidth = 3;
+  sctx.beginPath(); sctx.moveTo(0, groundY); sctx.lineTo(w, groundY); sctx.stroke();
+
+  // Stalaktiter (tak-spetsar)
+  sctx.fillStyle = '#1a0e30';
+  for (let x = 30; x < w; x += 85) {
+    const len = 28 + Math.sin(x * 0.05) * 18;
+    sctx.beginPath();
+    sctx.moveTo(x - 14, 0); sctx.lineTo(x + 14, 0); sctx.lineTo(x, len);
+    sctx.closePath(); sctx.fill();
+  }
+
+  // Stalagmiter (golvspetsar)
+  sctx.fillStyle = '#2a1850';
+  for (let x = 55; x < w; x += 95) {
+    const len = 22 + Math.sin(x * 0.07) * 14;
+    sctx.beginPath();
+    sctx.moveTo(x - 11, h); sctx.lineTo(x + 11, h); sctx.lineTo(x, h - len);
+    sctx.closePath(); sctx.fill();
+  }
+
+  // Glödande kristaller längs golvet
+  const crystals = [
+    {x:w*.08, y:h*.84, c:'#aa44ff'}, {x:w*.22, y:h*.86, c:'#4466ff'},
+    {x:w*.45, y:h*.85, c:'#ff44bb'}, {x:w*.67, y:h*.84, c:'#44ffaa'},
+    {x:w*.82, y:h*.86, c:'#ffaa22'}, {x:w*.93, y:h*.83, c:'#ff4466'},
+  ];
+  for (const cr of crystals) {
+    sctx.save();
+    sctx.globalAlpha = 0.55 + Math.sin(t + cr.x * 0.01) * 0.2;
+    const cg = sctx.createRadialGradient(cr.x, cr.y, 2, cr.x, cr.y, 30);
+    cg.addColorStop(0, cr.c); cg.addColorStop(1, 'transparent');
+    sctx.fillStyle = cg;
+    sctx.beginPath(); sctx.arc(cr.x, cr.y, 30, 0, Math.PI*2); sctx.fill();
+    // Kristallform (diamant)
+    sctx.fillStyle = cr.c;
+    sctx.beginPath();
+    sctx.moveTo(cr.x, cr.y - 16); sctx.lineTo(cr.x + 7, cr.y);
+    sctx.lineTo(cr.x, cr.y + 10); sctx.lineTo(cr.x - 7, cr.y);
+    sctx.closePath(); sctx.fill();
+    sctx.restore();
+  }
+
+  // Svävande magiska partiklar
+  for (let i = 0; i < 15; i++) {
+    const px = ((w * 0.07 * i + t * 18 * (i%2===0?1:-1)) % w + w) % w;
+    const py = h * 0.25 + Math.sin(t * 1.2 + i * 0.8) * h * 0.28;
+    sctx.save();
+    sctx.globalAlpha = 0.25 + Math.sin(t * 2.5 + i) * 0.18;
+    sctx.fillStyle = ['#ff55ff','#55aaff','#ffbb44','#55ffbb'][i%4];
+    sctx.beginPath(); sctx.arc(px, py, 2.5, 0, Math.PI*2); sctx.fill();
+    sctx.restore();
+  }
+
+  // ── Spelaren i mitten ──
+  const px = sPlayerX, py = sPlayerY;
+  const angle = Math.atan2(sMY - py, sMX - px);
+
+  // Glöd runt spelaren
+  sctx.save();
+  const pg = sctx.createRadialGradient(px, py, 4, px, py, 35);
+  pg.addColorStop(0, 'rgba(80,180,255,0.45)');
+  pg.addColorStop(1, 'transparent');
+  sctx.fillStyle = pg;
+  sctx.beginPath(); sctx.arc(px, py, 35, 0, Math.PI*2); sctx.fill();
+
+  // Kropp (blå cirkel)
+  sctx.fillStyle = '#3366dd';
+  sctx.beginPath(); sctx.arc(px, py, 17, 0, Math.PI*2); sctx.fill();
+  sctx.strokeStyle = '#88ccff'; sctx.lineWidth = 3;
+  sctx.stroke();
+
+  // Gevärspipa mot trådkorset
+  sctx.strokeStyle = '#aaaaaa'; sctx.lineWidth = 7; sctx.lineCap = 'round';
+  sctx.beginPath();
+  sctx.moveTo(px + Math.cos(angle)*4,  py + Math.sin(angle)*4);
+  sctx.lineTo(px + Math.cos(angle)*32, py + Math.sin(angle)*32);
+  sctx.stroke();
+
+  // Eldflasch vid skott
+  if (performance.now() - sLastShot < 90) {
+    sctx.fillStyle = '#ffee44';
+    sctx.shadowColor = '#ffaa00'; sctx.shadowBlur = 15;
+    sctx.beginPath();
+    sctx.arc(px + Math.cos(angle)*34, py + Math.sin(angle)*34, 11, 0, Math.PI*2);
+    sctx.fill();
+  }
+  sctx.restore();
+}
+
+// ── Draw monster ──
+function drawMonster(m) {
+  sctx.save();
+  sctx.translate(m.x, m.y);
+
+  const flash = m.hitFlash > 0;
+  if (flash) { sctx.globalAlpha = 0.5 + Math.sin(m.hitFlash * 0.8) * 0.5; }
+
+  if (m.kind === 'blob') {
+    m.bobT += 0.05;
+    const squish = 1 + Math.sin(m.bobT) * 0.12;
+    sctx.fillStyle = flash ? '#fff' : m.col;
+    sctx.beginPath();
+    sctx.ellipse(0, 0, m.r*squish, m.r/squish, 0, 0, Math.PI*2); sctx.fill();
+    // Eyes
+    sctx.fillStyle = '#000';
+    sctx.beginPath(); sctx.arc(-m.r*.28, -m.r*.1, m.r*.14, 0, Math.PI*2); sctx.fill();
+    sctx.beginPath(); sctx.arc( m.r*.28, -m.r*.1, m.r*.14, 0, Math.PI*2); sctx.fill();
+    sctx.fillStyle = '#fff';
+    sctx.beginPath(); sctx.arc(-m.r*.24, -m.r*.14, m.r*.06, 0, Math.PI*2); sctx.fill();
+
+  } else if (m.kind === 'ghost') {
+    m.bobT += 0.04;
+    const bob = Math.sin(m.bobT) * 8;
+    sctx.translate(0, bob);
+    sctx.fillStyle = flash ? '#fff' : 'rgba(180,180,240,.85)';
+    sctx.beginPath();
+    sctx.arc(0, -m.r*.2, m.r, Math.PI, 0);
+    sctx.lineTo(m.r, m.r*.6);
+    for (let i = 3; i >= 0; i--) {
+      sctx.arc(m.r - i*(m.r*2/3) - m.r/3, m.r*.6, m.r/3, 0, Math.PI, i%2===0);
+    }
+    sctx.closePath(); sctx.fill();
+    sctx.fillStyle = '#330044';
+    sctx.beginPath(); sctx.arc(-m.r*.28, 0, m.r*.18, 0, Math.PI*2); sctx.fill();
+    sctx.beginPath(); sctx.arc( m.r*.28, 0, m.r*.18, 0, Math.PI*2); sctx.fill();
+    sctx.fillStyle = '#ff00ff';
+    sctx.beginPath(); sctx.arc(-m.r*.24, -m.r*.04, m.r*.07, 0, Math.PI*2); sctx.fill();
+    sctx.beginPath(); sctx.arc( m.r*.28, -m.r*.04, m.r*.07, 0, Math.PI*2); sctx.fill();
+
+  } else if (m.kind === 'shell') {
+    // Armored hexagon
+    sctx.fillStyle = flash ? '#fff' : '#aaaaaa';
+    sctx.beginPath();
+    for (let i=0;i<6;i++){
+      const a=(i/6)*Math.PI*2-Math.PI/6;
+      i===0?sctx.moveTo(Math.cos(a)*m.r,Math.sin(a)*m.r):sctx.lineTo(Math.cos(a)*m.r,Math.sin(a)*m.r);
+    }
+    sctx.closePath(); sctx.fill();
+    sctx.strokeStyle='#666'; sctx.lineWidth=3; sctx.stroke();
+    // HP pips
+    for(let i=0;i<m.maxHp;i++){
+      sctx.fillStyle = i<m.hp ? '#ff4444' : '#333';
+      sctx.beginPath(); sctx.arc(-m.r*.3+i*m.r*.3, -m.r*.1, 5, 0, Math.PI*2); sctx.fill();
+    }
+    sctx.fillStyle='#444';
+    sctx.beginPath(); sctx.arc(-m.r*.2, m.r*.1, m.r*.18, 0, Math.PI*2); sctx.fill();
+    sctx.beginPath(); sctx.arc( m.r*.2, m.r*.1, m.r*.18, 0, Math.PI*2); sctx.fill();
+
+  } else if (m.kind === 'wasp') {
+    m.bobT += 0.2;
+    const bob = Math.sin(m.bobT) * 4;
+    sctx.translate(0, bob);
+    sctx.fillStyle = flash ? '#fff' : '#ffcc00';
+    sctx.beginPath(); sctx.ellipse(0,0,m.r*1.4,m.r*.7,0,0,Math.PI*2); sctx.fill();
+    sctx.fillStyle='#222';
+    sctx.beginPath(); sctx.arc(m.r*.4, 0, m.r*.5, 0, Math.PI*2); sctx.fill();
+    // Stripes
+    sctx.strokeStyle='#222'; sctx.lineWidth=m.r*.25;
+    for(const ox of [-m.r*.3, 0]) {
+      sctx.beginPath(); sctx.moveTo(ox, -m.r*.5); sctx.lineTo(ox, m.r*.5); sctx.stroke();
+    }
+    // Wings
+    sctx.fillStyle='rgba(200,230,255,.55)';
+    sctx.beginPath(); sctx.ellipse(-m.r*.1,-m.r*.9,m.r*.8,m.r*.4,-.3,0,Math.PI*2); sctx.fill();
+    sctx.beginPath(); sctx.ellipse(-m.r*.1, m.r*.9,m.r*.8,m.r*.4, .3,0,Math.PI*2); sctx.fill();
+
+  } else if (m.kind === 'boss') {
+    m.bobT += 0.025;
+    const pulse = 1 + Math.sin(m.bobT) * 0.07;
+    sctx.scale(pulse, pulse);
+    // Body
+    sctx.fillStyle = flash ? '#fff' : '#cc2200';
+    sctx.beginPath(); sctx.ellipse(0, 0, m.r, m.r*.85, 0, 0, Math.PI*2); sctx.fill();
+    // Horns
+    sctx.fillStyle = '#881100';
+    sctx.beginPath(); sctx.moveTo(-m.r*.4,-m.r*.8); sctx.lineTo(-m.r*.6,-m.r*1.4); sctx.lineTo(-m.r*.15,-m.r*.8); sctx.closePath(); sctx.fill();
+    sctx.beginPath(); sctx.moveTo( m.r*.4,-m.r*.8); sctx.lineTo( m.r*.6,-m.r*1.4); sctx.lineTo( m.r*.15,-m.r*.8); sctx.closePath(); sctx.fill();
+    // Eyes
+    sctx.fillStyle='#ff8800';
+    sctx.beginPath(); sctx.arc(-m.r*.28, -m.r*.15, m.r*.22, 0, Math.PI*2); sctx.fill();
+    sctx.beginPath(); sctx.arc( m.r*.28, -m.r*.15, m.r*.22, 0, Math.PI*2); sctx.fill();
+    sctx.fillStyle='#111';
+    sctx.beginPath(); sctx.arc(-m.r*.28, -m.r*.15, m.r*.1, 0, Math.PI*2); sctx.fill();
+    sctx.beginPath(); sctx.arc( m.r*.28, -m.r*.15, m.r*.1, 0, Math.PI*2); sctx.fill();
+    // Mouth
+    sctx.strokeStyle='#ff0000'; sctx.lineWidth=m.r*.08; sctx.lineCap='round';
+    sctx.beginPath(); sctx.arc(0, m.r*.2, m.r*.35, 0.2, Math.PI-0.2); sctx.stroke();
+    // Arms
+    sctx.fillStyle='#aa1800';
+    sctx.beginPath(); sctx.ellipse(-m.r*.9, m.r*.1, m.r*.3, m.r*.18, -0.5, 0, Math.PI*2); sctx.fill();
+    sctx.beginPath(); sctx.ellipse( m.r*.9, m.r*.1, m.r*.3, m.r*.18,  0.5, 0, Math.PI*2); sctx.fill();
+  }
+  sctx.restore();
+  if (m.hitFlash > 0) m.hitFlash--;
+}
+
+// ── Crosshair för story ──
+function drawStoryCrosshair() {
+  const x=sMX, y=sMY, r=18, gap=5, arm=10;
+  sctx.save();
+  sctx.strokeStyle=secretWeaponUnlocked?'#8B4513':'#fff';
+  sctx.lineWidth=2.5; sctx.shadowColor='#000'; sctx.shadowBlur=5;
+  sctx.beginPath(); sctx.arc(x,y,r,0,Math.PI*2); sctx.stroke();
+  sctx.beginPath();
+  sctx.moveTo(x,y-r-gap); sctx.lineTo(x,y-r-gap-arm);
+  sctx.moveTo(x,y+r+gap); sctx.lineTo(x,y+r+gap+arm);
+  sctx.moveTo(x-r-gap,y); sctx.lineTo(x-r-gap-arm,y);
+  sctx.moveTo(x+r+gap,y); sctx.lineTo(x+r+gap+arm,y);
+  sctx.stroke();
+  sctx.restore();
+}
+
+// ── Story overlay (weapon reveal / won / dead) ──
+function drawStoryOverlay() {
+  const w=sc.width, h=sc.height;
+  if (sState === 'doorOpen') {
+    // Blixt-effekt mellan vågorna
+    sDoorAnim = Math.min(1, sDoorAnim + 0.025);
+    sctx.save(); sctx.globalAlpha = Math.sin(sDoorAnim * Math.PI) * 0.7;
+    sctx.fillStyle = '#aaddff'; sctx.fillRect(0,0,w,h); sctx.restore();
+    // Text "Våg klar!"
+    sctx.save(); sctx.globalAlpha = Math.sin(sDoorAnim * Math.PI);
+    sctx.fillStyle = '#fff'; sctx.font = `bold ${Math.round(w/12)}px system-ui`; sctx.textAlign = 'center';
+    sctx.shadowColor = '#0088ff'; sctx.shadowBlur = 20;
+    sctx.fillText(sRoom < 5 ? `✅ Våg ${sRoom} klar!` : '👹 Boss dyker upp!', w/2, h/2);
+    sctx.restore();
+    if (sDoorAnim >= 1) {
+      sDoorAnim = 0;
+      if (sRoom < 5) loadRoom(sRoom + 1);
+      else { sState = 'playing'; }
+    }
+  } else if (sState === 'won') {
+    sctx.save();
+    sctx.fillStyle='rgba(0,0,0,.7)'; sctx.fillRect(0,0,w,h);
+    sctx.fillStyle='#ffd700'; sctx.font=`bold ${Math.round(w/12)}px system-ui`; sctx.textAlign='center';
+    sctx.fillText('🥔 POTATISKANON UPPLÅST! 🥔', w/2, h*0.38);
+    sctx.fillStyle='#fff'; sctx.font=`bold ${Math.round(w/20)}px system-ui`;
+    sctx.fillText('Du klarade Story Mode!', w/2, h*0.52);
+    sctx.fillText('Vapnet finns nu i Butiken 🛒', w/2, h*0.62);
+    // Back button
+    sctx.fillStyle='#ff5500'; sctx.beginPath();
+    sctx.roundRect(w/2-100, h*0.72, 200, 50, 14); sctx.fill();
+    sctx.fillStyle='#fff'; sctx.font='bold 20px system-ui';
+    sctx.fillText('🏠 Tillbaka', w/2, h*0.72+32);
+    sctx.restore();
+    // Tap to go back
+    sc.addEventListener('pointerdown', function once(e) {
+      sc.removeEventListener('pointerdown', once);
+      exitStory();
+    });
+  } else if (sState === 'dead') {
+    sctx.save();
+    sctx.fillStyle='rgba(80,0,0,.8)'; sctx.fillRect(0,0,w,h);
+    sctx.fillStyle='#ff4444'; sctx.font=`bold ${Math.round(w/10)}px system-ui`; sctx.textAlign='center';
+    sctx.fillText('💀 Du dog!', w/2, h*0.42);
+    sctx.fillStyle='#fff'; sctx.font=`bold ${Math.round(w/18)}px system-ui`;
+    sctx.fillText('Tryck för att försöka igen', w/2, h*0.58);
+    sctx.restore();
+    sc.addEventListener('pointerdown', function once() {
+      sc.removeEventListener('pointerdown', once);
+      openStoryMode();
+    });
+  }
+}
+
+// ── Story RAF-loop ──
+let sLastTS = 0;
+let sPointerHeld = false; // för potatiskanon auto-fire i bossrummet
+function sLoop(ts, gen) {
+  if (!sActive || gen !== sLoopGen) return; // gammal loop → avsluta
+  requestAnimationFrame(ts2 => sLoop(ts2, gen));
+  const dt = ts - sLastTS; sLastTS = ts;
+
+  sctx.clearRect(0, 0, sc.width, sc.height);
+  drawCorridor();
+
+  // Auto-fire: maskinpistol och potatiskanon kan hållas inne (alla rum)
+  const autoFire = sRoom === 5 || currentGun === 'maskinpistol' || currentGun === 'potatiskanon';
+  if (sState === 'playing' && sPointerHeld && autoFire) {
+    sShoot(sMX, sMY);
+  }
+
+  // Spawna monster
+  if (sState === 'playing' && sSpawnQ.length > 0) {
+    sSpawnT -= dt;
+    if (sSpawnT <= 0) {
+      spawnMonster(sSpawnQ.shift());
+      sSpawnT = sRoom === 4 ? 600 : (sRoom === 5 ? 0 : 1400);
+    }
+  }
+
+  // Uppdatera + rita monster
+  let playerHit = false;
+  sMonsters = sMonsters.filter(m => {
+    // Rörelse mot spelaren (liten svängning för att det ska se mer levande ut)
+    m.bobT += 0.05;
+    const wobble = Math.sin(m.bobT) * 0.6; // liten sidorörelse
+    const perpX = -m.dy, perpY = m.dx;
+    m.x += (m.dx + perpX * wobble) * m.spd;
+    m.y += (m.dy + perpY * wobble) * m.spd;
+
+    // Nådde spelaren?
+    const dist = Math.sqrt((m.x - sPlayerX)**2 + (m.y - sPlayerY)**2);
+    if (dist < m.r + 18) { playerHit = true; return false; }
+
+    drawMonster(m);
+    return true;
+  });
+
+  // Om monster nådde spelaren
+  if (playerHit && sState === 'playing') {
+    sHealth = Math.max(0, sHealth - 1);
+    updateStoryHUD();
+    sndGameOver();
+    if (sHealth <= 0) { sState = 'dead'; }
+  }
+
+  // Kolla om rummet är klarat
+  if (sState === 'playing' && sSpawnQ.length === 0 && sMonsters.length === 0) {
+    if (sRoom < 5) {
+      sState = 'doorOpen'; sDoorAnim = 0;
+    }
+    // Boss room cleared → handled in onBossKilled
+  }
+
+  // Rita bullets
+  sBullets = sBullets.filter(b => {
+    sctx.save();
+    sctx.globalAlpha = b.life/14;
+    sctx.strokeStyle = b.color; sctx.lineWidth=3;
+    sctx.shadowColor=b.color; sctx.shadowBlur=8;
+    sctx.beginPath(); sctx.moveTo(b.x,b.y); sctx.lineTo(b.tx,b.ty); sctx.stroke();
+    sctx.restore();
+    b.life--;
+    return b.life > 0;
+  });
+
+  drawStoryOverlay();
+  if (sState !== 'dead' && sState !== 'won') drawStoryCrosshair();
+}
+
+window.addEventListener('resize', () => {
+  if (sActive) {
+    sc.width  = window.innerWidth;
+    sc.height = window.innerHeight - document.getElementById('story-hud').offsetHeight;
+    sPlayerX = sc.width / 2;
+    sPlayerY = sc.height / 2;
+  }
+});
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+window.addEventListener('resize', () => { if (running) resizeCanvas(); });
+</script>
+</body>
+</html>

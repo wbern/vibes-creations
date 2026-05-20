@@ -5,6 +5,24 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "ivriga-koltrasten",
+          "student": "test1",
+          "display_name": "test1",
+          "persona": "claudina",
+          "archived_at": "2026-05-20T14:45:50Z",
+          "published_at": "2026-05-20T14:45:55Z",
+          "thumbnail": "students/pilot/ivriga-koltrasten/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0
+          }
+        },
+        {
           "slug": "ivriga-oxen",
           "display_name": "port2f6532",
           "persona": "kladd",
