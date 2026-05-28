@@ -5,6 +5,28 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "ljusa-jaguaren",
+          "student": "ljusa-jaguaren",
+          "display_name": "Anonym kreatör",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T05:41:42Z",
+          "published_at": "2026-05-28T20:50:28Z",
+          "thumbnail": "students/pilot/ljusa-jaguaren/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "fria-lejonet",
           "student": "fria-lejonet",
           "display_name": "Anonym kreatör",

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Thermonuclear War</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+    canvas { display: block; touch-action: none; cursor: crosshair; }
+    #ui {
+      position: fixed; top: 12px; left: 0; right: 0;
+      text-align: center; color: #0f0; font: bold 20px monospace;
+      pointer-events: none; letter-spacing: 2px;
+    }
+    #msg {
+      display: none; position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: #f00; font: bold 48px monospace; text-align: center;
+      text-shadow: 0 0 30px #f00; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">SCORE: <span id="score">0</span> &nbsp;|&nbsp; CITIES: <span id="lives">6</span></div>
+  <div id="msg">GAME OVER</div>
+  <canvas id="c"></canvas>
+  <script>
+    const c = document.getElementById("c");
+    const ctx = c.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const livesEl = document.getElementById("lives");
+    const msgEl   = document.getElementById("msg");
+
+    let W, H, GROUND;
+    const CITY_COUNT = 6;
+    const cities = [];
+    let enemies = [], interceptors = [], explosions = [];
+    let score = 0, gameOver = false, spawnTimer = 0;
+
+    function resize() {
+      W = c.width  = innerWidth;
+      H = c.height = innerHeight;
+      GROUND = H - 70;
+      buildCities();
+    }
+
+    function buildCities() {
+      const alive = cities.map(ct => ct.alive);
+      cities.length = 0;
+      const gap = W / (CITY_COUNT + 1);
+      for (let i = 0; i < CITY_COUNT; i++) {
+        cities.push({ x: gap * (i + 1), alive: alive[i] !== false });
+      }
+    }
+
+    function drawCity(x, alive) {
+      ctx.fillStyle = alive ? "#00ff88" : "#333";
+      ctx.fillRect(x - 18, GROUND - 20, 36, 20);   // base
+      ctx.fillRect(x - 13, GROUND - 34, 11, 14);   // left tower
+      ctx.fillRect(x + 2,  GROUND - 34, 11, 14);   // right tower
+    }
+
+    function drawGround() {
+      ctx.fillStyle = "#111";
+      ctx.fillRect(0, GROUND, W, H - GROUND);
+      ctx.strokeStyle = "#1f3";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, GROUND); ctx.lineTo(W, GROUND); ctx.stroke();
+    }
+
+    // Static starfield derived from index — no flicker, no array
+    function drawStars() {
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      for (let i = 0; i < 120; i++) {
+        const sx = ((i * 137 + 7)  * 79) % W;
+        const sy = ((i * 97  + 31) * 53) % (GROUND * 0.85);
+        ctx.fillRect(sx, sy, 1, 1);
+      }
+    }
+
+    resize();
+    addEventListener("resize", resize);
+
+    // --- Enemy missiles ---
+    function spawnEnemy() {
+      const aliveCities = cities.filter(ct => ct.alive);
+      if (!aliveCities.length) return;
+      const target = aliveCities[Math.floor(Math.random() * aliveCities.length)];
+      enemies.push({
+        x0: Math.random() * W, y0: 0,
+        x1: target.x + (Math.random() - 0.5) * 20,
+        y1: GROUND,
+        t: 0, speed: 0.0012 + Math.random() * 0.001,
+        cityTarget: target
+      });
+    }
+
+    function updateEnemies() {
+      enemies.forEach(e => { e.t += e.speed; });
+      // check if any reached the ground
+      enemies.filter(e => e.t >= 1).forEach(e => {
+        e.cityTarget.alive = false;
+        livesEl.textContent = cities.filter(ct => ct.alive).length;
+      });
+      enemies = enemies.filter(e => e.t < 1);
+    }
+
+    function drawEnemies() {
+      enemies.forEach(e => {
+        const hx = e.x0 + (e.x1 - e.x0) * e.t;
+        const hy = e.y0 + (e.y1 - e.y0) * e.t;
+        // trail
+        ctx.strokeStyle = "#f44";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(e.x0, e.y0); ctx.lineTo(hx, hy); ctx.stroke();
+        // warhead dot
+        ctx.fillStyle = "#ff0";
+        ctx.beginPath(); ctx.arc(hx, hy, 3, 0, Math.PI * 2); ctx.fill();
+      });
+    }
+
+    // --- Interceptors (player fires these) ---
+    function fireAt(tx, ty) {
+      const base = W / 2; // launch from bottom-center
+      interceptors.push({ x0: base, y0: GROUND, x1: tx, y1: ty, t: 0, speed: 0.025 });
+    }
+
+    function updateInterceptors() {
+      interceptors.forEach(m => { m.t += m.speed; });
+      // detonate when arrived
+      interceptors.filter(m => m.t >= 1).forEach(m => {
+        explosions.push({ x: m.x1, y: m.y1, r: 0, maxR: 55, growing: true });
+      });
+      interceptors = interceptors.filter(m => m.t < 1);
+    }
+
+    function drawInterceptors() {
+      interceptors.forEach(m => {
+        const hx = m.x0 + (m.x1 - m.x0) * m.t;
+        const hy = m.y0 + (m.y1 - m.y0) * m.t;
+        ctx.strokeStyle = "#8af";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(m.x0, m.y0); ctx.lineTo(hx, hy); ctx.stroke();
+        ctx.fillStyle = "#fff";
+        ctx.beginPath(); ctx.arc(hx, hy, 2, 0, Math.PI * 2); ctx.fill();
+      });
+    }
+
+    // --- Explosions ---
+    function updateExplosions() {
+      explosions.forEach(ex => {
+        if (ex.growing) {
+          ex.r += 2.5;
+          if (ex.r >= ex.maxR) ex.growing = false;
+        } else {
+          ex.r -= 1.5;
+        }
+        // kill enemies inside explosion
+        enemies = enemies.filter(e => {
+          const hx = e.x0 + (e.x1 - e.x0) * e.t;
+          const hy = e.y0 + (e.y1 - e.y0) * e.t;
+          const dist = Math.hypot(hx - ex.x, hy - ex.y);
+          if (dist < ex.r) { score += 25; scoreEl.textContent = score; return false; }
+          return true;
+        });
+      });
+      explosions = explosions.filter(ex => ex.r > 0);
+    }
+
+    function drawExplosions() {
+      explosions.forEach(ex => {
+        const g = ctx.createRadialGradient(ex.x, ex.y, 0, ex.x, ex.y, ex.r);
+        g.addColorStop(0,   "rgba(255,200,50,0.9)");
+        g.addColorStop(0.5, "rgba(255,80,20,0.5)");
+        g.addColorStop(1,   "rgba(255,0,0,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(ex.x, ex.y, ex.r, 0, Math.PI * 2); ctx.fill();
+      });
+    }
+
+    // --- Click to fire ---
+    c.addEventListener("pointerdown", e => {
+      if (gameOver) return;
+      const r = c.getBoundingClientRect();
+      fireAt(e.clientX - r.left, e.clientY - r.top);
+    });
+
+    // --- Game loop ---
+    let last = 0;
+    function loop(ts) {
+      const dt = ts - last; last = ts;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, W, H);
+      drawStars();
+
+      if (!gameOver) {
+        spawnTimer += dt;
+        if (spawnTimer > 1400) { spawnEnemy(); spawnTimer = 0; }
+        updateEnemies();
+        updateInterceptors();
+        updateExplosions();
+        // check game over
+        if (cities.every(ct => !ct.alive)) {
+          gameOver = true;
+          msgEl.style.display = "block";
+        }
+      }
+
+      drawEnemies();
+      drawInterceptors();
+      drawExplosions();
+      drawGround();
+      cities.forEach(ct => drawCity(ct.x, ct.alive));
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
