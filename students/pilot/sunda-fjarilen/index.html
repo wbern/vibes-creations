@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tåget som åker förbi</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #aed6f1;
+    }
+
+    .scen {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* ── Solen ── */
+    .sol {
+      position: absolute;
+      top: 40px;
+      right: 120px;
+    }
+
+    /* ── Moln ── */
+    .moln {
+      position: absolute;
+      animation: moln-rörelse linear infinite;
+    }
+    .moln-1 { top: 70px;  animation-duration: 22s; animation-delay: 0s; }
+    .moln-2 { top: 130px; animation-duration: 30s; animation-delay: -12s; }
+    .moln-3 { top: 55px;  animation-duration: 38s; animation-delay: -22s; }
+
+    @keyframes moln-rörelse {
+      from { left: 110vw; }
+      to   { left: -280px; }
+    }
+
+    /* ── Mark ── */
+    .mark {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 30vh;
+      background: linear-gradient(to bottom, #6abf5e, #4a9c3e);
+    }
+
+    /* ── Träd ── */
+    .träd {
+      position: absolute;
+      bottom: 30vh;
+      animation: träd-rörelse linear infinite;
+    }
+    .träd-1 { animation-duration: 8s;  animation-delay: -1s; }
+    .träd-2 { animation-duration: 12s; animation-delay: -5s; }
+    .träd-3 { animation-duration: 9s;  animation-delay: -3s; }
+
+    @keyframes träd-rörelse {
+      from { left: 110vw; }
+      to   { left: -80px; }
+    }
+
+    /* ── Räls ── */
+    .räls-wrap {
+      position: absolute;
+      bottom: calc(30vh + 2px);
+      width: 100%;
+      height: 36px;
+      overflow: hidden;
+    }
+    .räls-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Tåget ── */
+    .tåg {
+      position: absolute;
+      bottom: calc(30vh + 18px);
+      animation: tåg-rörelse 7s linear infinite;
+    }
+
+    @keyframes tåg-rörelse {
+      from { left: 110vw; }
+      to   { left: -620px; }
+    }
+  </style>
+</head>
+<body>
+<div class="scen">
+
+  <!-- Sol -->
+  <div class="sol">
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+      <circle cx="40" cy="40" r="26" fill="#f9e94e"/>
+      <!-- Strålar -->
+      <g stroke="#f9e94e" stroke-width="4" stroke-linecap="round">
+        <line x1="40" y1="4"  x2="40" y2="14"/>
+        <line x1="40" y1="66" x2="40" y2="76"/>
+        <line x1="4"  y1="40" x2="14" y2="40"/>
+        <line x1="66" y1="40" x2="76" y2="40"/>
+        <line x1="13" y1="13" x2="20" y2="20"/>
+        <line x1="60" y1="60" x2="67" y2="67"/>
+        <line x1="67" y1="13" x2="60" y2="20"/>
+        <line x1="20" y1="60" x2="13" y2="67"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Moln 1 -->
+  <div class="moln moln-1">
+    <svg width="220" height="75" viewBox="0 0 220 75" fill="none">
+      <ellipse cx="110" cy="55" rx="100" ry="28" fill="white" opacity="0.92"/>
+      <ellipse cx="75"  cy="40" rx="55"  ry="34" fill="white" opacity="0.92"/>
+      <ellipse cx="148" cy="36" rx="46"  ry="32" fill="white" opacity="0.92"/>
+    </svg>
+  </div>
+
+  <!-- Moln 2 -->
+  <div class="moln moln-2">
+    <svg width="160" height="58" viewBox="0 0 160 58" fill="none">
+      <ellipse cx="80"  cy="42" rx="72"  ry="22" fill="white" opacity="0.85"/>
+      <ellipse cx="58"  cy="30" rx="42"  ry="26" fill="white" opacity="0.85"/>
+      <ellipse cx="110" cy="28" rx="36"  ry="24" fill="white" opacity="0.85"/>
+    </svg>
+  </div>
+
+  <!-- Moln 3 (lite genomskinligt) -->
+  <div class="moln moln-3">
+    <svg width="180" height="64" viewBox="0 0 180 64" fill="none">
+      <ellipse cx="90"  cy="48" rx="82"  ry="24" fill="white" opacity="0.7"/>
+      <ellipse cx="65"  cy="35" rx="48"  ry="29" fill="white" opacity="0.7"/>
+      <ellipse cx="130" cy="32" rx="40"  ry="27" fill="white" opacity="0.7"/>
+    </svg>
+  </div>
+
+  <!-- Mark -->
+  <div class="mark"></div>
+
+  <!-- Träd 1 -->
+  <div class="träd träd-1">
+    <svg width="60" height="100" viewBox="0 0 60 100" fill="none">
+      <rect x="24" y="65" width="12" height="35" rx="3" fill="#7d5a2f"/>
+      <ellipse cx="30" cy="50" rx="28" ry="32" fill="#2e7d32"/>
+      <ellipse cx="30" cy="35" rx="20" ry="24" fill="#388e3c"/>
+    </svg>
+  </div>
+
+  <!-- Träd 2 (litet) -->
+  <div class="träd träd-2">
+    <svg width="42" height="72" viewBox="0 0 42 72" fill="none">
+      <rect x="17" y="48" width="8" height="24" rx="2" fill="#7d5a2f"/>
+      <ellipse cx="21" cy="36" rx="19" ry="22" fill="#388e3c"/>
+      <ellipse cx="21" cy="24" rx="14" ry="17" fill="#43a047"/>
+    </svg>
+  </div>
+
+  <!-- Träd 3 -->
+  <div class="träd träd-3">
+    <svg width="55" height="90" viewBox="0 0 55 90" fill="none">
+      <rect x="22" y="60" width="11" height="30" rx="3" fill="#6d4c2a"/>
+      <ellipse cx="27" cy="46" rx="25" ry="29" fill="#1b5e20"/>
+      <ellipse cx="27" cy="30" rx="18" ry="21" fill="#2e7d32"/>
+    </svg>
+  </div>
+
+  <!-- Räls -->
+  <div class="räls-wrap">
+    <svg class="räls-svg" viewBox="0 0 1720 36" preserveAspectRatio="none">
+      <!-- Skenor -->
+      <rect x="0" y="5"  width="1720" height="8" rx="3" fill="#8d6e3a"/>
+      <rect x="0" y="23" width="1720" height="8" rx="3" fill="#8d6e3a"/>
+      <!-- Sliprar var 50px -->
+      <g fill="#6b4f2b">
+        <rect x="0"    y="0" width="20" height="36" rx="2"/>
+        <rect x="50"   y="0" width="20" height="36" rx="2"/>
+        <rect x="100"  y="0" width="20" height="36" rx="2"/>
+        <rect x="150"  y="0" width="20" height="36" rx="2"/>
+        <rect x="200"  y="0" width="20" height="36" rx="2"/>
+        <rect x="250"  y="0" width="20" height="36" rx="2"/>
+        <rect x="300"  y="0" width="20" height="36" rx="2"/>
+        <rect x="350"  y="0" width="20" height="36" rx="2"/>
+        <rect x="400"  y="0" width="20" height="36" rx="2"/>
+        <rect x="450"  y="0" width="20" height="36" rx="2"/>
+        <rect x="500"  y="0" width="20" height="36" rx="2"/>
+        <rect x="550"  y="0" width="20" height="36" rx="2"/>
+        <rect x="600"  y="0" width="20" height="36" rx="2"/>
+        <rect x="650"  y="0" width="20" height="36" rx="2"/>
+        <rect x="700"  y="0" width="20" height="36" rx="2"/>
+        <rect x="750"  y="0" width="20" height="36" rx="2"/>
+        <rect x="800"  y="0" width="20" height="36" rx="2"/>
+        <rect x="850"  y="0" width="20" height="36" rx="2"/>
+        <rect x="900"  y="0" width="20" height="36" rx="2"/>
+        <rect x="950"  y="0" width="20" height="36" rx="2"/>
+        <rect x="1000" y="0" width="20" height="36" rx="2"/>
+        <rect x="1050" y="0" width="20" height="36" rx="2"/>
+        <rect x="1100" y="0" width="20" height="36" rx="2"/>
+        <rect x="1150" y="0" width="20" height="36" rx="2"/>
+        <rect x="1200" y="0" width="20" height="36" rx="2"/>
+        <rect x="1250" y="0" width="20" height="36" rx="2"/>
+        <rect x="1300" y="0" width="20" height="36" rx="2"/>
+        <rect x="1350" y="0" width="20" height="36" rx="2"/>
+        <rect x="1400" y="0" width="20" height="36" rx="2"/>
+        <rect x="1450" y="0" width="20" height="36" rx="2"/>
+        <rect x="1500" y="0" width="20" height="36" rx="2"/>
+        <rect x="1550" y="0" width="20" height="36" rx="2"/>
+        <rect x="1600" y="0" width="20" height="36" rx="2"/>
+        <rect x="1650" y="0" width="20" height="36" rx="2"/>
+        <rect x="1700" y="0" width="20" height="36" rx="2"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Tåget -->
+  <div class="tåg">
+    <svg width="580" height="130" viewBox="0 0 580 130" fill="none">
+
+      <!-- Rök ur skorstenen -->
+      <circle cx="62" cy="20" r="16" fill="white" opacity="0.65"/>
+      <circle cx="48" cy="10" r="11" fill="white" opacity="0.45"/>
+      <circle cx="75" cy="5"  r="9"  fill="white" opacity="0.35"/>
+
+      <!-- ══ LOKET ══ -->
+      <!-- Kropp -->
+      <rect x="8"  y="52" width="148" height="58" rx="10" fill="#c0392b"/>
+      <!-- Hytt -->
+      <rect x="18" y="24" width="85"  height="34" rx="7"  fill="#c0392b"/>
+      <!-- Hytt-fönster vänster -->
+      <rect x="28" y="30" width="28"  height="20" rx="4"  fill="#aed6f1"/>
+      <!-- Hytt-fönster höger -->
+      <rect x="62" y="30" width="28"  height="20" rx="4"  fill="#aed6f1"/>
+      <!-- Skorsten -->
+      <rect x="54" y="10" width="16"  height="18" rx="4"  fill="#7b241c"/>
+      <!-- Frontlykta -->
+      <circle cx="154" cy="72" r="7"  fill="#f9e94e"/>
+      <circle cx="154" cy="72" r="4"  fill="white"/>
+      <!-- Röd rand nertill på loket -->
+      <rect x="8"  y="100" width="148" height="8" rx="2" fill="#7b241c"/>
+
+      <!-- ══ VAGN 1 ══ -->
+      <rect x="172" y="55" width="178" height="55" rx="9" fill="#2471a3"/>
+      <rect x="186" y="65" width="34"  height="24" rx="4" fill="#aed6f1"/>
+      <rect x="230" y="65" width="34"  height="24" rx="4" fill="#aed6f1"/>
+      <rect x="274" y="65" width="34"  height="24" rx="4" fill="#aed6f1"/>
+      <rect x="172" y="101" width="178" height="7" rx="2" fill="#1a5276"/>
+
+      <!-- ══ VAGN 2 ══ -->
+      <rect x="368" y="55" width="178" height="55" rx="9" fill="#2471a3"/>
+      <rect x="382" y="65" width="34"  height="24" rx="4" fill="#aed6f1"/>
+      <rect x="426" y="65" width="34"  height="24" rx="4" fill="#aed6f1"/>
+      <rect x="470" y="65" width="34"  height="24" rx="4" fill="#aed6f1"/>
+      <rect x="368" y="101" width="178" height="7" rx="2" fill="#1a5276"/>
+
+      <!-- Kopplingar -->
+      <rect x="157" y="88" width="18" height="7" rx="2" fill="#555"/>
+      <rect x="352" y="88" width="18" height="7" rx="2" fill="#555"/>
+
+      <!-- ══ HJUL ══ -->
+      <!-- Loket -->
+      <circle cx="48"  cy="112" r="17" fill="#2c3e50"/>
+      <circle cx="48"  cy="112" r="9"  fill="#95a5a6"/>
+      <circle cx="48"  cy="112" r="3"  fill="#2c3e50"/>
+      <circle cx="124" cy="112" r="17" fill="#2c3e50"/>
+      <circle cx="124" cy="112" r="9"  fill="#95a5a6"/>
+      <circle cx="124" cy="112" r="3"  fill="#2c3e50"/>
+      <!-- Drivstång (piston-stång) -->
+      <rect x="48" y="108" width="76" height="5" rx="2" fill="#7f8c8d"/>
+
+      <!-- Vagn 1 -->
+      <circle cx="210" cy="112" r="15" fill="#2c3e50"/>
+      <circle cx="210" cy="112" r="8"  fill="#95a5a6"/>
+      <circle cx="210" cy="112" r="3"  fill="#2c3e50"/>
+      <circle cx="312" cy="112" r="15" fill="#2c3e50"/>
+      <circle cx="312" cy="112" r="8"  fill="#95a5a6"/>
+      <circle cx="312" cy="112" r="3"  fill="#2c3e50"/>
+
+      <!-- Vagn 2 -->
+      <circle cx="406" cy="112" r="15" fill="#2c3e50"/>
+      <circle cx="406" cy="112" r="8"  fill="#95a5a6"/>
+      <circle cx="406" cy="112" r="3"  fill="#2c3e50"/>
+      <circle cx="508" cy="112" r="15" fill="#2c3e50"/>
+      <circle cx="508" cy="112" r="8"  fill="#95a5a6"/>
+      <circle cx="508" cy="112" r="3"  fill="#2c3e50"/>
+
+    </svg>
+  </div>
+
+</div>
+</body>
+</html>

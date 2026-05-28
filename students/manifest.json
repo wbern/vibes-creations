@@ -5,6 +5,28 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "sunda-fjarilen",
+          "student": "sunda-fjarilen",
+          "display_name": "Anonym kreatör",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T05:40:37Z",
+          "published_at": "2026-05-28T20:50:07Z",
+          "thumbnail": "students/pilot/sunda-fjarilen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "talmodiga-myran",
           "student": "talmodiga-myran",
           "display_name": "Anonym kreatör",
