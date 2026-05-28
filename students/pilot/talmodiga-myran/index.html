@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Super Mario</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100%; }
+    #controls {
+      position: fixed; bottom: 12px; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: flex-end;
+      padding: 0 16px; pointer-events: none; z-index: 10;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      #controls { display: none; }
+    }
+    .dpad { display: grid; grid-template: 56px 56px / 56px 56px 56px; gap: 4px; pointer-events: all; }
+    .dpad button {
+      background: rgba(255,255,255,.22); color: #fff; border: 0;
+      border-radius: 10px; font-size: 1.5rem; min-width: 44px; min-height: 44px;
+      touch-action: manipulation; cursor: pointer; font-weight: bold;
+    }
+    .dpad button:active { background: rgba(255,255,255,.55); }
+    .dpad .empty { pointer-events: none; }
+  </style>
+</head>
+<body>
+<div id="controls">
+  <div class="dpad">
+    <div class="empty"></div>
+    <button id="btn-up">▲</button>
+    <div class="empty"></div>
+    <button id="btn-left">◀</button>
+    <div class="empty"></div>
+    <button id="btn-right">▶</button>
+  </div>
+  <button id="btn-fire" style="pointer-events:all;width:64px;height:64px;border-radius:50%;border:0;background:rgba(255,100,0,.35);color:#fff;font-size:1.6rem;touch-action:manipulation;cursor:pointer;margin-bottom:4px">🔥</button>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/kaplay@3001.0.19/dist/kaplay.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

@@ -5,6 +5,28 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "talmodiga-myran",
+          "student": "talmodiga-myran",
+          "display_name": "Anonym kreatör",
+          "persona": "kladd",
+          "archived_at": "2026-05-26T14:44:02Z",
+          "published_at": "2026-05-28T20:50:00Z",
+          "thumbnail": "students/pilot/talmodiga-myran/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "breda-elefanten",
           "student": "breda-elefanten",
           "display_name": "Anonym kreatör",
