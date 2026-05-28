@@ -5,6 +5,28 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "fria-lejonet",
+          "student": "fria-lejonet",
+          "display_name": "Anonym kreatör",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T05:42:07Z",
+          "published_at": "2026-05-28T20:50:21Z",
+          "thumbnail": "students/pilot/fria-lejonet/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "lilla-radjuret",
           "student": "lilla-radjuret",
           "display_name": "Anonym kreatör",
