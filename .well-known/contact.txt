@@ -1,0 +1,4 @@
+Contact: mailto:william@bernting.se
+Operator: William Bernting
+Description: Vibe Coding workshop — kid-created static pages published from supervised sessions. Takedown requests handled manually; expect a same-day response during workshop weeks.
+Preferred-Languages: sv, en

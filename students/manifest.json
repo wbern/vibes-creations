@@ -5,6 +5,28 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "breda-elefanten",
+          "student": "breda-elefanten",
+          "display_name": "Anonym kreatör",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T05:41:48Z",
+          "published_at": "2026-05-28T20:33:04Z",
+          "thumbnail": "students/pilot/breda-elefanten/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "smidiga-maneten",
           "student": "kenneth",
           "display_name": "kenneth",
