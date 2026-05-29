@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-05-29T20:26:09Z",
+  "generated_at": "2026-05-29T20:26:20Z",
   "entries": [
+    {
+      "slug": "sakra-skoldpaddan",
+      "title": "HundGo 🐶",
+      "display_name": "Anonym kreatör",
+      "thumbnail": "students/pilot/sakra-skoldpaddan/thumbnail.webp",
+      "live_url": "https://public.vibes.bernting.se/students/pilot/sakra-skoldpaddan/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/sakra-skoldpaddan",
+      "date": "2026-05-29T20:26:20Z",
+      "persona": "kladd",
+      "description": "Det här är ett roligt spel där du ska fånga alla 12 hundar."
+    },
     {
       "slug": "sakra-ormen",
       "title": "Bird Shooter 🐦",

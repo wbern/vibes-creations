@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>HundGo 🐶</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      height: 100%; overflow: hidden;
+      background: #5aad5a;
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    /* HUD överst */
+    #hud {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(0,0,0,0.45);
+      color: #fff;
+      font: 800 1.2rem system-ui, sans-serif;
+      z-index: 100;
+      letter-spacing: 0.02em;
+    }
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0; left: 0;
+    }
+    /* Fångad-animation */
+    .caught-popup {
+      position: fixed;
+      pointer-events: none;
+      font: 900 1.6rem system-ui, sans-serif;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+      animation: floatUp 1s ease-out forwards;
+      z-index: 200;
+    }
+    @keyframes floatUp {
+      0%   { transform: translateY(0) scale(1);   opacity: 1; }
+      100% { transform: translateY(-80px) scale(1.3); opacity: 0; }
+    }
+    /* Win-skärm */
+    #win-screen {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font: 900 2rem system-ui, sans-serif;
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 1.2rem;
+      z-index: 300;
+    }
+    #win-screen.show { display: flex; }
+    #win-screen .big { font-size: 3.5rem; }
+    #win-screen .sub { font-size: 1.1rem; max-width: 300px; text-align: center; line-height: 1.6; }
+    #win-screen button {
+      min-height: 56px; padding: 14px 28px;
+      border: 0; border-radius: 16px;
+      font: 800 1.2rem system-ui, sans-serif;
+      background: #ff7a5a;
+      color: #fff;
+      box-shadow: 0 6px 0 #b03a20;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 80ms, box-shadow 80ms;
+    }
+    #win-screen button:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
+  </style>
+</head>
+<body>
+
+<!-- HUD -->
+<div id="hud">
+  <span>🐶 HundGo</span>
+  <span>Fångade: <span id="score">0</span> / 12</span>
+</div>
+
+<!-- Spelplan -->
+<canvas id="c"></canvas>
+
+<!-- Win-skärm -->
+<div id="win-screen">
+  <div class="big">🏆</div>
+  <div>Du fångade alla 12 hundar!</div>
+  <div class="sub" id="win-names"></div>
+  <button onclick="startGame()">Spela igen!</button>
+</div>
+
+<script>
+// ── Hunddata ──────────────────────────────────────────────────────────
+const HUNDAR = [
+  { namn: "Fido",    ras: "Labrador",    kropp: "#e8b96a", öra: "#c89040" },
+  { namn: "Bella",   ras: "Pudel",       kropp: "#f5f0e8", öra: "#d4c8b0" },
+  { namn: "Turbo",   ras: "Bulldog",     kropp: "#c9a07a", öra: "#9a6a40" },
+  { namn: "Snurr",   ras: "Dalmatiner", kropp: "#f8f8f8", öra: "#333"    },
+  { namn: "Lyktan",  ras: "Mops",        kropp: "#d4a870", öra: "#a07040" },
+  { namn: "Svansen", ras: "Beagle",      kropp: "#c8783a", öra: "#7a3a10" },
+  { namn: "Bulle",   ras: "Korv-hund",   kropp: "#b87040", öra: "#7a3a10" },
+  { namn: "Stolt",   ras: "Schäfer",     kropp: "#7a5a30", öra: "#3a2010" },
+  { namn: "Pricken", ras: "Dalmatiner", kropp: "#fffafa", öra: "#222"    },
+  { namn: "Muffin",  ras: "Pommeranian", kropp: "#f4d090", öra: "#d4a040" },
+];
+
+// ── Canvas ────────────────────────────────────────────────────────────
+const canvas = document.getElementById("c");
+const ctx    = canvas.getContext("2d");
+let hundar = [];   // aktiva hundar på banan
+let fångade = [];  // fångade hundar
+let animId;
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+// ── Rita park-bakgrund ────────────────────────────────────────────────
+function ritaBakgrund() {
+  // Grönt gräs
+  ctx.fillStyle = "#5aad5a";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Stig (beige oval)
+  ctx.fillStyle = "#c9b58a";
+  ctx.beginPath();
+  ctx.ellipse(
+    canvas.width * 0.5,  canvas.height * 0.52,
+    canvas.width * 0.38, canvas.height * 0.28,
+    0, 0, Math.PI * 2
+  );
+  ctx.fill();
+
+  // Buskar i hörnen
+  buske(70,  85,  42);
+  buske(canvas.width - 80,  95,  36);
+  buske(85,  canvas.height - 100, 46);
+  buske(canvas.width - 95, canvas.height - 115, 40);
+}
+
+function buske(x, y, r) {
+  ctx.fillStyle = "#3a8a3a";
+  [[0,0,r], [r*.7,-r*.3,r*.7], [-r*.6,-r*.2,r*.65]].forEach(([dx,dy,rad]) => {
+    ctx.beginPath(); ctx.arc(x+dx, y+dy, rad, 0, Math.PI*2); ctx.fill();
+  });
+}
+
+// ── Rita en hund ──────────────────────────────────────────────────────
+function ritaHund(h) {
+  const {x, y, r, kropp, öra, namn, ras, skaka} = h;
+  ctx.save();
+  ctx.translate(x, y);
+  if (skaka) ctx.translate(Math.sin(Date.now() * 0.04) * 3, 0);
+
+  // Kropp (oval)
+  ctx.fillStyle = kropp;
+  ctx.beginPath();
+  ctx.ellipse(0, r * 0.3, r * 0.78, r * 0.52, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Huvud
+  ctx.beginPath();
+  ctx.arc(0, -r * 0.25, r * 0.56, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Öron
+  ctx.fillStyle = öra;
+  ctx.beginPath(); ctx.ellipse(-r*.45, -r*.65, r*.22, r*.32, -0.4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse( r*.45, -r*.65, r*.22, r*.32,  0.4, 0, Math.PI*2); ctx.fill();
+
+  // Ögon
+  ctx.fillStyle = "#111";
+  ctx.beginPath(); ctx.arc(-r*.21, -r*.30, r*.1, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( r*.21, -r*.30, r*.1, 0, Math.PI*2); ctx.fill();
+  // Glans i ögonen
+  ctx.fillStyle = "#fff";
+  ctx.beginPath(); ctx.arc(-r*.18, -r*.33, r*.04, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( r*.24, -r*.33, r*.04, 0, Math.PI*2); ctx.fill();
+
+  // Näsa
+  ctx.fillStyle = "#333";
+  ctx.beginPath(); ctx.ellipse(0, -r*.08, r*.14, r*.1, 0, 0, Math.PI*2); ctx.fill();
+
+  // Ben (4 st)
+  ctx.fillStyle = kropp;
+  [-r*.45, -r*.18, r*.18, r*.45].forEach((bx, i) => {
+    const bh = i < 2 ? r*.45 : r*.38;
+    ctx.fillRect(bx - r*.11, r*.7, r*.22, bh);
+  });
+
+  // Svans (böjd linje)
+  ctx.strokeStyle = kropp;
+  ctx.lineWidth = r * .18;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(r*.72, r*.18);
+  ctx.quadraticCurveTo(r*1.35, -r*.3, r*1.1, -r*.72);
+  ctx.stroke();
+
+  // Namn
+  ctx.fillStyle = "#fff";
+  ctx.font = `bold ${Math.round(r * .43)}px system-ui`;
+  ctx.textAlign = "center";
+  ctx.shadowColor = "rgba(0,0,0,.75)";
+  ctx.shadowBlur = 5;
+  ctx.fillText(namn, 0, r * 1.3);
+
+  // Ras
+  ctx.font = `${Math.round(r * .31)}px system-ui`;
+  ctx.fillText(ras, 0, r * 1.62);
+  ctx.shadowBlur = 0;
+
+  ctx.restore();
+}
+
+// ── Spel-logik ────────────────────────────────────────────────────────
+const LIVSTID = 5500;   // ms tills en hund rymmer
+const MAX_HUNDAR = 5;   // max hundar på skärmen
+
+function slumpHund() {
+  const mall = HUNDAR[Math.floor(Math.random() * HUNDAR.length)];
+  const margin = 90;
+  const topM   = 70;
+  return {
+    ...mall,
+    x:     margin + Math.random() * (canvas.width  - margin * 2),
+    y:     topM + margin + Math.random() * (canvas.height - topM - margin * 2),
+    r:     38 + Math.random() * 16,
+    skapad: Date.now(),
+    id:    Math.random(),
+    skaka: false,
+  };
+}
+
+function startGame() {
+  fångade = [];
+  hundar  = [];
+  document.getElementById("win-screen").classList.remove("show");
+  document.getElementById("score").textContent = "0";
+  for (let i = 0; i < MAX_HUNDAR; i++) hundar.push(slumpHund());
+  if (animId) cancelAnimationFrame(animId);
+  loop();
+}
+
+function loop() {
+  const nu = Date.now();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ritaBakgrund();
+
+  // Ta bort hundar som rymde, lägg till nya
+  hundar = hundar.filter(h => {
+    if (nu - h.skapad >= LIVSTID) {
+      setTimeout(() => hundar.push(slumpHund()), 300);
+      return false;
+    }
+    h.skaka = (nu - h.skapad) > LIVSTID * 0.72;
+    return true;
+  });
+
+  // Rita hundar med lätt fade mot slutet
+  hundar.forEach(h => {
+    const ålder = nu - h.skapad;
+    ctx.globalAlpha = ålder > LIVSTID * 0.72
+      ? 1 - ((ålder - LIVSTID * 0.72) / (LIVSTID * 0.28)) * 0.55
+      : 1;
+    ritaHund(h);
+    ctx.globalAlpha = 1;
+  });
+
+  animId = requestAnimationFrame(loop);
+}
+
+// ── Trycka ────────────────────────────────────────────────────────────
+function handleTap(px, py) {
+  for (let i = hundar.length - 1; i >= 0; i--) {
+    const h = hundar[i];
+    const d = Math.hypot(px - h.x, py - h.y);
+    if (d < h.r * 1.5) {
+      fångade.push(h.namn + " (" + h.ras + ")");
+      hundar.splice(i, 1);
+      popup(h.namn, px, py);
+      document.getElementById("score").textContent = fångade.length;
+      setTimeout(() => hundar.push(slumpHund()), 700);
+      if (fångade.length >= 12) setTimeout(vinst, 500);
+      break;
+    }
+  }
+}
+
+function popup(namn, x, y) {
+  const el = document.createElement("div");
+  el.className = "caught-popup";
+  el.textContent = "🐾 " + namn + "!";
+  el.style.left = (x - 55) + "px";
+  el.style.top  = (y - 20) + "px";
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1050);
+}
+
+function vinst() {
+  cancelAnimationFrame(animId);
+  document.getElementById("win-names").textContent = fångade.join(" · ");
+  document.getElementById("win-screen").classList.add("show");
+}
+
+canvas.addEventListener("pointerdown", e => {
+  e.preventDefault();
+  handleTap(e.clientX, e.clientY);
+}, { passive: false });
+
+// ── Starta ────────────────────────────────────────────────────────────
+startGame();
+</script>
+</body>
+</html>
