@@ -6,11 +6,13 @@
       "published": [
         {
           "slug": "muntra-eldflugan",
+          "boilerplate": true,
           "student": "smokec5a1d9",
           "display_name": "smokec5a1d9",
+          "title": "min sida",
           "persona": "kladd",
           "archived_at": "2026-05-29T05:53:19Z",
-          "published_at": "2026-05-29T13:03:27Z",
+          "published_at": "2026-05-29T13:14:45Z",
           "thumbnail": "students/pilot/muntra-eldflugan/thumbnail.webp",
           "scan": {
             "counts": {
