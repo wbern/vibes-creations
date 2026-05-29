@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "rara-eldflugan",
+          "boilerplate": false,
+          "student": "rara-eldflugan",
+          "display_name": "Anonym kreatör",
+          "title": "Godisfotboll ⚽🍬",
+          "description": "Här kan du spela ett roligt godisfotbollsspel mot en AI och försöka göra fler mål än datorn.",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T12:00:00Z",
+          "published_at": "2026-05-29T20:25:54Z",
+          "thumbnail": "students/pilot/rara-eldflugan/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "stadiga-fenixen",
           "boilerplate": false,
           "student": "stadiga-fenixen",

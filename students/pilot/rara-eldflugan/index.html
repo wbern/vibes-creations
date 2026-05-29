@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Godisfotboll ⚽🍬</title>
+  <style>
+    /* === Touch-säkerhet === */
+    html, body { margin:0; padding:0; height:100%; overflow:hidden; overscroll-behavior:none; }
+    body {
+      -webkit-user-select:none; user-select:none;
+      -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
+      font-family: system-ui, sans-serif;
+      background: #0d3d0d;
+      display: flex; flex-direction: column;
+      height: 100svh;
+    }
+
+    /* === Scoreboard === */
+    .scoreboard {
+      display: flex; align-items: center; justify-content: center;
+      gap: .9rem; padding: .45rem .75rem;
+      background: rgba(0,0,0,.45); flex-shrink: 0;
+    }
+    .score-box { display:flex; align-items:center; gap:.45rem; }
+    .score-num {
+      font: 900 1.9rem/1 system-ui;
+      background: #fff; color: #0d3d0d;
+      border-radius: 8px; padding: .05rem .45rem;
+      min-width: 1.8rem; text-align: center;
+    }
+    .score-label { font: 700 .8rem/1.1 system-ui; color: #cfc; text-align:center; }
+    .vs { font: 900 1.1rem/1 system-ui; color: #ffd700; }
+
+    /* === Canvas === */
+    #gameCanvas { display:block; flex:1; touch-action:none; }
+
+    /* === Kontroller === */
+    .controls {
+      display: flex; gap: .45rem; padding: .45rem .6rem;
+      background: rgba(0,0,0,.35); flex-shrink: 0;
+      justify-content: center;
+    }
+    .ctrl-btn {
+      flex: 1; max-width: 110px; min-height: 58px;
+      background: rgba(255,255,255,.15);
+      border: 2px solid rgba(255,255,255,.3);
+      border-radius: 14px; color: #fff;
+      font-size: 1.4rem; font-weight: 800;
+      cursor: pointer; display: flex; align-items:center; justify-content:center;
+      transition: background .08s; touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ctrl-btn.pressed { background: rgba(255,255,255,.38); }
+
+    /* === Mål-animation === */
+    @keyframes goal-flash {
+      0%   { opacity: 0; }
+      25%  { opacity: 1; }
+      75%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    .goal-overlay {
+      position: fixed; inset: 0; pointer-events: none;
+      animation: goal-flash 1.3s ease forwards; z-index: 50;
+    }
+    @keyframes pop-in {
+      from { transform: translate(-50%,-50%) scale(.3) rotate(-8deg); opacity:0; }
+      to   { transform: translate(-50%,-50%) scale(1)  rotate(0deg);  opacity:1; }
+    }
+    .goal-text {
+      position: fixed; top:50%; left:50%;
+      font: 900 3.2rem/1 system-ui; color: #fff;
+      text-shadow: 0 5px 0 rgba(0,0,0,.4);
+      pointer-events: none; z-index: 60;
+      animation: pop-in .35s cubic-bezier(.5,1.6,.4,1) both;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Poängtavla -->
+<div class="scoreboard">
+  <div class="score-box">
+    <div>
+      <div class="score-label">🐻 Du</div>
+    </div>
+    <span class="score-num" id="playerScore">0</span>
+  </div>
+  <span class="vs">VS</span>
+  <div class="score-box">
+    <span class="score-num" id="aiScore">0</span>
+    <div>
+      <div class="score-label">🥤 AI</div>
+    </div>
+  </div>
+</div>
+
+<!-- Spelplan (canvas) -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- Kontroller -->
+<div class="controls">
+  <button class="ctrl-btn" id="btnLeft"  aria-label="Vänster">◀</button>
+  <button class="ctrl-btn" id="btnKick"  aria-label="Sparka">⚽</button>
+  <button class="ctrl-btn" id="btnRight" aria-label="Höger">▶</button>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+// Kortkommandon för canvas-storlek
+const W = () => canvas.width;
+const H = () => canvas.height;
+
+// Mål-öppningens bredd och pos
+const GOAL_W = 90;
+const goalLeft  = () => (W() - GOAL_W) / 2;
+const goalRight = () => (W() + GOAL_W) / 2;
+
+// ============================================================
+// Speltillstånd
+// ============================================================
+const player = { x:0, y:0, vx:0, vy:0, r:19, speed:4.2 };
+const ai     = { x:0, y:0, vx:0, vy:0, r:19, speed:2.4 };
+const ball   = { x:0, y:0, vx:0, vy:0, r:12 };
+
+let playerScore = 0;
+let aiScore     = 0;
+let gameActive  = true;
+let aiMissTimer = 0;   // AI:n missar ibland på riktigt
+
+// Kontroll-knappar (hållna)
+const keys = { left:false, right:false, kick:false };
+
+// ============================================================
+// Återställ positioner efter mål
+// ============================================================
+function resetPositions() {
+  player.x = W()/2;  player.y = H() * 0.78;
+  player.vx = 0;     player.vy = 0;
+  ai.x = W()/2;      ai.y = H() * 0.22;
+  ai.vx = 0;         ai.vy = 0;
+  ball.x = W()/2;    ball.y = H() / 2;
+  // Lite slumpmässig startfart på bollen
+  ball.vx = (Math.random() - 0.5) * 2.5;
+  ball.vy = (Math.random() - 0.5) * 2.5;
+}
+
+// ============================================================
+// Uppdatera spelet varje bildruta
+// ============================================================
+function update() {
+  if (!gameActive) return;
+  const w = W(), h = H();
+
+  // --- Spela: vänster/höger ---
+  if (keys.left)  player.vx -= 1.5;
+  if (keys.right) player.vx += 1.5;
+
+  // Kick = springa mot bollen
+  if (keys.kick) {
+    const dx = ball.x - player.x;
+    const dy = ball.y - player.y;
+    const d  = Math.hypot(dx, dy);
+    if (d > 1) { player.vx += (dx/d)*2; player.vy += (dy/d)*2; }
+  } else {
+    // Drift tillbaka till sin halva
+    player.vy += (h * 0.78 - player.y) * 0.04;
+  }
+
+  // Friktion
+  player.vx *= 0.80; player.vy *= 0.80;
+  clampSpeed(player, player.speed);
+  player.x += player.vx;  player.y += player.vy;
+
+  // Håll spelaren i sin halva (under mittlinjen)
+  player.x = clamp(player.x, player.r, w - player.r);
+  player.y = clamp(player.y, h * 0.42, h - player.r);
+
+  // --- AI: jagar bollen ---
+  aiMissTimer--;
+  let targetX = ball.x;
+  // Ibland missar AI:n lite (gör det mänskligt)
+  if (aiMissTimer > 0) targetX = ball.x + (Math.random()-0.5)*80;
+  const adx = targetX - ai.x;
+  const ady = ball.y - ai.y;
+  const ad  = Math.hypot(adx, ady);
+  if (ad > 1) { ai.vx += (adx/ad)*0.9; ai.vy += (ady/ad)*0.9; }
+  ai.vx *= 0.84; ai.vy *= 0.84;
+  clampSpeed(ai, ai.speed);
+  ai.x += ai.vx;  ai.y += ai.vy;
+  ai.x = clamp(ai.x, ai.r, w - ai.r);
+  ai.y = clamp(ai.y, ai.r, h * 0.58);
+
+  // Slumpa att AI missar
+  if (Math.random() < 0.008) aiMissTimer = 40 + Math.random()*60;
+
+  // --- Boll rör sig ---
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+  ball.vx *= 0.988; ball.vy *= 0.988;
+
+  // Studsar mot sidoväggar
+  if (ball.x - ball.r < 0)  { ball.x = ball.r;      ball.vx =  Math.abs(ball.vx) * 0.75; }
+  if (ball.x + ball.r > w)  { ball.x = w - ball.r;  ball.vx = -Math.abs(ball.vx) * 0.75; }
+
+  // Kolla mål UPPIFRÅN (spelare gör mål — bollen passerar top)
+  if (ball.y - ball.r < 0) {
+    if (ball.x > goalLeft() && ball.x < goalRight()) {
+      goalScored('player');
+    } else {
+      ball.y = ball.r; ball.vy = Math.abs(ball.vy) * 0.7;
+    }
+  }
+  // Kolla mål NERIFRÅN (AI gör mål — bollen passerar bottom)
+  if (ball.y + ball.r > h) {
+    if (ball.x > goalLeft() && ball.x < goalRight()) {
+      goalScored('ai');
+    } else {
+      ball.y = h - ball.r; ball.vy = -Math.abs(ball.vy) * 0.7;
+    }
+  }
+
+  // Kollision: spelare vs boll
+  pushBall(player, 5.5);
+  // Kollision: AI vs boll
+  pushBall(ai, 4.5);
+}
+
+// Skickar iväg bollen om en karaktär rör vid den
+function pushBall(char, power) {
+  const dx = ball.x - char.x;
+  const dy = ball.y - char.y;
+  const dist = Math.hypot(dx, dy);
+  const min  = char.r + ball.r;
+  if (dist < min && dist > 0.1) {
+    const nx = dx/dist, ny = dy/dist;
+    ball.vx += nx * power;
+    ball.vy += ny * power;
+    ball.x = char.x + nx * (min + 1);
+    ball.y = char.y + ny * (min + 1);
+  }
+}
+
+function goalScored(who) {
+  gameActive = false;
+  if (who === 'player') {
+    playerScore++;
+    document.getElementById('playerScore').textContent = playerScore;
+    flashGoal('#ffd700', '⚽ MÅL!');
+  } else {
+    aiScore++;
+    document.getElementById('aiScore').textContent = aiScore;
+    flashGoal('#ff4444', '😅 Åh nej!');
+  }
+  setTimeout(() => { resetPositions(); gameActive = true; }, 1600);
+}
+
+function flashGoal(color, text) {
+  const overlay = document.createElement('div');
+  overlay.className = 'goal-overlay';
+  overlay.style.background = color + '55'; // hex + alpha
+  const label = document.createElement('div');
+  label.className = 'goal-text';
+  label.textContent = text;
+  document.body.appendChild(overlay);
+  document.body.appendChild(label);
+  setTimeout(() => { overlay.remove(); label.remove(); }, 1400);
+}
+
+// ============================================================
+// Ritfunktioner
+// ============================================================
+function draw() {
+  const w = W(), h = H();
+  ctx.clearRect(0, 0, w, h);
+  drawPitch(w, h);
+  drawColaBottle(ai.x, ai.y, ai.r);
+  drawGummyBear(player.x, player.y, player.r);
+  drawBall(ball.x, ball.y, ball.r);
+}
+
+function drawPitch(w, h) {
+  // Gräs med ränder
+  for (let i = 0; i < Math.ceil(w / 38); i++) {
+    ctx.fillStyle = i % 2 === 0 ? '#2d7a2d' : '#318431';
+    ctx.fillRect(i*38, 0, 38, h);
+  }
+  // Mittlinje
+  ctx.strokeStyle = 'rgba(255,255,255,.3)';
+  ctx.lineWidth = 2; ctx.setLineDash([7,5]);
+  ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
+  ctx.setLineDash([]);
+  // Mittelcirkel
+  ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(w/2, h/2, 36, 0, Math.PI*2); ctx.stroke();
+  // Mittpunkt
+  ctx.fillStyle = 'rgba(255,255,255,.25)';
+  ctx.beginPath(); ctx.arc(w/2, h/2, 4, 0, Math.PI*2); ctx.fill();
+
+  // Mål UPPE (spelarens mål = dit AI försöker sparka)
+  drawGoalArea(goalLeft(), 0, GOAL_W, 18, '#c0392b');
+  // Mål NERE (AI:ns mål = dit spelaren försöker sparka)
+  drawGoalArea(goalLeft(), h - 18, GOAL_W, 18, '#27ae60');
+}
+
+function drawGoalArea(x, y, w, h, color) {
+  // Bakgrundsfärg för målet
+  ctx.fillStyle = color + '55';
+  ctx.fillRect(x, y, w, h);
+  // Vit ram
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
+  ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+  // Nätmönster
+  ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 1;
+  for (let i = 12; i < w; i += 12) {
+    ctx.beginPath(); ctx.moveTo(x+i, y); ctx.lineTo(x+i, y+h); ctx.stroke();
+  }
+}
+
+function drawBall(x, y, r) {
+  // Vit boll med skugga
+  ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 6;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+  // Svarta fläckar (fotbollsmönster)
+  ctx.fillStyle = '#222';
+  ctx.beginPath(); ctx.arc(x, y, r*.25, 0, Math.PI*2); ctx.fill();
+  for (let i = 0; i < 5; i++) {
+    const a  = (i/5)*Math.PI*2 - Math.PI/2;
+    const px = x + Math.cos(a)*r*.62;
+    const py = y + Math.sin(a)*r*.62;
+    ctx.beginPath(); ctx.arc(px, py, r*.16, 0, Math.PI*2); ctx.fill();
+  }
+  // Skimmer
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.beginPath(); ctx.arc(x-r*.28, y-r*.28, r*.22, 0, Math.PI*2); ctx.fill();
+}
+
+function drawGummyBear(x, y, r) {
+  // Öron
+  ctx.fillStyle = '#27ae60';
+  ctx.beginPath(); ctx.arc(x-r*.58, y-r*.72, r*.36, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+r*.58, y-r*.72, r*.36, 0, Math.PI*2); ctx.fill();
+  // Kropp (huvud)
+  ctx.fillStyle = '#2ecc71';
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+  // Kinder
+  ctx.fillStyle = '#ff9999'; ctx.globalAlpha = .38;
+  ctx.beginPath(); ctx.arc(x-r*.52, y+r*.12, r*.28, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+r*.52, y+r*.12, r*.28, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1;
+  // Ögon
+  ctx.fillStyle = '#1a6b38';
+  ctx.beginPath(); ctx.arc(x-r*.3, y-r*.1, r*.18, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+r*.3, y-r*.1, r*.18, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(x-r*.26, y-r*.14, r*.07, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+r*.33, y-r*.14, r*.07, 0, Math.PI*2); ctx.fill();
+  // Nos
+  ctx.fillStyle = '#1a6b38';
+  ctx.beginPath(); ctx.ellipse(x, y+r*.22, r*.2, r*.13, 0, 0, Math.PI*2); ctx.fill();
+  // Nummer 10 på magen
+  ctx.fillStyle = '#fff'; ctx.font = `bold ${r*.48}px system-ui`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('10', x, y+r*.58);
+}
+
+function drawColaBottle(x, y, r) {
+  // Kropp (oval)
+  ctx.fillStyle = '#c0392b';
+  ctx.beginPath(); ctx.ellipse(x, y+r*.1, r*.72, r*.95, 0, 0, Math.PI*2); ctx.fill();
+  // Hals
+  ctx.fillStyle = '#a93226';
+  ctx.beginPath(); ctx.ellipse(x, y-r*.6, r*.3, r*.45, 0, 0, Math.PI*2); ctx.fill();
+  // Kork
+  ctx.fillStyle = '#7b0000';
+  ctx.beginPath(); ctx.ellipse(x, y-r*.88, r*.22, r*.18, 0, 0, Math.PI*2); ctx.fill();
+  // Etikett
+  ctx.fillStyle = 'rgba(255,255,255,.22)';
+  ctx.beginPath(); ctx.ellipse(x, y+r*.2, r*.62, r*.26, 0, 0, Math.PI*2); ctx.fill();
+  // Ögon
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(x-r*.24, y-r*.3, r*.15, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+r*.24, y-r*.3, r*.15, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#222';
+  ctx.beginPath(); ctx.arc(x-r*.24, y-r*.3, r*.08, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+r*.24, y-r*.3, r*.08, 0, Math.PI*2); ctx.fill();
+  // Nummer på flaskan
+  ctx.fillStyle = '#fff'; ctx.font = `bold ${r*.4}px system-ui`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('AI', x, y+r*.2);
+}
+
+// ============================================================
+// Hjälpfunktioner
+// ============================================================
+function clamp(v, lo, hi)   { return Math.max(lo, Math.min(hi, v)); }
+function clampSpeed(obj, max) {
+  const s = Math.hypot(obj.vx, obj.vy);
+  if (s > max) { obj.vx = obj.vx/s*max; obj.vy = obj.vy/s*max; }
+}
+
+// ============================================================
+// Game-loop
+// ============================================================
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ============================================================
+// Kontrollknappar (touch + mus)
+// ============================================================
+function setupButtons() {
+  [
+    [document.getElementById('btnLeft'),  'left'],
+    [document.getElementById('btnKick'),  'kick'],
+    [document.getElementById('btnRight'), 'right'],
+  ].forEach(([btn, key]) => {
+    btn.addEventListener('pointerdown', e => {
+      e.preventDefault(); keys[key] = true; btn.classList.add('pressed');
+    });
+    const release = e => {
+      keys[key] = false; btn.classList.remove('pressed');
+    };
+    btn.addEventListener('pointerup',    release);
+    btn.addEventListener('pointerleave', release);
+    btn.addEventListener('pointercancel',release);
+  });
+}
+
+// ============================================================
+// Sätt igång efter att canvasen fått sin storlek
+// ============================================================
+requestAnimationFrame(() => {
+  canvas.width  = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+  resetPositions();
+  setupButtons();
+  loop();
+});
+
+window.addEventListener('resize', () => {
+  canvas.width  = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+});
+</script>
+</body>
+</html>
