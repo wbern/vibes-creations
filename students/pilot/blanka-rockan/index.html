@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Baristamaskin ☕</title>
+  <style>
+    html, body { margin: 0; padding: 0; min-height: 100%; overscroll-behavior: none; }
+    body {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      font-family: system-ui, sans-serif;
+    }
+    button { min-width: 44px; min-height: 44px; font-size: 1rem; }
+
+    /* ── Mörkt kaffe-tema ── */
+    :root {
+      --bg: #1e110a;
+      --card: #3a1f0d;
+      --ink: #f5e6d0;
+      --accent: #d4863a;
+      --accent-2: #e8c97a;
+      --radius: 16px;
+      --lip: 5px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 34rem;
+      margin: 0 auto;
+      padding: .75rem .75rem 5rem;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      font: 900 1.8rem/1.1 system-ui, sans-serif;
+      text-align: center;
+      margin: .25rem 0 .15rem;
+      color: var(--accent-2);
+      letter-spacing: -0.01em;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: .8rem;
+      color: #9a7050;
+      margin-bottom: .75rem;
+    }
+
+    /* ── Maskin-kropp ── */
+    .machine {
+      background: #3a1f0d;
+      border-radius: 20px;
+      padding: 1rem;
+      box-shadow: 0 6px 0 #0e0604, 0 0 0 3px #5a3018;
+    }
+
+    /* ── Kopp-display ── */
+    .cup-display {
+      background: #100804;
+      border-radius: 14px;
+      padding: .6rem .6rem .3rem;
+      margin-bottom: .75rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #cup-svg { width: 110px; height: 130px; }
+
+    .drink-label {
+      color: var(--accent-2);
+      font: 700 .78rem/1.3 system-ui, sans-serif;
+      text-align: center;
+      margin-top: .3rem;
+      min-height: 1.2em;
+      padding: 0 .5rem;
+    }
+
+    /* ── Sektion-rubriker ── */
+    .section-title {
+      font: 700 .7rem/1 system-ui, sans-serif;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #9a7050;
+      margin: .6rem 0 .35rem;
+    }
+
+    /* ── Väljar-knappar ── */
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-bottom: .1rem;
+    }
+
+    .opt {
+      padding: .4rem .8rem;
+      border-radius: 999px;
+      border: 2px solid #5a3018;
+      background: #1e110a;
+      color: var(--ink);
+      font: 700 .82rem/1 system-ui, sans-serif;
+      cursor: pointer;
+      transition: transform 80ms, background 80ms, border-color 80ms;
+    }
+    .opt:active { transform: scale(.92); }
+    .opt.selected {
+      background: var(--accent);
+      border-color: var(--accent-2);
+      color: #fff;
+    }
+
+    /* ── Brygg-knapp ── */
+    .btn-brew {
+      display: block;
+      width: 100%;
+      margin-top: .9rem;
+      min-height: 58px;
+      border: 0;
+      border-radius: var(--radius);
+      background: var(--accent);
+      box-shadow: 0 var(--lip) 0 #6a3a10;
+      color: #fff;
+      font: 900 1.15rem/1 system-ui, sans-serif;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 80ms, box-shadow 80ms;
+    }
+    .btn-brew:active {
+      transform: translateY(var(--lip));
+      box-shadow: 0 0 0 transparent;
+    }
+
+    /* ── Resultat-popup ── */
+    .result-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.75);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    .result-overlay.show { display: flex; }
+
+    .result-card {
+      background: var(--card);
+      border-radius: 22px;
+      padding: 1.25rem 1rem;
+      max-width: 280px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 8px 0 #0e0604;
+      animation: pop-in 260ms cubic-bezier(.5,1.6,.4,1) both;
+    }
+    @keyframes pop-in {
+      from { transform: scale(.55); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    .result-card h2 {
+      font: 900 1.35rem/1.1 system-ui, sans-serif;
+      color: var(--accent-2);
+      margin: 0 0 .4rem;
+    }
+    .result-card p {
+      font-size: .88rem;
+      color: var(--ink);
+      line-height: 1.5;
+      margin: 0 0 .9rem;
+      opacity: .9;
+    }
+    .result-card svg { width: 80px; height: 90px; margin-bottom: .3rem; }
+
+    .btn-close {
+      padding: .55rem 1.3rem;
+      border: 0;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 4px 0 #6a3a10;
+      color: #fff;
+      font: 800 .95rem/1 system-ui, sans-serif;
+      cursor: pointer;
+      transition: transform 80ms, box-shadow 80ms;
+    }
+    .btn-close:active { transform: translateY(4px); box-shadow: none; }
+
+    /* ── Ångande animation ── */
+    @keyframes steam {
+      0%   { opacity: .7; transform: translateY(0)    scaleX(1);   }
+      100% { opacity: 0;  transform: translateY(-26px) scaleX(1.7); }
+    }
+    .steam-puff { animation: steam 1.4s ease-out infinite; transform-origin: 50% 100%; }
+    .steam-puff:nth-child(2) { animation-delay: .45s; }
+    .steam-puff:nth-child(3) { animation-delay: .9s; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <h1>☕ Baristamaskin</h1>
+  <p class="subtitle">Bygg din perfekta drink!</p>
+
+  <div class="machine">
+
+    <!-- Kopp-display -->
+    <div class="cup-display">
+      <svg id="cup-svg" viewBox="0 0 120 130" xmlns="http://www.w3.org/2000/svg">
+        <!-- Ånga -->
+        <g id="steam-g" opacity="0" transform="translate(0,-10)">
+          <path class="steam-puff" d="M44 32 Q40 22 44 14 Q48 6 44 0"  stroke="#bbb" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path class="steam-puff" d="M60 28 Q56 18 60 10 Q64 2 60 -4"  stroke="#bbb" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path class="steam-puff" d="M76 32 Q72 22 76 14 Q80 6 76 0"  stroke="#bbb" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </g>
+        <!-- Kopp-kropp -->
+        <path d="M18 38 L26 114 L94 114 L102 38 Z" fill="#f0f0f0" stroke="#d0d0d0" stroke-width="1.5"/>
+        <!-- Dryck-fyllning (klipps av koppformen) -->
+        <clipPath id="cup-clip"><path d="M18 38 L26 114 L94 114 L102 38 Z"/></clipPath>
+        <rect id="drink-fill" x="8" y="50" width="104" height="64" fill="#5a2e10" clip-path="url(#cup-clip)"/>
+        <!-- Mjölk-lager ovanpå drycken -->
+        <rect id="milk-fill"  x="8" y="50" width="104" height="0"  fill="#f5e6cc" clip-path="url(#cup-clip)" opacity=".88"/>
+        <!-- Skum (ellips uppe på kanten) -->
+        <ellipse id="foam-fill" cx="60" cy="38" rx="36" ry="0" fill="#fffaf5" opacity=".95"/>
+        <!-- Karamellsås-swirlar -->
+        <g id="caramel-layer" opacity="0" clip-path="url(#cup-clip)">
+          <path d="M28 52 Q46 60 60 52 Q74 44 90 54" stroke="#c07020" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".85"/>
+          <path d="M30 62 Q50 70 70 62 Q84 56 90 64" stroke="#c07020" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".65"/>
+        </g>
+        <!-- Toppings -->
+        <g id="topping-layer" clip-path="url(#cup-clip)"></g>
+        <!-- Kopp-kant (övre ellips) -->
+        <ellipse cx="60" cy="38" rx="42" ry="8.5" fill="#e8e8e8" stroke="#c8c8c8" stroke-width="1.5"/>
+        <!-- Handtag -->
+        <path d="M102 58 Q122 58 122 78 Q122 98 102 98" fill="none" stroke="#d0d0d0" stroke-width="7" stroke-linecap="round"/>
+      </svg>
+      <div class="drink-label" id="drink-label">Välj dina alternativ nedan ↓</div>
+    </div>
+
+    <!-- Kaffetyp -->
+    <div class="section-title">☕ Kaffetyp</div>
+    <div class="options">
+      <button class="opt selected" data-group="coffee" data-val="espresso">Espresso</button>
+      <button class="opt" data-group="coffee" data-val="latte">Latte</button>
+      <button class="opt" data-group="coffee" data-val="cappuccino">Cappuccino</button>
+      <button class="opt" data-group="coffee" data-val="americano">Americano</button>
+      <button class="opt" data-group="coffee" data-val="choklad">Choklad 🍫</button>
+      <button class="opt" data-group="coffee" data-val="ingen">Bara mjölk 🥛</button>
+    </div>
+
+    <!-- Mjölk -->
+    <div class="section-title">🥛 Mjölk</div>
+    <div class="options">
+      <button class="opt selected" data-group="milk" data-val="ingen">Ingen</button>
+      <button class="opt" data-group="milk" data-val="helmjölk">Helmjölk</button>
+      <button class="opt" data-group="milk" data-val="havremjölk">Havremjölk</button>
+      <button class="opt" data-group="milk" data-val="sojamjölk">Sojamjölk</button>
+      <button class="opt" data-group="milk" data-val="kokosmjölk">Kokosmjölk</button>
+    </div>
+
+    <!-- Smaksirap -->
+    <div class="section-title">🍬 Smaksirap</div>
+    <div class="options">
+      <button class="opt selected" data-group="syrup" data-val="ingen">Ingen</button>
+      <button class="opt" data-group="syrup" data-val="vanilj">Vanilj</button>
+      <button class="opt" data-group="syrup" data-val="hasselnöt">Hasselnöt</button>
+      <button class="opt" data-group="syrup" data-val="lavendel">Lavendel</button>
+      <button class="opt" data-group="syrup" data-val="jordgubb">Jordgubb 🍓</button>
+      <button class="opt" data-group="syrup" data-val="mint">Mint 🌿</button>
+    </div>
+
+    <!-- Karamellsås -->
+    <div class="section-title">🍮 Karamellsås</div>
+    <div class="options">
+      <button class="opt selected" data-group="caramel" data-val="ingen">Ingen</button>
+      <button class="opt" data-group="caramel" data-val="lite">Lite 🍮</button>
+      <button class="opt" data-group="caramel" data-val="mycket">MASSOR 🤤</button>
+    </div>
+
+    <!-- Toppings – flerval -->
+    <div class="section-title">✨ Toppings (välj flera!)</div>
+    <div class="options">
+      <button class="opt" data-group="topping" data-val="kanel">🟤 Kanel</button>
+      <button class="opt" data-group="topping" data-val="kakao">⬛ Kakao</button>
+      <button class="opt" data-group="topping" data-val="strössel">🌈 Strössel</button>
+      <button class="opt" data-group="topping" data-val="marshmallow">🤍 Marshmallow</button>
+      <button class="opt" data-group="topping" data-val="chokladflarn">🍫 Chokladflarn</button>
+      <button class="opt" data-group="topping" data-val="kokos">🥥 Kokos</button>
+    </div>
+
+    <!-- Temperatur -->
+    <div class="section-title">🌡️ Temperatur</div>
+    <div class="options">
+      <button class="opt" data-group="temp" data-val="iskallt">🧊 Iskallt</button>
+      <button class="opt selected" data-group="temp" data-val="varmt">🔥 Varmt</button>
+      <button class="opt" data-group="temp" data-val="extra-varmt">🔥🔥 Extra varmt</button>
+    </div>
+
+    <!-- Brygg-knapp -->
+    <button class="btn-brew" id="brew-btn">BRYGGA ☕</button>
+
+  </div><!-- .machine -->
+</div><!-- .page -->
+
+<!-- Resultat-popup -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-card">
+    <!-- Mini-kopp i popup -->
+    <svg viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(0,-10)">
+        <path class="steam-puff" d="M44 32 Q40 22 44 14" stroke="#aaa" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path class="steam-puff" d="M60 28 Q56 18 60 10" stroke="#aaa" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path class="steam-puff" d="M76 32 Q72 22 76 14" stroke="#aaa" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </g>
+      <path d="M18 38 L26 102 L94 102 L102 38 Z" fill="#f0f0f0" stroke="#ccc" stroke-width="1.5"/>
+      <clipPath id="r-clip"><path d="M18 38 L26 102 L94 102 L102 38 Z"/></clipPath>
+      <rect id="r-drink" x="8" y="48" width="104" height="54" fill="#5a2e10" clip-path="url(#r-clip)"/>
+      <rect id="r-milk"  x="8" y="48" width="104" height="0"  fill="#f5e6cc" clip-path="url(#r-clip)" opacity=".88"/>
+      <ellipse id="r-foam" cx="60" cy="38" rx="36" ry="0" fill="#fffaf5"/>
+      <g id="r-caramel" opacity="0" clip-path="url(#r-clip)">
+        <path d="M28 50 Q46 58 60 50 Q74 42 90 52" stroke="#c07020" stroke-width="3" fill="none" stroke-linecap="round" opacity=".85"/>
+      </g>
+      <ellipse cx="60" cy="38" rx="42" ry="8.5" fill="#e8e8e8" stroke="#c8c8c8" stroke-width="1.5"/>
+      <path d="M102 55 Q118 55 118 72 Q118 89 102 89" fill="none" stroke="#d0d0d0" stroke-width="7" stroke-linecap="round"/>
+    </svg>
+    <h2 id="result-title">Din drink!</h2>
+    <p id="result-desc"></p>
+    <button class="btn-close" id="close-btn">Ny drink! ☕</button>
+  </div>
+</div>
+
+<script>
+  // ── State ────────────────────────────────────────────────
+  const state = {
+    coffee:   'espresso',
+    milk:     'ingen',
+    syrup:    'ingen',
+    caramel:  'ingen',
+    toppings: new Set(),   // flerval
+    temp:     'varmt'
+  };
+
+  // ── Väljar-logik ─────────────────────────────────────────
+  document.querySelectorAll('.opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const group = btn.dataset.group;
+      const val   = btn.dataset.val;
+
+      if (group === 'topping') {
+        // Toppings är flerval — toggle varje knapp
+        if (state.toppings.has(val)) {
+          state.toppings.delete(val);
+          btn.classList.remove('selected');
+        } else {
+          state.toppings.add(val);
+          btn.classList.add('selected');
+        }
+      } else {
+        // Alla andra grupper: bara ett val åt gången
+        document.querySelectorAll(`.opt[data-group="${group}"]`)
+          .forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        state[group] = val;
+      }
+
+      updateCupPreview();
+    });
+  });
+
+  // ── Uppdatera koppen i realtid ───────────────────────────
+  function updateCupPreview() {
+    // Kaffe-färg beroende på val
+    const coffeeColors = {
+      espresso: '#3a1808',
+      latte:    '#7a4a2a',
+      cappuccino:'#5a2c10',
+      americano:'#2a1006',
+      choklad:  '#2a1020',
+      ingen:    '#c8e8f8'  // ljusblå = bara mjölk/vatten
+    };
+    const drinkColor = coffeeColors[state.coffee] || '#5a2e10';
+
+    // Fyll koppen
+    const df = document.getElementById('drink-fill');
+    df.setAttribute('fill', drinkColor);
+    df.setAttribute('y', '52');
+    df.setAttribute('height', '62');
+
+    // Mjölk-lager
+    const mf = document.getElementById('milk-fill');
+    const milkColors = {
+      helmjölk: '#f5e6cc',
+      havremjölk: '#e8d8b0',
+      sojamjölk: '#f0e0a0',
+      kokosmjölk: '#fff8e8',
+      ingen: 'transparent'
+    };
+    mf.setAttribute('fill', milkColors[state.milk] || 'transparent');
+    if (state.milk !== 'ingen') {
+      mf.setAttribute('y', '52');
+      mf.setAttribute('height', '18');
+    } else {
+      mf.setAttribute('height', '0');
+    }
+
+    // Skum: cappuccino & latte får skum
+    const foam = document.getElementById('foam-fill');
+    if (state.coffee === 'cappuccino' || state.coffee === 'latte') {
+      foam.setAttribute('ry', '9');
+    } else {
+      foam.setAttribute('ry', '0');
+    }
+
+    // Karamellsås-swirlar
+    document.getElementById('caramel-layer').setAttribute(
+      'opacity', state.caramel !== 'ingen' ? '1' : '0'
+    );
+
+    // Ånga när varmt
+    document.getElementById('steam-g').setAttribute(
+      'opacity', state.temp !== 'iskallt' ? '1' : '0'
+    );
+
+    // Etikett under koppen
+    const parts = [];
+    if (state.temp === 'iskallt') parts.push('🧊 Iskallt');
+    if (state.temp === 'extra-varmt') parts.push('🔥🔥 Extra varmt');
+    const coffeeNames = { espresso:'Espresso', latte:'Latte', cappuccino:'Cappuccino',
+                          americano:'Americano', choklad:'Chokladdrink', ingen:'Mjölk' };
+    parts.push(coffeeNames[state.coffee] || state.coffee);
+    if (state.milk !== 'ingen') parts.push(state.milk);
+    if (state.syrup !== 'ingen') parts.push(state.syrup + 'sirap');
+    if (state.caramel !== 'ingen') parts.push('karamellsås');
+    if (state.toppings.size) parts.push([...state.toppings].join(', '));
+
+    document.getElementById('drink-label').textContent = parts.join(' · ');
+  }
+
+  // ── Brygg-knapp: bygg drinknamn + visa popup ─────────────
+  document.getElementById('brew-btn').addEventListener('click', () => {
+    // Bas-drinknamn
+    const baseNames = {
+      espresso: 'Espresso', latte: 'Caffè Latte', cappuccino: 'Cappuccino',
+      americano: 'Americano', choklad: 'Varm Choklad 🍫', ingen: 'Varm Mjölk 🥛'
+    };
+    let drinkName = baseNames[state.coffee] || 'Mystisk Drink';
+
+    // Prefixera med sirap och temperatur
+    if (state.syrup !== 'ingen') {
+      const n = state.syrup.charAt(0).toUpperCase() + state.syrup.slice(1);
+      drinkName = n + '-' + drinkName;
+    }
+    if (state.temp === 'iskallt') drinkName = 'Iced ' + drinkName;
+
+    // Bygg ingrediens-lista
+    const rows = [];
+    if (state.milk !== 'ingen') rows.push('🥛 ' + cap(state.milk));
+    if (state.syrup !== 'ingen') rows.push('🍬 ' + cap(state.syrup) + 'sirap');
+    if (state.caramel === 'lite')   rows.push('🍮 Lite karamellsås');
+    if (state.caramel === 'mycket') rows.push('🍮🍮 MASSOR av karamellsås!');
+    if (state.toppings.size) {
+      const topEmoji = { kanel:'🟤', kakao:'⬛', strössel:'🌈',
+                         marshmallow:'🤍', chokladflarn:'🍫', kokos:'🥥' };
+      rows.push([...state.toppings].map(t => `${topEmoji[t]||'·'} ${cap(t)}`).join('  '));
+    }
+    if (state.temp === 'extra-varmt') rows.push('🔥🔥 Extra het!');
+
+    // Uppdatera popup-kopp med rätt färg
+    const coffeeColors = {
+      espresso:'#3a1808', latte:'#7a4a2a', cappuccino:'#5a2c10',
+      americano:'#2a1006', choklad:'#2a1020', ingen:'#c8e8f8'
+    };
+    document.getElementById('r-drink').setAttribute('fill', coffeeColors[state.coffee] || '#5a2e10');
+    document.getElementById('r-milk').setAttribute('height', state.milk !== 'ingen' ? '20' : '0');
+    document.getElementById('r-foam').setAttribute('ry',
+      (state.coffee === 'cappuccino' || state.coffee === 'latte') ? '8' : '0');
+    document.getElementById('r-caramel').setAttribute('opacity', state.caramel !== 'ingen' ? '1' : '0');
+
+    document.getElementById('result-title').textContent = '☕ ' + drinkName;
+    document.getElementById('result-desc').textContent =
+      rows.length ? rows.join('  ·  ') : 'En ren, svart klassiker — enkel och god!';
+
+    document.getElementById('result-overlay').classList.add('show');
+  });
+
+  // Stäng popup
+  document.getElementById('close-btn').addEventListener('click', () => {
+    document.getElementById('result-overlay').classList.remove('show');
+  });
+
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // Init: visa förvald dryck direkt
+  updateCupPreview();
+</script>
+</body>
+</html>

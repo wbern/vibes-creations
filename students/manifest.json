@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "blanka-rockan",
+          "boilerplate": false,
+          "student": "blanka-rockan",
+          "display_name": "Anonym kreatör",
+          "title": "Baristamaskin ☕",
+          "description": "En rolig maskin där du kan bygga och brygga din egen drinkbeställning med kaffe, mjölk, smaksirap och toppings.",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T12:00:00Z",
+          "published_at": "2026-05-29T20:26:47Z",
+          "thumbnail": "students/pilot/blanka-rockan/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "snalla-gamen",
           "boilerplate": false,
           "student": "snalla-gamen",
