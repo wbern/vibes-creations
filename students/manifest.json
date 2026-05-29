@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "milda-albatrossen",
+          "boilerplate": false,
+          "student": "milda-albatrossen",
+          "display_name": "Anonym kreatör",
+          "title": "Skjutspelet",
+          "description": "Ett roligt skjutspel där du väljer olika banor och skjuter på mål för att samla poäng och mynt.",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T12:00:00Z",
+          "published_at": "2026-05-29T20:27:20Z",
+          "thumbnail": "students/pilot/milda-albatrossen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "bruna-lammeln",
           "boilerplate": false,
           "student": "bruna-lammeln",

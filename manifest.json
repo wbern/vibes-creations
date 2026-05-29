@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-05-29T20:27:09Z",
+  "generated_at": "2026-05-29T20:27:20Z",
   "entries": [
+    {
+      "slug": "milda-albatrossen",
+      "title": "Skjutspelet",
+      "display_name": "Anonym kreatör",
+      "thumbnail": "students/pilot/milda-albatrossen/thumbnail.webp",
+      "live_url": "https://public.vibes.bernting.se/students/pilot/milda-albatrossen/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/milda-albatrossen",
+      "date": "2026-05-29T20:27:20Z",
+      "persona": "kladd",
+      "description": "Ett roligt skjutspel där du väljer olika banor och skjuter på mål för att samla poäng och mynt."
+    },
     {
       "slug": "bruna-lammeln",
       "title": "Elsa",
