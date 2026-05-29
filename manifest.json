@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-29T13:24:50Z",
+  "generated_at": "2026-05-29T18:00:45Z",
   "entries": [
     {
       "slug": "ljusa-jaguaren",
@@ -9,7 +9,8 @@
       "live_url": "https://public.vibes.bernting.se/students/pilot/ljusa-jaguaren/",
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/ljusa-jaguaren",
       "date": "2026-05-28T20:50:28Z",
-      "persona": "kladd"
+      "persona": "kladd",
+      "description": "Det här är ett datorspel där du samlar poäng och försöker skydda städer."
     },
     {
       "slug": "fria-lejonet",
@@ -19,7 +20,8 @@
       "live_url": "https://public.vibes.bernting.se/students/pilot/fria-lejonet/",
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/fria-lejonet",
       "date": "2026-05-28T20:50:21Z",
-      "persona": "kladd"
+      "persona": "kladd",
+      "description": "En rolig 3D-minigolfspel där du drar för att sikta och håller för att slå bollen mot hålet."
     },
     {
       "slug": "lilla-radjuret",
@@ -29,7 +31,8 @@
       "live_url": "https://public.vibes.bernting.se/students/pilot/lilla-radjuret/",
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/lilla-radjuret",
       "date": "2026-05-28T20:50:14Z",
-      "persona": "kladd"
+      "persona": "kladd",
+      "description": "Här kan du lära dig roliga fakta om Gerard geparden, världens snabbaste djur som bor på Afrikas savann!"
     },
     {
       "slug": "sunda-fjarilen",
@@ -39,7 +42,8 @@
       "live_url": "https://public.vibes.bernting.se/students/pilot/sunda-fjarilen/",
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/sunda-fjarilen",
       "date": "2026-05-28T20:50:07Z",
-      "persona": "kladd"
+      "persona": "kladd",
+      "description": "Tåget åker förbi på räls och du kan se det röra sig genom landskapet!"
     },
     {
       "slug": "talmodiga-myran",
@@ -49,7 +53,8 @@
       "live_url": "https://public.vibes.bernting.se/students/pilot/talmodiga-myran/",
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/talmodiga-myran",
       "date": "2026-05-28T20:50:00Z",
-      "persona": "kladd"
+      "persona": "kladd",
+      "description": "Här kan du spela Super Mario och styra honom med pilar medan han hoppar över hinder och eldar!"
     },
     {
       "slug": "ivriga-koltrasten",
@@ -59,7 +64,8 @@
       "live_url": "https://public.vibes.bernting.se/students/pilot/ivriga-koltrasten/",
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/ivriga-koltrasten",
       "date": "2026-05-20T19:09:44Z",
-      "persona": "claudina"
+      "persona": "claudina",
+      "description": "Ett skjutspel där du väljer mellan olika banor som skog, rymden och vatten, och skjuter på mål för att samla poäng och mynt."
     }
   ]
 }

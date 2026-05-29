@@ -26,7 +26,8 @@
               "action": "error",
               "soft_flag_categories": []
             }
-          }
+          },
+          "description": null
         },
         {
           "slug": "ljusa-jaguaren",
@@ -48,7 +49,8 @@
               "action": "error",
               "soft_flag_categories": []
             }
-          }
+          },
+          "description": "Det här är ett datorspel där du samlar poäng och försöker skydda städer."
         },
         {
           "slug": "fria-lejonet",
@@ -70,7 +72,8 @@
               "action": "error",
               "soft_flag_categories": []
             }
-          }
+          },
+          "description": "En rolig 3D-minigolfspel där du drar för att sikta och håller för att slå bollen mot hålet."
         },
         {
           "slug": "lilla-radjuret",
@@ -92,7 +95,8 @@
               "action": "error",
               "soft_flag_categories": []
             }
-          }
+          },
+          "description": "Här kan du lära dig roliga fakta om Gerard geparden, världens snabbaste djur som bor på Afrikas savann!"
         },
         {
           "slug": "sunda-fjarilen",
@@ -114,7 +118,8 @@
               "action": "error",
               "soft_flag_categories": []
             }
-          }
+          },
+          "description": "Tåget åker förbi på räls och du kan se det röra sig genom landskapet!"
         },
         {
           "slug": "talmodiga-myran",
@@ -136,7 +141,8 @@
               "action": "error",
               "soft_flag_categories": []
             }
-          }
+          },
+          "description": "Här kan du spela Super Mario och styra honom med pilar medan han hoppar över hinder och eldar!"
         },
         {
           "slug": "ivriga-koltrasten",
@@ -154,7 +160,8 @@
               "total": 0
             },
             "finding_count": 0
-          }
+          },
+          "description": "Ett skjutspel där du väljer mellan olika banor som skog, rymden och vatten, och skjuter på mål för att samla poäng och mynt."
         }
       ]
     }
