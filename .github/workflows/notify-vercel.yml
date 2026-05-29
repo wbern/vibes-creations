@@ -1,0 +1,47 @@
+name: Notify Vercel on publish
+
+# A kid publish (admin-api publisher.py) pushes the student's page into
+# students/<cohort>/<slug>/ and refreshes the consumer-facing root
+# manifest.json. When that lands on main we fire vibe_coding_site's Vercel
+# deploy hook so bram's grid rebuilds against the fresh manifest.
+#
+# The hook URL is a capability secret (VERCEL_DEPLOY_HOOK_URL) — never
+# committed. Set it with:
+#   gh secret set VERCEL_DEPLOY_HOOK_URL --repo wbern/vibes-creations
+# Until it's set the job no-ops with a warning rather than failing, so the
+# workflow can land before bram hands over the URL.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'manifest.json'
+      - 'students/**'
+  workflow_dispatch: {}
+
+# Coalesce a burst of publishes: the deploy hook always rebuilds from the
+# latest commit on the connected branch, so an in-flight notify is safe to
+# cancel — the newest manifest still wins.
+concurrency:
+  group: notify-vercel
+  cancel-in-progress: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fire Vercel deploy hook
+        env:
+          HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK_URL" ]; then
+            echo "::warning::VERCEL_DEPLOY_HOOK_URL not set — skipping deploy notify."
+            exit 0
+          fi
+          echo "Triggering Vercel deploy hook for vibe_coding_site…"
+          code=$(curl -fsS -X POST -o /dev/null -w '%{http_code}' "$HOOK_URL") || {
+            rc=$?
+            echo "::error::Deploy hook POST failed (curl exit $rc)"
+            exit 1
+          }
+          echo "Vercel deploy hook accepted: HTTP $code"
