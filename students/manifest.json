@@ -115,27 +115,9 @@
           }
         },
         {
-          "slug": "smidiga-maneten",
-          "student": "kenneth",
-          "display_name": "kenneth",
-          "persona": "claudina",
-          "archived_at": "2026-05-23T12:51:26Z",
-          "published_at": "2026-05-23T12:51:32Z",
-          "thumbnail": "students/pilot/smidiga-maneten/thumbnail.webp",
-          "scan": {
-            "counts": {
-              "personnummer": 0,
-              "secrets": 0,
-              "ner": 0,
-              "total": 0
-            },
-            "finding_count": 0
-          }
-        },
-        {
           "slug": "ivriga-koltrasten",
-          "student": "test1",
-          "display_name": "test1",
+          "student": "ivriga-koltrasten",
+          "display_name": "Anonym kreatör",
           "persona": "claudina",
           "archived_at": "2026-05-20T19:09:39Z",
           "published_at": "2026-05-20T19:09:44Z",
@@ -147,54 +129,6 @@
               "ner": 0,
               "total": 0
             },
-            "finding_count": 0
-          }
-        },
-        {
-          "slug": "ivriga-oxen",
-          "display_name": "port2f6532",
-          "persona": "kladd",
-          "archived_at": "2026-05-15T07:11:24Z",
-          "published_at": "2026-05-15T14:47:42Z",
-          "thumbnail": "students/pilot/ivriga-oxen/thumbnail.webp",
-          "scan": {
-            "scanner": "gitleaks",
-            "finding_count": 0
-          }
-        },
-        {
-          "slug": "yviga-muslan",
-          "display_name": "port1db3e2",
-          "persona": "kladd",
-          "archived_at": "2026-05-15T08:01:57Z",
-          "published_at": "2026-05-15T11:21:41Z",
-          "thumbnail": "students/pilot/yviga-muslan/thumbnail.webp",
-          "scan": {
-            "scanner": "gitleaks",
-            "finding_count": 0
-          }
-        },
-        {
-          "slug": "roliga-tukanen",
-          "display_name": "port209e46",
-          "persona": "kladd",
-          "archived_at": "2026-05-15T08:02:05Z",
-          "published_at": "2026-05-15T11:20:37Z",
-          "thumbnail": "students/pilot/roliga-tukanen/thumbnail.webp",
-          "scan": {
-            "scanner": "gitleaks",
-            "finding_count": 0
-          }
-        },
-        {
-          "slug": "kvicka-domherren",
-          "display_name": "student08",
-          "persona": "kladd",
-          "archived_at": "2026-05-15T06:57:43Z",
-          "published_at": "2026-05-15T11:02:04Z",
-          "thumbnail": "students/pilot/kvicka-domherren/thumbnail.webp",
-          "scan": {
-            "scanner": "gitleaks",
             "finding_count": 0
           }
         }
