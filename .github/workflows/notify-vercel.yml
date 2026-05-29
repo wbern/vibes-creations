@@ -9,7 +9,7 @@ name: Notify Vercel on publish
 # committed. Set it with:
 #   gh secret set VERCEL_DEPLOY_HOOK_URL --repo wbern/vibes-creations
 # Until it's set the job no-ops with a warning rather than failing, so the
-# workflow can land before bram hands over the URL.
+# workflow can land before the URL is handed over.
 
 on:
   push:
@@ -19,9 +19,14 @@ on:
       - 'students/**'
   workflow_dispatch: {}
 
-# Coalesce a burst of publishes: the deploy hook always rebuilds from the
-# latest commit on the connected branch, so an in-flight notify is safe to
-# cancel — the newest manifest still wins.
+# pages:read lets the gate below poll the Pages build status for this commit.
+permissions:
+  contents: read
+  pages: read
+
+# Coalesce a burst of publishes: cancel-in-progress means a newer push cancels
+# this job (and its own job gates on the newer commit), so we never fire for a
+# superseded commit and the newest manifest always wins.
 concurrency:
   group: notify-vercel
   cancel-in-progress: true
@@ -30,14 +35,52 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Fire Vercel deploy hook
+      - name: Wait for Pages to publish this commit, then fire Vercel hook
         env:
           HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -z "$HOOK_URL" ]; then
+          set -u
+          if [ -z "${HOOK_URL:-}" ]; then
             echo "::warning::VERCEL_DEPLOY_HOOK_URL not set — skipping deploy notify."
             exit 0
           fi
+
+          # --- Pages-deploy gate -------------------------------------------------
+          # vibe_coding_site fetches /manifest.json at BUILD time, so the hook must
+          # not fire until GitHub Pages has actually published THIS commit. Pages
+          # reports "built" only after the deploy is live (incl. Fastly purge), so
+          # a plain fetch from Vercel then gets fresh bytes. Without this gate the
+          # Vercel rebuild can race ahead of Pages and fetch a stale/empty manifest.
+          #
+          # FAIL OPEN on timeout: if Pages doesn't report built within the budget,
+          # fire the hook anyway. Worst case is then the pre-gate behaviour (at most
+          # one-publish stale) — never swallowing the publish entirely.
+          deadline=$(( SECONDS + 240 ))
+          gated=false
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            line=$(gh api "repos/${GITHUB_REPOSITORY}/pages/builds/latest" \
+                     --jq '"\(.status) \(.commit)"' 2>/dev/null || true)
+            status=${line%% *}
+            commit=${line##* }
+            echo "Pages build: status=${status:-?} commit=${commit:-?} (want: built @ ${GITHUB_SHA})"
+            if [ "$status" = "built" ] && [ "$commit" = "$GITHUB_SHA" ]; then
+              gated=true
+              break
+            fi
+            if [ "$status" = "errored" ] && [ "$commit" = "$GITHUB_SHA" ]; then
+              echo "::warning::Pages build errored for ${GITHUB_SHA} — firing hook anyway (fail-open)."
+              break
+            fi
+            sleep 10
+          done
+          if [ "$gated" = true ]; then
+            echo "Pages deployment live for ${GITHUB_SHA} — firing hook."
+          elif [ "${status:-}" != "errored" ]; then
+            echo "::warning::Pages-deploy gate timed out after 240s — firing hook anyway (fail-open)."
+          fi
+
+          # --- Fire the hook -----------------------------------------------------
           echo "Triggering Vercel deploy hook for vibe_coding_site…"
           code=$(curl -fsS -X POST -o /dev/null -w '%{http_code}' "$HOOK_URL") || {
             rc=$?
