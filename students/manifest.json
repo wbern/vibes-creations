@@ -5,6 +5,28 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "muntra-eldflugan",
+          "student": "smokec5a1d9",
+          "display_name": "smokec5a1d9",
+          "persona": "kladd",
+          "archived_at": "2026-05-29T05:53:19Z",
+          "published_at": "2026-05-29T13:03:27Z",
+          "thumbnail": "students/pilot/muntra-eldflugan/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "ljusa-jaguaren",
           "student": "ljusa-jaguaren",
           "display_name": "Anonym kreatör",
