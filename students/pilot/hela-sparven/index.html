@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>UFO Shooter</title>
+<style>
+  html,body { margin:0; background:#000; overflow:hidden; height:100%; }
+  canvas { display:block; touch-action:none; outline:none; }
+</style>
+</head>
+<body>
+<canvas id="c" tabindex="0"></canvas>
+<script>
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+
+// Stars – stored as fractions (0-1) so they scale with any screen size
+const STARS = Array.from({length:90}, () => ({
+  x: Math.random(), y: Math.random(), r: Math.random()*1.8+0.3
+}));
+
+// ── Game state ─────────────────────────────────────────────────────────────
+const ufo = { x:0, y:0, spd:5, lives:3, invincible:0 };
+const keys = { left:false, right:false, shoot:false };
+const bullets  = [];   // laser shots the UFO fires
+const enemies  = [];   // all aliens + rocks
+const powerups = [];   // falling power-up items
+let score = 0;
+let gameOver = false;
+let shootCooldown = 0;
+let spawnTimer = 0;
+let puSpawnTimer = 0;
+
+// Active power-up timers (in frames)
+const active = { rapidfire: 0, tripleshot: 0 };
+
+function resetGame() {
+  gameOver = false;
+  score = 0;
+  ufo.lives = 3;
+  ufo.invincible = 0;
+  bullets.length = 0;
+  enemies.length = 0;
+  powerups.length = 0;
+  spawnTimer = 0;
+  puSpawnTimer = 0;
+  active.rapidfire = 0;
+  active.tripleshot = 0;
+  ufo.x = c.width / 2;
+  ufo.y = c.height - 110;
+}
+
+function resize() {
+  c.width  = innerWidth;
+  c.height = innerHeight;
+  ufo.y = c.height - 110;
+}
+resize();
+addEventListener('resize', resize);
+
+// ── Draw the player UFO ────────────────────────────────────────────────────
+function drawUFO(x, y, blink) {
+  if (blink) return;  // invisible frames when blinking after a hit
+  // green engine glow under saucer
+  ctx.strokeStyle = 'rgba(60,255,140,.55)';
+  ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.ellipse(x, y+18, 30, 7, 0, 0, Math.PI*2); ctx.stroke();
+  // saucer body
+  ctx.fillStyle = '#7799ff';
+  ctx.beginPath(); ctx.ellipse(x, y+8, 40, 16, 0, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#aabbff'; ctx.lineWidth = 2; ctx.stroke();
+  // glass dome
+  ctx.fillStyle = '#cceeff';
+  ctx.beginPath(); ctx.ellipse(x, y-5, 22, 20, 0, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#99ddff'; ctx.lineWidth = 1.5; ctx.stroke();
+  // yellow lights along rim
+  [-24,-10,10,24].forEach(dx => {
+    ctx.fillStyle = '#ffe84a';
+    ctx.beginPath(); ctx.arc(x+dx, y+9, 4, 0, Math.PI*2); ctx.fill();
+  });
+}
+
+// ── Draw one enemy (alien or rock) ────────────────────────────────────────
+function drawEnemy(e) {
+  const {x, y, type, hp, maxHp} = e;
+
+  if (type === 'rock') {
+    // bumpy grey asteroid
+    ctx.fillStyle = '#778';
+    ctx.beginPath();
+    [0,48,105,162,222,282,340].forEach((a, i) => {
+      const r = i%2===0 ? 22 : 13;
+      const rad = a * Math.PI / 180;
+      i===0 ? ctx.moveTo(x+Math.cos(rad)*r, y+Math.sin(rad)*r)
+             : ctx.lineTo(x+Math.cos(rad)*r, y+Math.sin(rad)*r);
+    });
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#99a'; ctx.lineWidth = 2; ctx.stroke();
+    return;
+  }
+
+  // Alien – colour depends on type
+  const col = {green:'#33dd55', red:'#ff3333', blue:'#33aaff', purple:'#cc55ff'}[type];
+  // Body
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.ellipse(x, y, 20, 16, 0, 0, Math.PI*2); ctx.fill();
+  // White eyes
+  ctx.fillStyle = '#fff';
+  [[-8,-4],[8,-4]].forEach(([dx,dy]) => {
+    ctx.beginPath(); ctx.ellipse(x+dx, y+dy, 5, 6, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.arc(x+dx+1, y+dy, 3, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+  });
+  // Antenna
+  ctx.strokeStyle = col; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x, y-16); ctx.lineTo(x, y-26); ctx.stroke();
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(x, y-27, 4, 0, Math.PI*2); ctx.fill();
+
+  // HP bar for purple shield alien (takes 3 hits)
+  if (type === 'purple') {
+    const bw=44, bx=x-22, by=y+24;
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.roundRect(bx, by, bw, 6, 3); ctx.fill();
+    ctx.fillStyle = '#cc55ff';
+    ctx.beginPath(); ctx.roundRect(bx, by, bw*(hp/maxHp), 6, 3); ctx.fill();
+  }
+}
+
+// ── Draw a falling power-up ────────────────────────────────────────────────
+function drawPowerup(p) {
+  const {x, y, type} = p;
+  // glowing ring around it so it's easy to spot
+  ctx.strokeStyle = {life:'#ff6677', rapidfire:'#ffdd33', tripleshot:'#33eeff'}[type];
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI*2); ctx.stroke();
+  // white background circle
+  ctx.fillStyle = 'rgba(255,255,255,.15)';
+  ctx.beginPath(); ctx.arc(x, y, 15, 0, Math.PI*2); ctx.fill();
+
+  ctx.textAlign = 'center';
+  ctx.font = '20px sans-serif';
+  if (type === 'life') {
+    // red heart
+    ctx.fillStyle = '#ff4455';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('❤', x, y+7);
+  } else if (type === 'rapidfire') {
+    // yellow lightning bolt
+    ctx.fillStyle = '#ffdd33';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('⚡', x, y+7);
+  } else if (type === 'tripleshot') {
+    // cyan triple arrow
+    ctx.fillStyle = '#33eeff';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText('»»', x, y+6);
+  }
+}
+
+// ── On-screen touch buttons ────────────────────────────────────────────────
+function drawButtons() {
+  const by = c.height - 96;
+  ctx.font = 'bold 36px sans-serif';
+  ctx.textAlign = 'center';
+  // Left arrow
+  ctx.fillStyle = keys.left  ? 'rgba(255,255,255,.42)' : 'rgba(255,255,255,.18)';
+  ctx.beginPath(); ctx.roundRect(18, by, 84, 76, 16); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillText('◀', 60, by+52);
+  // Right arrow
+  ctx.fillStyle = keys.right ? 'rgba(255,255,255,.42)' : 'rgba(255,255,255,.18)';
+  ctx.beginPath(); ctx.roundRect(112, by, 84, 76, 16); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillText('▶', 154, by+52);
+  // Shoot button (red glow)
+  ctx.fillStyle = keys.shoot ? 'rgba(255,90,90,.6)' : 'rgba(255,90,90,.28)';
+  ctx.beginPath(); ctx.roundRect(c.width-110, by, 96, 76, 16); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 14px sans-serif'; ctx.fillText('SKJUT', c.width-62, by+30);
+  ctx.font = '26px sans-serif';      ctx.fillText('⚡', c.width-62, by+60);
+}
+
+// ── Heads-up display: score + lives ───────────────────────────────────────
+function drawHUD() {
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 20px system-ui';
+  ctx.textAlign = 'left';
+  ctx.fillText('Poäng: ' + score, 18, 34);
+  // Lives shown as hearts
+  ctx.textAlign = 'right';
+  for (let i=0; i<ufo.lives; i++) {
+    ctx.fillText('❤', c.width - 18 - i*28, 34);
+  }
+  // Active power-up indicators
+  let px = 18;
+  if (active.rapidfire > 0) {
+    ctx.fillStyle = '#ffdd33'; ctx.textAlign = 'left';
+    ctx.font = 'bold 16px system-ui';
+    ctx.fillText('⚡ SNABBELD  ' + Math.ceil(active.rapidfire/60) + 's', px, 58);
+    px += 160;
+  }
+  if (active.tripleshot > 0) {
+    ctx.fillStyle = '#33eeff'; ctx.textAlign = 'left';
+    ctx.font = 'bold 16px system-ui';
+    ctx.fillText('»» TRIPPEL  ' + Math.ceil(active.tripleshot/60) + 's', px, 58);
+  }
+}
+
+// ── Spawn a new enemy from the top ────────────────────────────────────────
+function spawnEnemy() {
+  // Rock and green alien are more common than the special ones
+  const pool = ['rock','rock','rock','green','green','green','red','blue','purple'];
+  const type  = pool[Math.floor(Math.random() * pool.length)];
+  const spd   = {rock:2.3, green:1.8, red:4.5, blue:2, purple:1.3}[type];
+  enemies.push({
+    x: 40 + Math.random() * (c.width - 80),
+    y: -30,
+    type,
+    spd,
+    hp: type === 'purple' ? 3 : 1,   // purple needs 3 hits!
+    maxHp: type === 'purple' ? 3 : 1,
+    zigTimer: 0                        // used by blue zigzag alien
+  });
+}
+
+// ── Main game loop ─────────────────────────────────────────────────────────
+let lastT = 0;
+function loop(ts) {
+  const dt = Math.min((ts - lastT) / 16, 3);
+  lastT = ts;
+
+  // Draw space background
+  ctx.fillStyle = '#060c1e';
+  ctx.fillRect(0, 0, c.width, c.height);
+
+  // Draw stars
+  ctx.fillStyle = '#fff';
+  STARS.forEach(s => {
+    ctx.beginPath();
+    ctx.arc(s.x * c.width, s.y * c.height, s.r, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  if (!gameOver) {
+    // ── Move UFO left / right ────────────────────────────────────────────
+    if (keys.left)  ufo.x = Math.max(44, ufo.x - ufo.spd * dt);
+    if (keys.right) ufo.x = Math.min(c.width - 44, ufo.x + ufo.spd * dt);
+
+    // ── Fire a laser bullet ──────────────────────────────────────────────
+    const cooldownTime = active.rapidfire > 0 ? 5 : 12;  // rapidfire = 2× faster
+    if (keys.shoot && shootCooldown <= 0) {
+      if (active.tripleshot > 0) {
+        // Triple shot: one straight + two angled
+        bullets.push({ x: ufo.x,      y: ufo.y - 24, vx: 0   });
+        bullets.push({ x: ufo.x - 14, y: ufo.y - 14, vx: -2  });
+        bullets.push({ x: ufo.x + 14, y: ufo.y - 14, vx:  2  });
+      } else {
+        bullets.push({ x: ufo.x, y: ufo.y - 24, vx: 0 });
+      }
+      shootCooldown = cooldownTime;
+    }
+    shootCooldown -= dt;
+
+    // ── Move bullets upward (tripleshot side bullets also drift sideways) ─
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      bullets[i].y -= 10 * dt;
+      bullets[i].x += (bullets[i].vx || 0) * dt;
+      if (bullets[i].y < -20) bullets.splice(i, 1);
+    }
+
+    // ── Spawn enemies (gets faster as score rises) ───────────────────────
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) {
+      spawnEnemy();
+      spawnTimer = 55 - Math.min(score / 10, 38);
+    }
+
+    // ── Spawn power-ups every ~10 seconds ────────────────────────────────
+    puSpawnTimer -= dt;
+    if (puSpawnTimer <= 0) {
+      // Only offer a life power-up if the player has lost at least one life
+      const types = ufo.lives < 3
+        ? ['life', 'rapidfire', 'tripleshot']
+        : ['rapidfire', 'tripleshot'];
+      powerups.push({
+        x: 40 + Math.random() * (c.width - 80),
+        y: -24,
+        type: types[Math.floor(Math.random() * types.length)],
+        spd: 1.4
+      });
+      puSpawnTimer = 370 + Math.random() * 200;
+    }
+
+    // ── Update power-up timers ────────────────────────────────────────────
+    active.rapidfire  = Math.max(0, active.rapidfire  - dt);
+    active.tripleshot = Math.max(0, active.tripleshot - dt);
+
+    // ── Move power-ups + check bullet collisions ──────────────────────────
+    for (let i = powerups.length - 1; i >= 0; i--) {
+      const p = powerups[i];
+      p.y += p.spd * dt;
+      if (p.y > c.height + 40) { powerups.splice(i, 1); continue; }
+
+      for (let j = bullets.length - 1; j >= 0; j--) {
+        const b  = bullets[j];
+        const dx = b.x - p.x, dy = b.y - p.y;
+        if (dx*dx + dy*dy < 22*22) {
+          // Collected!
+          bullets.splice(j, 1);
+          powerups.splice(i, 1);
+          if (p.type === 'life') {
+            ufo.lives = Math.min(ufo.lives + 1, 6);   // max 6 hearts
+          } else {
+            active[p.type] = 360;   // ~6 seconds at 60fps
+          }
+          break;
+        }
+      }
+    }
+
+    // ── Update enemies ───────────────────────────────────────────────────
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const e = enemies[i];
+
+      e.y += e.spd * dt;
+
+      // Blue alien zigzags side to side with a sine wave
+      if (e.type === 'blue') {
+        e.zigTimer += dt;
+        e.x += Math.sin(e.zigTimer * 0.14) * 3.8;
+      }
+
+      // Enemy left the screen without hitting anything
+      if (e.y > c.height + 50) { enemies.splice(i, 1); continue; }
+
+      // Check collision with each bullet
+      for (let j = bullets.length - 1; j >= 0; j--) {
+        const b  = bullets[j];
+        const dx = b.x - e.x, dy = b.y - e.y;
+        if (dx*dx + dy*dy < 28*28) {
+          // Hit! Reduce HP
+          e.hp--;
+          bullets.splice(j, 1);
+          if (e.hp <= 0) {
+            // Destroyed – add score
+            score += {rock:5, green:10, red:20, blue:30, purple:50}[e.type];
+            enemies.splice(i, 1);
+          }
+          break;
+        }
+      }
+    }
+
+    // ── Check if any enemy hit the UFO ───────────────────────────────────
+    if (ufo.invincible <= 0) {
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e  = enemies[i];
+        const dx = e.x - ufo.x, dy = e.y - ufo.y;
+        if (dx*dx + dy*dy < 40*40) {
+          ufo.lives--;
+          enemies.splice(i, 1);
+          ufo.invincible = 90;   // 90 frames of blink-immunity after hit
+          if (ufo.lives <= 0) gameOver = true;
+        }
+      }
+    }
+    ufo.invincible -= dt;
+
+    // ── Draw power-ups ───────────────────────────────────────────────────
+    powerups.forEach(p => drawPowerup(p));
+
+    // ── Draw bullets ─────────────────────────────────────────────────────
+    bullets.forEach(b => {
+      ctx.fillStyle = '#aaff55';
+      ctx.beginPath(); ctx.roundRect(b.x - 3, b.y - 10, 6, 20, 3); ctx.fill();
+      // glow around bullet
+      ctx.fillStyle = 'rgba(170,255,80,.25)';
+      ctx.beginPath(); ctx.ellipse(b.x, b.y, 8, 14, 0, 0, Math.PI*2); ctx.fill();
+    });
+
+    // ── Draw enemies ─────────────────────────────────────────────────────
+    enemies.forEach(e => drawEnemy(e));
+
+    // ── Draw UFO (blinks after being hit) ────────────────────────────────
+    const blink = ufo.invincible > 0 && Math.floor(ufo.invincible / 6) % 2 === 0;
+    drawUFO(ufo.x, ufo.y, blink);
+
+    drawHUD();
+
+  } else {
+    // ── Game Over screen ──────────────────────────────────────────────────
+    ctx.fillStyle = 'rgba(0,0,0,.65)';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ff5555';
+    ctx.font = 'bold 54px system-ui';
+    ctx.fillText('GAME OVER', c.width/2, c.height/2 - 55);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 30px system-ui';
+    ctx.fillText('Poäng: ' + score, c.width/2, c.height/2 + 8);
+    ctx.fillStyle = '#aaddff';
+    ctx.font = '20px system-ui';
+    ctx.fillText('Tryck var som helst för att spela igen', c.width/2, c.height/2 + 54);
+  }
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ── Pointer input ──────────────────────────────────────────────────────────
+function hitZone(x, y) {
+  // Touch buttons removed — keyboard only
+  return null;
+}
+
+const ptrs = {};
+
+// ── Keyboard controls ──────────────────────────────────────────────────────
+// Arrow left/right = move, Space = shoot
+// We listen on both window and canvas to catch all focus states
+function handleKeyDown(e) {
+  if (e.key === 'ArrowLeft'  || e.key === 'a' || e.key === 'A') { keys.left  = true;  e.preventDefault(); }
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { keys.right = true;  e.preventDefault(); }
+  if (e.key === ' ')          { keys.shoot = true;  e.preventDefault(); }
+  if (e.key === ' ' && gameOver) resetGame();
+}
+function handleKeyUp(e) {
+  if (e.key === 'ArrowLeft'  || e.key === 'a' || e.key === 'A') keys.left  = false;
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+  if (e.key === ' ')          keys.shoot = false;
+}
+window.addEventListener('keydown', handleKeyDown);
+window.addEventListener('keyup',   handleKeyUp);
+c.addEventListener('keydown', handleKeyDown);
+c.addEventListener('keyup',   handleKeyUp);
+
+// Auto-focus the canvas so keyboard works right away
+c.focus();
+// Re-grab focus whenever the mouse moves over the game
+c.addEventListener('mouseenter', () => c.focus());
+c.addEventListener('pointerdown', () => c.focus());
+
+c.addEventListener('pointerdown', e => {
+  if (gameOver) { resetGame(); e.preventDefault(); return; }
+  const z = hitZone(e.clientX, e.clientY);
+  ptrs[e.pointerId] = z;
+  if (z) keys[z] = true;
+  e.preventDefault();
+}, {passive: false});
+
+c.addEventListener('pointermove', e => {
+  if (gameOver) return;
+  const old = ptrs[e.pointerId];
+  const z   = hitZone(e.clientX, e.clientY);
+  if (old) keys[old] = false;
+  ptrs[e.pointerId] = z;
+  if (z) keys[z] = true;
+  e.preventDefault();
+}, {passive: false});
+
+c.addEventListener('pointerup', e => {
+  const z = ptrs[e.pointerId];
+  if (z) keys[z] = false;
+  delete ptrs[e.pointerId];
+  e.preventDefault();
+}, {passive: false});
+</script>
+</body>
+</html>
