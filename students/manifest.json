@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "smala-albatrossen",
+          "boilerplate": false,
+          "student": "smala-albatrossen",
+          "display_name": "Anonym kreatör",
+          "title": "Sushi",
+          "description": "Ett digitalt husdjur som du tar hand om genom att mata, leka med och kela med katten Sushi.",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T12:00:00Z",
+          "published_at": "2026-05-29T20:26:58Z",
+          "thumbnail": "students/pilot/smala-albatrossen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "blanka-rockan",
           "boilerplate": false,
           "student": "blanka-rockan",

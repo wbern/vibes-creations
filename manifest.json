@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-05-29T20:26:47Z",
+  "generated_at": "2026-05-29T20:26:58Z",
   "entries": [
+    {
+      "slug": "smala-albatrossen",
+      "title": "Sushi",
+      "display_name": "Anonym kreatör",
+      "thumbnail": "students/pilot/smala-albatrossen/thumbnail.webp",
+      "live_url": "https://public.vibes.bernting.se/students/pilot/smala-albatrossen/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/smala-albatrossen",
+      "date": "2026-05-29T20:26:58Z",
+      "persona": "kladd",
+      "description": "Ett digitalt husdjur som du tar hand om genom att mata, leka med och kela med katten Sushi."
+    },
     {
       "slug": "blanka-rockan",
       "title": "Baristamaskin ☕",
