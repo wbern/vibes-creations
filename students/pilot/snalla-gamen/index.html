@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Lamm-Kaos 🐑</title>
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #87ceeb; }
+    body {
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: none;
+    }
+    canvas { display: block; }
+    #hint {
+      position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,.5); color: #fff;
+      border-radius: 99px; padding: .4rem 1.2rem;
+      font: 600 .95rem/1.3 system-ui,sans-serif;
+      pointer-events: none;
+      animation: fade 3s ease 3s forwards;
+    }
+    @keyframes fade { to { opacity:0; pointer-events:none; } }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">🐑 Tryck på lammet för KAOS! &nbsp;|&nbsp; Tryck på marken för att gräva!</div>
+<script>
+const c   = document.getElementById("c");
+const ctx = c.getContext("2d");
+function resize() { c.width = innerWidth; c.height = innerHeight; }
+resize(); addEventListener("resize", resize);
+
+const W = () => c.width;
+const H = () => c.height;
+
+// ── ground level — shrinks as holes are dug ──
+let groundFraction = 0.72;   // starts at 72% down the screen
+const GROUND = () => H() * groundFraction;
+
+let holes = [];   // {x, y, r}  — dug circles
+
+// ── chaos particles ──
+let particles = [];
+const PCOLS = ["#ff3ea5","#ffcc44","#3ef0ff","#ff7a5a","#7ec850","#aa44ff","#ffffff"];
+function rand(a,b) { return a + Math.random()*(b-a); }
+
+function spawnBurst(x, y, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = rand(0, Math.PI*2);
+    const speed = rand(6, 24);
+    particles.push({
+      x, y,
+      vx: Math.cos(angle)*speed,
+      vy: Math.sin(angle)*speed - rand(3,10),
+      size: rand(8, 28),
+      color: PCOLS[Math.floor(Math.random()*PCOLS.length)],
+      life: 1,
+      decay: rand(0.012, 0.026),
+      rot: rand(0, Math.PI*2),
+      spin: rand(-0.3, 0.3),
+      gravity: rand(0.35, 0.7),
+      shape: Math.random() < 0.4 ? "star" : "circle",
+    });
+  }
+}
+
+// ── camera shake ──
+let shakeX = 0, shakeY = 0;
+function doShake(strength, frames) {
+  let f = 0;
+  const id = setInterval(() => {
+    shakeX = (Math.random()-.5)*strength;
+    shakeY = (Math.random()-.5)*strength;
+    if (++f >= frames) { clearInterval(id); shakeX=0; shakeY=0; }
+  }, 35);
+}
+
+// ── lamb ──
+let lambWobble = 0;
+
+function drawBigLamb(px, baseY) {
+  const s  = Math.min(W(), H()) * 0.003;
+  const wob = lambWobble > 0 ? Math.sin(lambWobble * 0.5) * 12 * (lambWobble/40) : 0;
+  if (lambWobble > 0) lambWobble--;
+
+  ctx.save();
+  ctx.translate(px, baseY);
+  ctx.rotate(wob * Math.PI/180);
+  ctx.scale(s*1.9, s*1.9);
+
+  // shadow
+  ctx.fillStyle = "rgba(0,0,0,.13)";
+  ctx.beginPath();
+  ctx.ellipse(0, 12, 72, 14, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // legs
+  ctx.fillStyle = "#e8c89e";
+  [[-30],[-11],[11],[30]].forEach(([lx]) => {
+    ctx.beginPath();
+    ctx.roundRect(lx-7, -18, 14, 52, 6);
+    ctx.fill();
+  });
+
+  // body
+  ctx.fillStyle = "#f0f0f0";
+  ctx.beginPath();
+  ctx.ellipse(0, -65, 68, 50, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // fluffy bumps
+  ctx.fillStyle = "#fff";
+  [[-52,-54],[-28,-84],[-2,-94],[24,-86],[50,-56],[-42,-38],[42,-38]].forEach(([bx,by]) => {
+    ctx.beginPath(); ctx.arc(bx, by, 27, 0, Math.PI*2); ctx.fill();
+  });
+
+  // head
+  ctx.fillStyle = "#e8c89e";
+  ctx.beginPath();
+  ctx.ellipse(54, -107, 30, 27, 0.25, 0, Math.PI*2);
+  ctx.fill();
+
+  // ear
+  ctx.fillStyle = "#e8a080";
+  ctx.beginPath();
+  ctx.ellipse(40, -130, 8, 16, -0.4, 0, Math.PI*2);
+  ctx.fill();
+
+  // eye
+  ctx.fillStyle = "#2b2b2b";
+  ctx.beginPath(); ctx.arc(60, -114, 7, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#fff";
+  ctx.beginPath(); ctx.arc(62, -116, 2.5, 0, Math.PI*2); ctx.fill();
+
+  // smile
+  ctx.strokeStyle = "#c89060"; ctx.lineWidth = 3.5; ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.arc(57, -100, 8, 0.2, Math.PI-0.2, true);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function lambScale() { return Math.min(W(), H()) * 0.003 * 1.9; }
+function hitLamb(tx, ty) {
+  const px = W()*.5, by = GROUND(), s = lambScale();
+  return tx > px - 72*s && tx < px + 72*s && ty > by - 140*s && ty < by+20;
+}
+
+// ── stars for KAOS text ──
+function drawStar(cx, cy, outer, inner) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const r = i%2===0 ? outer : inner;
+    const a = (i/10)*Math.PI*2 - Math.PI/2;
+    i===0 ? ctx.moveTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r)
+           : ctx.lineTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r);
+  }
+  ctx.closePath(); ctx.fill();
+}
+
+// ── clouds ──
+let clouds = [
+  { x: W()*.1,  y: 55, s: 1.1 },
+  { x: W()*.45, y: 38, s: 0.85 },
+  { x: W()*.75, y: 70, s: 1.0  },
+];
+function drawCloud(cx, cy, s) {
+  ctx.fillStyle = "rgba(255,255,255,.88)";
+  ctx.beginPath();
+  ctx.arc(cx,      cy,      28*s, 0, Math.PI*2);
+  ctx.arc(cx+26*s, cy-8*s,  20*s, 0, Math.PI*2);
+  ctx.arc(cx+48*s, cy,      24*s, 0, Math.PI*2);
+  ctx.fill();
+}
+
+// ── ground drawing (with shrink) ──
+function drawGround() {
+  ctx.fillStyle = "#7ec850";
+  ctx.fillRect(0, GROUND(), W(), H()-GROUND());
+  ctx.fillStyle = "#5da33c";
+  ctx.fillRect(0, GROUND(), W(), 14);
+  ctx.fillStyle = "#a0622a";
+  ctx.fillRect(0, GROUND()+14, W(), H()-GROUND()-14);
+
+  // punch holes
+  if (holes.length) {
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    holes.forEach(h => {
+      ctx.beginPath();
+      ctx.arc(h.x, h.y, h.r, 0, Math.PI*2);
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+}
+
+// ── particle draw ──
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color; ctx.shadowBlur = 10;
+    if (p.shape === "star") {
+      drawStar(0, 0, p.size, p.size*.42);
+    } else {
+      ctx.beginPath(); ctx.arc(0, 0, p.size*.6, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  });
+}
+
+// ── input ──
+c.addEventListener("pointerdown", e => {
+  if (hitLamb(e.clientX, e.clientY)) {
+    lambWobble = 40;
+    doShake(18, 14);
+    spawnBurst(W()*.5, GROUND() - 100*lambScale(), 60);
+    // ground shrinks a little each time!
+    groundFraction = Math.max(0.35, groundFraction - 0.025);
+  } else if (e.clientY > GROUND() - 8) {
+    holes.push({ x: e.clientX, y: e.clientY, r: 24 + Math.random()*18 });
+    groundFraction = Math.max(0.35, groundFraction - 0.008);
+    spawnBurst(e.clientX, e.clientY, 12);
+  }
+});
+
+// ── main loop ──
+let frame = 0;
+function loop() {
+  requestAnimationFrame(loop);
+  frame++;
+  ctx.clearRect(0, 0, W(), H());
+
+  // sky
+  const sg = ctx.createLinearGradient(0,0,0,GROUND());
+  sg.addColorStop(0,"#87ceeb"); sg.addColorStop(1,"#c8f0ff");
+  ctx.fillStyle = sg;
+  ctx.fillRect(0,0,W(),GROUND());
+
+  // clouds
+  clouds.forEach(cl => {
+    cl.x -= 0.3; if (cl.x < -130) cl.x = W()+60;
+    drawCloud(cl.x, cl.y, cl.s);
+  });
+
+  // ground
+  drawGround();
+
+  // camera shake wrap
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  // KAOS text
+  const px = W()*.5;
+  const ks = Math.min(W(),H()) * 0.003;
+  ctx.save();
+  ctx.translate(px, GROUND() - 330*ks - 18);
+  ctx.rotate(Math.sin(frame*.035)*.05);
+  ctx.font = `900 ${Math.floor(82*ks)}px system-ui,sans-serif`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = "#ff3ea5";
+  ctx.shadowColor = "#ff3ea5"; ctx.shadowBlur = 30;
+  ctx.fillText("KAOS", 0, 0);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // big lamb
+  drawBigLamb(px, GROUND());
+
+  // particles
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += p.gravity; p.vx *= 0.98;
+    p.rot += p.spin; p.life -= p.decay;
+  });
+  particles = particles.filter(p => p.life > 0);
+  drawParticles();
+
+  ctx.restore(); // end shake
+
+  // sun
+  ctx.fillStyle="#ffdd44"; ctx.shadowColor="#ffcc00"; ctx.shadowBlur=32;
+  ctx.beginPath(); ctx.arc(W()-70,60,36,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0;
+}
+loop();
+</script>
+</body>
+</html>

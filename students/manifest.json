@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "snalla-gamen",
+          "boilerplate": false,
+          "student": "snalla-gamen",
+          "display_name": "Anonym kreatör",
+          "title": "Lamm-Kaos 🐑",
+          "description": "Ett roligt spel där du trycker på ett lamm för att skapa kaos eller gräver i marken!",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T12:00:00Z",
+          "published_at": "2026-05-29T20:26:36Z",
+          "thumbnail": "students/pilot/snalla-gamen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "sakra-skoldpaddan",
           "boilerplate": false,
           "student": "sakra-skoldpaddan",

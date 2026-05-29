@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-05-29T20:26:20Z",
+  "generated_at": "2026-05-29T20:26:36Z",
   "entries": [
+    {
+      "slug": "snalla-gamen",
+      "title": "Lamm-Kaos 🐑",
+      "display_name": "Anonym kreatör",
+      "thumbnail": "students/pilot/snalla-gamen/thumbnail.webp",
+      "live_url": "https://public.vibes.bernting.se/students/pilot/snalla-gamen/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/snalla-gamen",
+      "date": "2026-05-29T20:26:36Z",
+      "persona": "kladd",
+      "description": "Ett roligt spel där du trycker på ett lamm för att skapa kaos eller gräver i marken!"
+    },
     {
       "slug": "sakra-skoldpaddan",
       "title": "HundGo 🐶",
