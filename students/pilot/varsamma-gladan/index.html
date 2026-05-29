@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Pokerkort 3D</title>
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0d1f10; }
+    body { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    #hint {
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+      color: rgba(255,255,255,0.55); font-family: ui-sans-serif, sans-serif;
+      font-size: 13px; pointer-events: none; white-space: nowrap; z-index: 10;
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three":         "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+<div id="hint">Dra kort · Tryck för att vända · Dra bakgrunden för att rotera 🃏</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ── Scen ───────────────────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1f10);
+scene.fog = new THREE.Fog(0x0d1f10, 18, 30);
+
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(0, 8, 8);
+camera.lookAt(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+// Förhindra att canvas får tangentbordsfokus (vilket öppnar skärmtangentbordet)
+renderer.domElement.setAttribute('tabindex', '-1');
+renderer.domElement.style.outline = 'none';
+renderer.domElement.style.touchAction = 'none';
+renderer.domElement.addEventListener('focus', () => renderer.domElement.blur());
+
+// ── Ljus ───────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+
+const spot = new THREE.SpotLight(0xfff8e7, 3.5, 24, Math.PI / 4, 0.5);
+spot.position.set(0, 12, 2);
+spot.castShadow = true;
+spot.shadow.mapSize.set(1024, 1024);
+scene.add(spot);
+
+const fill = new THREE.DirectionalLight(0xc0d8ff, 0.8);
+fill.position.set(-6, 4, -6);
+scene.add(fill);
+
+// ── Pokerbord ──────────────────────────────────────────────────────
+const felt = new THREE.Mesh(
+  new THREE.CylinderGeometry(7, 7, 0.15, 72),
+  new THREE.MeshStandardMaterial({ color: 0x1a6b35, roughness: 0.95 })
+);
+felt.position.y = -0.075;
+felt.receiveShadow = true;
+scene.add(felt);
+
+const rim = new THREE.Mesh(
+  new THREE.TorusGeometry(7.1, 0.28, 10, 80),
+  new THREE.MeshStandardMaterial({ color: 0x5c3317, roughness: 0.6, metalness: 0.1 })
+);
+rim.rotation.x = Math.PI / 2;
+rim.position.y = -0.05;
+scene.add(rim);
+
+// ── Hjälpfunktion: rundad rektangel på canvas ──────────────────────
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y,     x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x,     y + h, r);
+  ctx.arcTo(x,     y + h, x,     y,     r);
+  ctx.arcTo(x,     y,     x + w, y,     r);
+  ctx.closePath();
+}
+
+// ── Rita kortbild på canvas → Three.js textur ─────────────────────
+function makeCardTex(isFront, value, symbol, color) {
+  const W = 256, H = 358;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+
+  if (isFront) {
+    // Vit yta
+    roundRect(ctx, 0, 0, W, H, 20);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = '#cccccc';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+
+    // Övre vänster: värde
+    ctx.font = 'bold 52px Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(value, 16, 10);
+
+    // Övre vänster: symbol
+    ctx.font = '38px Georgia, serif';
+    ctx.fillText(symbol, 19, 62);
+
+    // Stor symbol i mitten
+    ctx.font = '145px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(symbol, W / 2, H / 2);
+
+    // Nedre höger: uppochned
+    ctx.save();
+    ctx.translate(W, H);
+    ctx.rotate(Math.PI);
+    ctx.font = 'bold 52px Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(value, 16, 10);
+    ctx.font = '38px Georgia, serif';
+    ctx.fillText(symbol, 19, 62);
+    ctx.restore();
+
+  } else {
+    // Blå baksida
+    roundRect(ctx, 0, 0, W, H, 20);
+    ctx.fillStyle = '#1a3a8a';
+    ctx.fill();
+    ctx.strokeStyle = '#3a5acc';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Rutmönster (clippat till kortform)
+    roundRect(ctx, 7, 7, W - 14, H - 14, 13);
+    ctx.save();
+    ctx.clip();
+    const sq = 20;
+    for (let row = 0; row * sq < H; row++) {
+      for (let col = 0; col * sq < W; col++) {
+        ctx.fillStyle = (row + col) % 2 === 0 ? '#1e44a8' : '#152e7a';
+        ctx.fillRect(col * sq, row * sq, sq, sq);
+      }
+    }
+    ctx.restore();
+
+    // Inre ram
+    ctx.strokeStyle = '#4060cc';
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, 9, 9, W - 18, H - 18, 11);
+    ctx.stroke();
+
+    // Vattenstämpel
+    ctx.fillStyle = 'rgba(255,255,255,0.09)';
+    ctx.font = '90px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('♠', W / 2, H / 2);
+  }
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+// ── Kortdata ───────────────────────────────────────────────────────
+const CARDS = [
+  { value: 'A', symbol: '♥', color: '#c0392b', x: -2.5, z: -0.8 },
+  { value: 'K', symbol: '♠', color: '#111111', x: -0.8, z:  1.0 },
+  { value: 'Q', symbol: '♦', color: '#c0392b', x:  0.9, z: -0.8 },
+  { value: 'A', symbol: '♣', color: '#111111', x:  2.5, z:  1.0 },
+];
+
+const cardGroups = [];
+
+CARDS.forEach((info, i) => {
+  const frontTex = makeCardTex(true,  info.value, info.symbol, info.color);
+  const backTex  = makeCardTex(false, info.value, info.symbol, info.color);
+
+  // 6 sidor på boxen: [+X, -X, +Y, -Y, +Z(framsida), -Z(baksida)]
+  const mats = [
+    new THREE.MeshStandardMaterial({ color: 0xe8e8e8 }), // kant
+    new THREE.MeshStandardMaterial({ color: 0xe8e8e8 }),
+    new THREE.MeshStandardMaterial({ color: 0xe8e8e8 }),
+    new THREE.MeshStandardMaterial({ color: 0xe8e8e8 }),
+    new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.25 }), // framsida
+    new THREE.MeshStandardMaterial({ map: backTex,  roughness: 0.25 }), // baksida
+  ];
+
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.0, 0.015), mats);
+  mesh.castShadow = true;
+
+  // Gruppen sköter position + "liggande flat" rotation
+  const group = new THREE.Group();
+  group.position.set(info.x, 0.01, info.z);
+  group.rotation.x = -Math.PI / 2;                    // framsida pekar upp
+  group.rotation.z = (Math.random() - 0.5) * 0.25;   // lite slumpmässig vinkel
+  group.add(mesh);
+  scene.add(group);
+
+  // Animations-state
+  group.userData = {
+    mesh,
+    flipped:    false,
+    flipping:   false,
+    flipAngle:  0,         // mesh.rotation.y just nu
+    flipTarget: 0,         // 0 = framsida upp, Math.PI = baksida upp
+    liftY:      0,         // extra höjd under vändningen
+  };
+
+  cardGroups.push(group);
+});
+
+// ── Eld 🔥 ─────────────────────────────────────────────────────────
+function makeFireSprite() {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 64;
+  const ctx = cv.getContext('2d');
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0,    'rgba(255,255,255,1)');
+  g.addColorStop(0.15, 'rgba(255,220,80,0.9)');
+  g.addColorStop(0.5,  'rgba(255,60,0,0.4)');
+  g.addColorStop(1,    'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(cv);
+}
+
+const FIRE_N   = 300;
+const firePos  = new Float32Array(FIRE_N * 3);
+const fireCol  = new Float32Array(FIRE_N * 3);
+const fireState = Array.from({ length: FIRE_N }, () =>
+  ({ x:0, y:0, z:0, vx:0, vy:0, vz:0, life:0, maxLife:1 })
+);
+
+// De fyra hörnen av bordet (tabellradien är 7, hörnen vid ~45°)
+const FIRE_CORNERS = [
+  {  x:  5, z:  5 },
+  {  x: -5, z:  5 },
+  {  x: -5, z: -5 },
+  {  x:  5, z: -5 },
+];
+
+function spawnParticle(p) {
+  const corner = FIRE_CORNERS[p.corner];
+  const a = Math.random() * Math.PI * 2;
+  const r = Math.random() * 0.25;
+  p.x = corner.x + Math.cos(a) * r;
+  p.y = 0.05;
+  p.z = corner.z + Math.sin(a) * r;
+  p.vx = (Math.random() - 0.5) * 0.015;
+  p.vy = 0.03 + Math.random() * 0.05;
+  p.vz = (Math.random() - 0.5) * 0.015;
+  p.maxLife = 0.6 + Math.random() * 0.9;
+  p.life    = p.maxLife;
+}
+
+// Tilldela varje partikel ett hörn (75 per hörn)
+fireState.forEach((p, i) => {
+  p.corner = i % 4;
+  spawnParticle(p);
+  p.life = Math.random() * p.maxLife;
+});
+
+const fireGeo = new THREE.BufferGeometry();
+fireGeo.setAttribute('position', new THREE.BufferAttribute(firePos, 3));
+fireGeo.setAttribute('color',    new THREE.BufferAttribute(fireCol, 3));
+
+const fireMat = new THREE.PointsMaterial({
+  size: 0.45,
+  map: makeFireSprite(),
+  vertexColors: true,
+  blending: THREE.AdditiveBlending,
+  transparent: true,
+  depthWrite: false,
+  sizeAttenuation: true,
+});
+
+scene.add(new THREE.Points(fireGeo, fireMat));
+
+// ── Regnbågar 🌈 ───────────────────────────────────────────────────
+const RAINBOW = [0xff2020, 0xff8800, 0xffee00, 0x33dd00, 0x00aaff, 0x3333ff, 0xcc00ff];
+const rainbowGroup = new THREE.Group();
+rainbowGroup.position.set(0, 0, -7); // bakom bordet, vid marken
+
+RAINBOW.forEach((color, i) => {
+  const radius = 3.5 + i * 0.38;
+  const mesh = new THREE.Mesh(
+    new THREE.TorusGeometry(radius, 0.09, 8, 80, Math.PI),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.82, side: THREE.DoubleSide })
+  );
+  // Ingen rotation — torus är redan i XY-planet och vetter mot kameran
+  rainbowGroup.add(mesh);
+});
+
+scene.add(rainbowGroup);
+
+// ── Raycasting och dra-logik ───────────────────────────────────────
+const raycaster   = new THREE.Raycaster();
+const ndc         = new THREE.Vector2();
+const tablePlane  = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const planeHit    = new THREE.Vector3();
+const allMeshes   = cardGroups.map(g => g.userData.mesh);
+
+let dragGroup  = null;
+let hasMoved   = false;
+let ptrStart   = { x: 0, y: 0 };
+const dragOffset = new THREE.Vector2();
+
+function setNDC(e) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  ndc.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+  ndc.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+}
+
+// Mina lyssnare måste registreras FÖRE OrbitControls
+// så att stopImmediatePropagation() förhindrar att OrbitControls startar
+
+renderer.domElement.addEventListener('pointerdown', e => {
+  setNDC(e);
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObjects(allMeshes, false);
+
+  if (hits.length > 0) {
+    dragGroup = hits[0].object.parent; // hämta gruppen
+    hasMoved  = false;
+    ptrStart  = { x: e.clientX, y: e.clientY };
+
+    // Räkna ut offset så kortet inte hoppar
+    raycaster.ray.intersectPlane(tablePlane, planeHit);
+    dragOffset.set(
+      dragGroup.position.x - planeHit.x,
+      dragGroup.position.z - planeHit.z
+    );
+
+    // Lyft kortet lite
+    dragGroup.position.y = 0.35;
+
+    e.stopImmediatePropagation();
+    e.preventDefault();
+  }
+});
+
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!dragGroup) return;
+
+  const dx = e.clientX - ptrStart.x;
+  const dy = e.clientY - ptrStart.y;
+  if (Math.abs(dx) > 4 || Math.abs(dy) > 4) hasMoved = true;
+
+  setNDC(e);
+  raycaster.setFromCamera(ndc, camera);
+  if (raycaster.ray.intersectPlane(tablePlane, planeHit)) {
+    dragGroup.position.x = planeHit.x + dragOffset.x;
+    dragGroup.position.z = planeHit.z + dragOffset.y;
+  }
+
+  e.stopImmediatePropagation();
+});
+
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!dragGroup) return;
+
+  dragGroup.position.y = 0.01;
+
+  if (!hasMoved) {
+    // Kort tryck = vänd kortet
+    const ud = dragGroup.userData;
+    if (!ud.flipping) {
+      ud.flipped    = !ud.flipped;
+      ud.flipping   = true;
+      ud.flipTarget = ud.flipped ? Math.PI : 0;
+    }
+  }
+
+  dragGroup = null;
+  e.stopImmediatePropagation();
+});
+
+// ── OrbitControls (läggs till EFTER mina lyssnare) ─────────────────
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping  = true;
+controls.dampingFactor  = 0.08;
+controls.minPolarAngle  = 0.15;
+controls.maxPolarAngle  = Math.PI / 2.1;
+controls.minDistance    = 4;
+controls.maxDistance    = 18;
+
+// ── Resize ─────────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ── Render-loop ────────────────────────────────────────────────────
+renderer.setAnimationLoop(() => {
+  controls.update();
+
+  // Regnbågen vaggar lite men håller sig mot kameran
+  rainbowGroup.rotation.y = Math.sin(Date.now() * 0.0004) * 0.15;
+
+  // Uppdatera eldpartiklar
+  fireState.forEach((p, i) => {
+    p.life -= 0.016;
+    if (p.life <= 0) spawnParticle(p);
+
+    // Rör sig uppåt med lite slumpmässig turbulens
+    p.x += p.vx + (Math.random() - 0.5) * 0.008;
+    p.y += p.vy;
+    p.z += p.vz + (Math.random() - 0.5) * 0.008;
+    p.vy *= 0.985; // saktar ner med höjden
+
+    firePos[i*3]   = p.x;
+    firePos[i*3+1] = p.y;
+    firePos[i*3+2] = p.z;
+
+    // Färg: vit/gul när ny → orange → röd → osynlig
+    const t    = p.life / p.maxLife; // 1=ny, 0=död
+    const fade = t * t;
+    fireCol[i*3]   = fade;
+    fireCol[i*3+1] = fade * Math.max(0, t - 0.05) * 0.65;
+    fireCol[i*3+2] = fade * Math.max(0, t - 0.55) * 0.15;
+  });
+  fireGeo.attributes.position.needsUpdate = true;
+  fireGeo.attributes.color.needsUpdate    = true;
+
+  // Animera vändningar
+  cardGroups.forEach(group => {
+    const ud = group.userData;
+    if (ud.flipping) {
+      ud.flipAngle = THREE.MathUtils.lerp(ud.flipAngle, ud.flipTarget, 0.13);
+      ud.mesh.rotation.y = ud.flipAngle;
+
+      // Lyft kortet som en båge: högst mitt i vändningen (vid 90°)
+      const progress = Math.abs(ud.flipAngle - ud.flipTarget) / Math.PI;
+      ud.liftY = Math.sin((1 - progress) * Math.PI) * 0.8;
+      group.position.y = 0.01 + ud.liftY;
+
+      if (Math.abs(ud.flipAngle - ud.flipTarget) < 0.005) {
+        ud.mesh.rotation.y = ud.flipTarget;
+        ud.flipAngle    = ud.flipTarget;
+        ud.flipping     = false;
+        ud.liftY        = 0;
+        group.position.y = 0.01;
+      }
+    }
+  });
+
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>
