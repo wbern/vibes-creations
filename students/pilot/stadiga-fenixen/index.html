@@ -1,0 +1,1156 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Gårdsförsvararen</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #1a1a2e; overflow: hidden; height: 100%; }
+    canvas { display: block; touch-action: none; }
+
+    #ui {
+      position: fixed; top: 16px; left: 16px;
+      color: #fff; font: 700 18px/1.6 system-ui, sans-serif;
+      pointer-events: none; text-shadow: 0 2px 6px #000a;
+    }
+    #lives { color: #ff6b6b; }
+    #waveLabel { color: #ffd86b; }
+    #modList { font-size: 13px; color: #c8f; margin-top: 4px; line-height: 1.8; }
+
+    #waveAnnounce {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      pointer-events: none;
+      font-family: system-ui, sans-serif; color: #fff; text-align: center;
+      opacity: 0; transition: opacity .3s;
+    }
+    #waveAnnounce.show { opacity: 1; }
+    #waveAnnounce h2 { font-size: clamp(2.5rem,8vw,5rem); margin: 0; text-shadow: 0 4px 20px #000c; }
+    #waveAnnounce p  { font-size: 1.4rem; margin: .4rem 0 0; color: #ffda6b; text-shadow: 0 2px 8px #000a; }
+
+    /* ── Isaac-style item room ── */
+    #modPicker {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #0d0d12;
+      font-family: system-ui, sans-serif; color: #fff; text-align: center;
+    }
+    #modPicker::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        repeating-linear-gradient(0deg,  transparent, transparent 31px, #1a1a22 31px, #1a1a22 32px),
+        repeating-linear-gradient(90deg, transparent, transparent 31px, #1a1a22 31px, #1a1a22 32px);
+      pointer-events: none;
+    }
+    #modPicker h2 {
+      font-size: clamp(1.4rem,4vw,2.4rem); margin: 0 0 .2rem;
+      text-shadow: 0 0 20px #fff6; letter-spacing: .04em; position: relative;
+    }
+    #modPicker .sub { color: #666; margin: 0 0 2rem; font-size: .9rem; position: relative; }
+    #modCards {
+      display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center;
+      padding: 0 1.5rem; position: relative;
+    }
+    /* Pedestal — the Isaac item stand */
+    .mod-card {
+      display: flex; flex-direction: column; align-items: center;
+      width: clamp(130px, 20vw, 190px);
+      cursor: pointer; touch-action: manipulation;
+      transition: transform .15s;
+    }
+    .mod-card:hover  { transform: translateY(-6px); }
+    .mod-card:active { transform: scale(.95); }
+
+    /* The item box (floats above pedestal) */
+    .item-box {
+      width: 72px; height: 72px;
+      background: #1e1e2e;
+      border: 3px solid #555;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2rem;
+      box-shadow: 0 0 18px #0008, inset 0 0 10px #0006;
+      animation: float 2s ease-in-out infinite;
+      position: relative;
+    }
+    .mod-card:hover .item-box {
+      border-color: #ffd700;
+      box-shadow: 0 0 24px #ffd70066, inset 0 0 10px #0006;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-6px); }
+    }
+    /* Pedestal pole */
+    .pedestal {
+      width: 14px; height: 32px;
+      background: linear-gradient(to right, #444, #888, #444);
+      margin: 0 auto;
+    }
+    /* Pedestal base */
+    .pedestal-base {
+      width: 70px; height: 12px;
+      background: linear-gradient(to bottom, #888, #555);
+      border-radius: 3px;
+    }
+    .item-name {
+      margin-top: .6rem;
+      font-size: 1rem; font-weight: 700;
+      color: #e8d5a3; letter-spacing: .02em;
+      text-shadow: 0 1px 4px #000;
+    }
+    .item-desc {
+      font-size: .8rem; color: #888; margin-top: .25rem; line-height: 1.4;
+      max-width: 16ch;
+    }
+    .item-tags { margin-top: .3rem; }
+    .item-tag {
+      display: inline-block; padding: 2px 7px;
+      font-size: .7rem; border-radius: 99px;
+      background: #2a2a40; color: #aaa; margin: 2px;
+      border: 1px solid #444;
+    }
+    .item-tag.red   { background:#3a1a1a; color:#f88; border-color:#622; }
+    .item-tag.blue  { background:#1a1a3a; color:#88f; border-color:#226; }
+    .item-tag.gold  { background:#2a2200; color:#fd4; border-color:#540; }
+    .item-tag.green { background:#1a2a1a; color:#8f8; border-color:#262; }
+
+    /* Tier 2 — golden glow on the card */
+    .mod-card.tier2 .item-box {
+      border-color: #ffd700;
+      box-shadow: 0 0 28px #ffd700aa, inset 0 0 12px #0006;
+      background: #2a2000;
+    }
+    .mod-card.tier2 .pedestal { background: linear-gradient(to right,#886600,#ffd700,#886600); }
+    .mod-card.tier2 .pedestal-base { background: linear-gradient(to bottom,#ffd700,#886600); }
+    .tier2-badge {
+      display: inline-block; margin-bottom: .35rem;
+      padding: 2px 10px; font-size: .72rem; font-weight: 700;
+      background: #ffd700; color: #1a1000; border-radius: 99px;
+      letter-spacing: .05em;
+    }
+    #modPicker.hidden { display: none; }
+
+    /* Start / Game Over / Win */
+    #overlay {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #000a; color: #fff;
+      font-family: system-ui, sans-serif; text-align: center;
+    }
+    #overlay h1 { font-size: clamp(2rem,6vw,4rem); margin: 0 0 .5rem; }
+    #overlay p  { font-size: 1.1rem; color: #ccc; margin: 0 0 1.5rem; max-width: 40ch; line-height: 1.5; }
+    #overlay button {
+      padding: 14px 36px; font-size: 1.2rem; font-weight: 700;
+      background: #e84040; color: #fff; border: 0; border-radius: 12px;
+      cursor: pointer; touch-action: manipulation; transition: transform .1s;
+    }
+    #overlay button:active { transform: scale(.96); }
+    #overlay.hidden { display: none; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="ui">
+  <div>Poäng: <span id="score">0</span></div>
+  <div id="lives">❤️❤️❤️</div>
+  <div id="waveLabel">Våg 1 / 50</div>
+  <div id="modList"></div>
+</div>
+
+<div id="waveAnnounce">
+  <h2 id="announceTitle"></h2>
+  <p id="announceSubtitle"></p>
+</div>
+
+<div id="modPicker" class="hidden">
+  <h2>— VÄLJ ETT FÖREMÅL —</h2>
+  <p class="sub">Var tredje våg • Resetar vid nytt spel</p>
+  <div id="modCards"></div>
+</div>
+
+<div id="overlay">
+  <h1>Gårdsförsvararen</h1>
+  <p>Håll inne musknappen för att skjuta.<br>50 vågor, boss var 10:e.<br>Var 3:e våg väljer du ett föremål!</p>
+  <button id="startBtn">Starta spelet</button>
+</div>
+
+<script>
+// ── Canvas ────────────────────────────────────────────────────────────
+const canvas = document.getElementById("c");
+const ctx    = canvas.getContext("2d");
+let W, H;
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+resize(); addEventListener("resize", resize);
+
+// ── Isaac-style item pool ─────────────────────────────────────────────
+// Each item: id, icon (emoji), name, desc, tags[], effect fn
+const ITEM_POOL = [
+  {
+    id: "tears_up", icon: "💧", name: "Tårar Upp",
+    desc: "Skjuter mycket fortare.",
+    tags: [["Eldtakt ×2","gold"]],
+    t2desc: "Skjuter nu 4 gånger fortare.",
+    t2tags: [["Eldtakt ×4","gold"]],
+  },
+  {
+    id: "damage_up", icon: "💀", name: "Skalle",
+    desc: "Varje kula gör dubbel skada.",
+    tags: [["Skada ×2","red"]],
+    t2desc: "Fem gånger skada. Fienderna smälter.",
+    t2tags: [["Skada ×5","red"]],
+  },
+  {
+    id: "mushroom", icon: "🍄", name: "Magisk Svamp",
+    desc: "Kulorna blir jättestora. Allt är bättre.",
+    tags: [["Skada ×2","red"],["Storlek ↑","gold"]],
+    t2desc: "Kulorna är enorma + du får ett extra liv.",
+    t2tags: [["Skada ×4","red"],["Storlek ↑↑","gold"],["Liv +1","green"]],
+  },
+  {
+    id: "twenty_twenty", icon: "👁️", name: "20/20",
+    desc: "Skjuter två kulor åt sidan samtidigt.",
+    tags: [["Sidokulor ×2","blue"]],
+    t2desc: "Skjuter nu i 8 riktningar på en gång.",
+    t2tags: [["8-vägs-skott","blue"]],
+  },
+  {
+    id: "cupid", icon: "🏹", name: "Cupids Pil",
+    desc: "Kulorna flyger igenom fiender.",
+    tags: [["Genomträngande","blue"]],
+    t2desc: "Obegränsat genomträngande + kulorna flyger fortare.",
+    t2tags: [["∞ Pierce","blue"],["Hastighet ↑","gold"]],
+  },
+  {
+    id: "mr_mega", icon: "💣", name: "Mr. Mega",
+    desc: "Kulorna exploderar och skadar flera.",
+    tags: [["Explosion","red"]],
+    t2desc: "Kedjereaktioner — varje explosion orsakar en till.",
+    t2tags: [["Kedjeexplosion","red"]],
+  },
+  {
+    id: "technology", icon: "⚡", name: "Teknologi",
+    desc: "Kulor ersätts med laserstrålar. Snabba och genomträngande.",
+    tags: [["Laser","blue"],["Genomträngande","blue"]],
+    t2desc: "Tre laserstrålar i en spread på en gång.",
+    t2tags: [["Trippel-laser","blue"]],
+  },
+  {
+    id: "homing", icon: "🎯", name: "Styrpil",
+    desc: "Kulorna söker upp närmaste fiende, men lite dåligt.",
+    tags: [["Svag styrning","green"]],
+    t2desc: "Styrningen är lite bättre nu.",
+    t2tags: [["Okej styrning","green"]],
+  },
+  {
+    id: "wiggle", icon: "🌊", name: "Wiggelmask",
+    desc: "Kulorna vinglar i vågig bana.",
+    tags: [["Vågig bana","green"]],
+    t2desc: "Extrem vingel — kulorna svänger som galningar.",
+    t2tags: [["Extrem vingel","green"]],
+  },
+  {
+    id: "quad_shot", icon: "✚", name: "Fyra Skott",
+    desc: "Skjuter också i alla fyra riktningar automatiskt.",
+    tags: [["Quad-skott","gold"]],
+    t2desc: "Nu 8 riktningar — diagonalerna med.",
+    t2tags: [["8-skott","gold"]],
+  },
+  {
+    id: "extra_heart", icon: "❤️", name: "Hjärtbit",
+    desc: "Ger dig två extra liv.",
+    tags: [["Liv +2","green"]],
+    t2desc: "Ännu två extra liv.",
+    t2tags: [["Liv +2","green"]],
+  },
+  {
+    id: "dead_cat", icon: "🐱", name: "Dödskatt",
+    desc: "Du får 9 liv — men går ner till 1 direkt.",
+    tags: [["Liv → 9","gold"],["Nu: 1 liv","red"]],
+    t2desc: "Återigen 9 liv. Katten är odödlig.",
+    t2tags: [["Liv → 9 igen","gold"],["Nu: 1 liv","red"]],
+  },
+  {
+    id: "blood_price", icon: "🩸", name: "Blodpris",
+    desc: "Förlorar 1 liv, men alla kulor gör tredubbel skada.",
+    tags: [["Skada ×3","red"],["Liv −1","red"]],
+    t2desc: "−1 liv till, men 6 gånger skada totalt.",
+    t2tags: [["Skada ×6","red"],["Liv −1","red"]],
+  },
+  {
+    id: "polyphemus", icon: "🔴", name: "Polyphemus",
+    desc: "En enda enorm kula med massor av skada.",
+    tags: [["Skada ×5","red"],["Storlek ↑↑","gold"]],
+    t2desc: "Nästan omöjlig att missa. Tolv gånger skada.",
+    t2tags: [["Skada ×12","red"],["Jättestor","gold"]],
+  },
+  {
+    id: "brimstone", icon: "🔥", name: "Svavel",
+    desc: "Håll musen: laddar en bred eldstråle. Släpp för att avfyra.",
+    tags: [["Laddningsskott","red"]],
+    t2desc: "Strålen är bredare och laddas dubbelt så snabbt.",
+    t2tags: [["Bredare stråle","red"],["Snabbare laddning","gold"]],
+  },
+  {
+    id: "rubber", icon: "🧪", name: "Gummicement",
+    desc: "Kulorna studsar mot väggarna — upp till 3 gånger.",
+    tags: [["Studsar ×3","blue"]],
+    t2desc: "Kulorna studsar 6 gånger och håller längre.",
+    t2tags: [["Studsar ×6","blue"],["Räckvidd ↑","gold"]],
+  },
+  {
+    id: "pop", icon: "💥", name: "Pop!",
+    desc: "Kulorna delar sig i 4 när de tar slut.",
+    tags: [["Split ×4","gold"]],
+    t2desc: "Delar sig i 8 riktningar istället.",
+    t2tags: [["Split ×8","gold"]],
+  },
+  {
+    id: "crickets", icon: "🦗", name: "Crickets Kropp",
+    desc: "När en fiende dör skjuter 4 kulor ut från kroppen.",
+    tags: [["On-kill burst","green"]],
+    t2desc: "8 kulor skjuter ut, och de gör dubbel skada.",
+    t2tags: [["On-kill ×8","green"],["Skada ×2","red"]],
+  },
+  {
+    id: "candy_heart", icon: "🍬", name: "Godis Hjärta",
+    desc: "Återfår 1 liv efter varje klarad våg.",
+    tags: [["Liv +1/våg","green"]],
+    t2desc: "Återfår 2 liv efter varje klarad våg.",
+    t2tags: [["Liv +2/våg","green"]],
+  },
+  {
+    id: "saltpeter", icon: "⚗️", name: "Salpeter",
+    desc: "Var 4:e skott är ett megaskott — 3× större och starkare.",
+    tags: [["Megaskott","red"]],
+    t2desc: "Var 3:e skott är megaskott, och de är ännu kraftigare.",
+    t2tags: [["Megaskott ↑↑","red"]],
+  },
+  {
+    id: "monstro", icon: "🫁", name: "Monstros Lunga",
+    desc: "Skjuter en ring av kulor i alla riktningar på en gång.",
+    tags: [["Cirkelskott","gold"]],
+    t2desc: "Dubbelt så många kulor i ringen.",
+    t2tags: [["Dubbel ring","gold"]],
+  },
+  {
+    id: "contact", icon: "☠️", name: "Kontakt",
+    desc: "Fiender nära dig tar konstant skada — farligt nära!",
+    tags: [["Skada-aura","red"]],
+    t2desc: "Aura-räckvidden och skadan är dubbelt så stor.",
+    t2tags: [["Stor aura","red"]],
+  },
+  {
+    id: "fire_tear", icon: "🔥", name: "Eldstarter",
+    desc: "Kulorna tänder fiender — de brinner i 5 träffar.",
+    tags: [["Brinnande","red"],["DoT","red"]],
+    t2desc: "Brinner längre och gör mer skada per tick.",
+    t2tags: [["Lång brand","red"],["DoT ↑","red"]],
+  },
+  {
+    id: "poison_tear", icon: "🧪", name: "Giftpil",
+    desc: "Kulorna förgiftar fiender — de långsas ner och tar skada.",
+    tags: [["Gift","green"],["Slow","blue"]],
+    t2desc: "Giftet håller 3× längre.",
+    t2tags: [["Långt gift","green"],["Slow ↑","blue"]],
+  },
+  {
+    id: "ice_crystal", icon: "❄️", name: "Iskristall",
+    desc: "Kulorna fryser fiender i 1.5 sekunder.",
+    tags: [["Frys","blue"]],
+    t2desc: "Fiender är frysta i 3 sekunder.",
+    t2tags: [["Lång frys","blue"]],
+  },
+  {
+    id: "static_elec", icon: "⚡", name: "Statisk",
+    desc: "Varje träff hoppar till 2 närstående fiender.",
+    tags: [["Kedjeblixtar","gold"]],
+    t2desc: "Hoppar till 3 fiender istället.",
+    t2tags: [["Kedjeblixtar ×3","gold"]],
+  },
+  {
+    id: "bandage", icon: "🩹", name: "Bandage",
+    desc: "Absorberar nästa träff helt. Visas som en blå ring.",
+    tags: [["Sköld ×1","blue"]],
+    t2desc: "En ny sköld varje gång du tar skada.",
+    t2tags: [["Auto-sköld","blue"]],
+  },
+  {
+    id: "black_hole", icon: "🌑", name: "Svart Håla",
+    desc: "Alla fiender dras sakta mot mitten av planen.",
+    tags: [["Gravitation","gold"]],
+    t2desc: "Dragningskraften är dubbelt så stark.",
+    t2tags: [["Stark gravitation","gold"]],
+  },
+];
+
+// ── Modifier state ─────────────────────────────────────────────────────
+let mods = {};
+function hasMod(id) { return !!(mods[id] && mods[id] > 0); }
+function modCount(id) { return mods[id] || 0; }
+
+// ── Wave config ───────────────────────────────────────────────────────
+const MAX_WAVES = 50, BOSS_EVERY = 10;
+function waveEnemyCount(w) {
+  return Math.floor(3 + w*2.2 + (w>30?(w-30)*2:0));
+}
+
+// ── Game state ────────────────────────────────────────────────────────
+let player, bullets, enemies, particles;
+let score, lives, running, frameId;
+let wave, wavePhase, announceTimer;
+let toSpawn, spawnTimer, spawnInterval;
+let mouseDown=false, mouseX, mouseY;
+
+// Brimstone charge
+let brimCharging=false, brimCharge=0, brimFired=false, shotCounter=0;
+let brimBeam=null; // {angle, life}
+
+function initGame() {
+  mouseX=W/2; mouseY=H/2;
+  player={x:W/2,y:H/2,r:18,color:"#ffd86b",hit:0,shield:false};
+  bullets=[]; enemies=[]; particles=[];
+  score=0; lives=3; wave=0; mods={};
+  brimCharge=0; brimBeam=null; brimFired=false; shotCounter=0;
+  updateUI(); updateModUI();
+  startNextWave();
+}
+
+// ── Wave flow ─────────────────────────────────────────────────────────
+function startNextWave() {
+  wave++;
+  const isBoss=wave%BOSS_EVERY===0;
+  wavePhase="announce"; announceTimer=130;
+  document.getElementById("announceTitle").textContent=
+    isBoss?`⚠️ BOSS – Våg ${wave}!`:`Våg ${wave}`;
+  document.getElementById("announceSubtitle").textContent=
+    isBoss?"En boss är på väg!":wave===MAX_WAVES?"SISTA VÅGEN!":`${waveEnemyCount(wave)} fiender`;
+  document.getElementById("waveAnnounce").classList.add("show");
+  toSpawn=isBoss?0:waveEnemyCount(wave);
+  spawnTimer=0; spawnInterval=Math.max(18,55-wave);
+  updateUI();
+}
+
+function hideAnnounce() { document.getElementById("waveAnnounce").classList.remove("show"); }
+
+// ── Modifier picker ───────────────────────────────────────────────────
+let pickedIds = []; // items already picked this run (for display)
+
+function showModifierPicker() {
+  running=false; cancelAnimationFrame(frameId);
+
+  // Random 3 from pool — avoid duplicates unless pool is small
+  const available=[...ITEM_POOL];
+  const picks=[]; let tries=0;
+  while (picks.length<3 && available.length>0 && tries++<30) {
+    const i=Math.floor(Math.random()*available.length);
+    const m=available[i];
+    // Brimstone only once
+    if ((m.id==="brimstone"||m.id==="dead_cat") && hasMod(m.id)) continue;
+    picks.push(available.splice(i,1)[0]);
+  }
+
+  const container=document.getElementById("modCards");
+  container.innerHTML="";
+  picks.forEach(item=>{
+    const isTier2 = modCount(item.id) >= 1;
+    const card=document.createElement("div");
+    card.className="mod-card" + (isTier2?" tier2":"");
+    const showDesc = isTier2 && item.t2desc ? item.t2desc : item.desc;
+    const showTags = isTier2 && item.t2tags ? item.t2tags : item.tags;
+    const tagsHtml=showTags.map(([t,c])=>`<span class="item-tag ${c}">${t}</span>`).join("");
+    const badge = isTier2 ? `<div class="tier2-badge">★ UPPGRADERAT</div>` : "";
+    card.innerHTML=`
+      <div class="item-box">${item.icon}</div>
+      <div class="pedestal"></div>
+      <div class="pedestal-base"></div>
+      ${badge}
+      <div class="item-name">${item.name}</div>
+      <div class="item-desc">${showDesc}</div>
+      <div class="item-tags">${tagsHtml}</div>`;
+    card.addEventListener("click",()=>{
+      applyItem(item);
+      document.getElementById("modPicker").classList.add("hidden");
+      running=true; frame();
+      startNextWave();
+    });
+    container.appendChild(card);
+  });
+  document.getElementById("modPicker").classList.remove("hidden");
+}
+
+function applyItem(item) {
+  const wasAlready = modCount(item.id) >= 1;
+  switch(item.id) {
+    case "bandage":
+      player.shield=true; break;
+    case "extra_heart":
+      lives+=2; break;
+    case "dead_cat":
+      lives=9; setTimeout(()=>{ lives=1; updateUI(); },50); break;
+    case "blood_price":
+      lives=Math.max(1,lives-1);
+      mods.blood_price=(mods.blood_price||0)+1; break;
+    case "mushroom":
+      mods.mushroom=(mods.mushroom||0)+1;
+      if(wasAlready) { lives++; } // tier 2 bonus life
+      break;
+    default:
+      mods[item.id]=(mods[item.id]||0)+1;
+  }
+  pickedIds.push(item.id);
+  updateUI(); updateModUI();
+}
+
+function updateModUI() {
+  const lines = pickedIds.map(id=>{
+    const m=ITEM_POOL.find(x=>x.id===id);
+    return m?`${m.icon} ${m.name}`:"";
+  }).filter(Boolean);
+  document.getElementById("modList").textContent=lines.join(" · ");
+}
+
+// ── UI ────────────────────────────────────────────────────────────────
+function updateUI() {
+  document.getElementById("score").textContent=score;
+  document.getElementById("lives").textContent="❤️".repeat(Math.max(0,lives));
+  document.getElementById("waveLabel").textContent=`Våg ${wave} / ${MAX_WAVES}`;
+}
+
+// ── Input ─────────────────────────────────────────────────────────────
+const keys={};
+addEventListener("keydown",e=>{keys[e.key]=true;});
+addEventListener("keyup",  e=>{keys[e.key]=false;});
+
+canvas.addEventListener("pointermove",e=>{
+  const r=canvas.getBoundingClientRect();
+  mouseX=e.clientX-r.left; mouseY=e.clientY-r.top;
+});
+canvas.addEventListener("pointerdown",e=>{
+  if(!running)return;
+  mouseDown=true;
+  const r=canvas.getBoundingClientRect();
+  mouseX=e.clientX-r.left; mouseY=e.clientY-r.top;
+});
+canvas.addEventListener("pointerup",  ()=>{
+  if(hasMod("brimstone")&&brimCharge>30) fireBrimstone();
+  mouseDown=false; brimCharging=false; brimCharge=0;
+});
+canvas.addEventListener("pointercancel",()=>{ mouseDown=false; brimCharging=false; brimCharge=0; });
+
+// ── Shoot ─────────────────────────────────────────────────────────────
+let lastShot=0;
+
+// Damage calculation
+function t2(id) { return modCount(id) >= 2; } // true if tier 2
+
+function bulletDamage() {
+  let dmg=1;
+  if(hasMod("damage_up"))   dmg *= t2("damage_up")   ? 5 : 2;
+  if(hasMod("mushroom"))    dmg *= t2("mushroom")    ? 4 : 2;
+  if(hasMod("blood_price")) dmg *= t2("blood_price") ? 6 : 3;
+  if(hasMod("polyphemus"))  dmg *= t2("polyphemus")  ? 12 : 5;
+  if(hasMod("technology"))  dmg *= 1.5;
+  return dmg;
+}
+function bulletRadius() {
+  let r=5;
+  if(hasMod("mushroom"))   r *= t2("mushroom")   ? 3.5 : 2.2;
+  if(hasMod("polyphemus")) r  = t2("polyphemus") ? 28  : 18;
+  if(hasMod("technology")) r  = 3;
+  return r;
+}
+function bulletSpeed() {
+  let s=10;
+  if(hasMod("technology"))  s=18;
+  if(hasMod("cupid") && t2("cupid")) s+=4; // faster at tier 2
+  if(hasMod("polyphemus"))  s=7;
+  return s;
+}
+function fireInterval() {
+  let ms=200;
+  // tears_up: tier1 = /2 per stack, tier2 already covered since count=2 → /4
+  if(hasMod("tears_up")) ms = ms / Math.pow(2, modCount("tears_up"));
+  if(hasMod("polyphemus")) ms*=2.5;
+  if(hasMod("brimstone") && t2("brimstone")) ms*=0.5; // faster charge
+  return Math.max(40, ms);
+}
+
+// Builds the list of fire angles for a main direction — shared by shoot() and brimstone
+function buildAngles(a) {
+  const angles=[a];
+  if(hasMod("twenty_twenty")){
+    if(t2("twenty_twenty")){ for(let i=0;i<8;i++) angles.push((i/8)*Math.PI*2); }
+    else { angles.push(a-Math.PI/2, a+Math.PI/2); }
+  }
+  if(hasMod("quad_shot")){
+    if(t2("quad_shot")){ for(let i=0;i<8;i++) angles.push((i/8)*Math.PI*2); }
+    else { angles.push(0, Math.PI/2, Math.PI, -Math.PI/2); }
+  }
+  if(hasMod("technology") && t2("technology")) angles.push(a-0.15, a+0.15);
+  return [...new Set(angles)]; // deduplicate overlapping angles
+}
+
+function spawnBullet(angle, overrides={}) {
+  const spd = overrides.spd || bulletSpeed();
+  const r   = overrides.r   || bulletRadius();
+  const dmg = overrides.dmg || bulletDamage();
+  bullets.push({
+    x: player.x, y: player.y,
+    vx: Math.cos(angle)*spd, vy: Math.sin(angle)*spd,
+    r, dmg,
+    life:        overrides.life        ?? (hasMod("technology") ? 130 : 90),
+    pierce:      overrides.pierce      ?? (hasMod("cupid") || hasMod("technology")),
+    pierceCount: overrides.pierceCount ?? ((hasMod("cupid") && t2("cupid")) ? 99 : 3),
+    homing:      overrides.homing      ?? hasMod("homing"),
+    wiggle:      overrides.wiggle      ?? hasMod("wiggle"),
+    wiggleAmp:   overrides.wiggleAmp   ?? (t2("wiggle") ? 5.5 : 2.5),
+    explosive:   overrides.explosive   ?? hasMod("mr_mega"),
+    chain:       overrides.chain       ?? t2("mr_mega"),
+    isBrim:      overrides.isBrim      ?? false,
+    onFire:      overrides.onFire      ?? hasMod("fire_tear"),
+    onPoison:    overrides.onPoison    ?? hasMod("poison_tear"),
+    onFreeze:    overrides.onFreeze    ?? hasMod("ice_crystal"),
+    bounce:      overrides.bounce      ?? hasMod("rubber"),
+    bounceLeft:  overrides.bounceLeft  ?? (t2("rubber") ? 6 : 3),
+    split:       overrides.split       ?? hasMod("pop"),
+    wt: Math.random()*Math.PI*2,
+  });
+}
+
+function shoot(tx,ty) {
+  if(hasMod("brimstone")) { brimCharging=true; return; }
+  const now=performance.now();
+  if(now-lastShot<fireInterval()) return;
+  lastShot=now;
+  shotCounter++;
+
+  // Monstros Lunga: fire a full ring instead of aimed shot
+  if(hasMod("monstro")) {
+    const count = t2("monstro") ? 24 : 12;
+    for(let i=0;i<count;i++) spawnBullet((i/count)*Math.PI*2);
+    return;
+  }
+
+  const a=Math.atan2(ty-player.y, tx-player.x);
+  const megaEvery = t2("saltpeter") ? 3 : 4;
+  const isMega = hasMod("saltpeter") && shotCounter % megaEvery === 0;
+  const megaOverride = isMega ? {
+    r:   bulletRadius() * (t2("saltpeter")?3:2.5),
+    dmg: bulletDamage() * (t2("saltpeter")?5:3),
+    life: 130,
+  } : {};
+  buildAngles(a).forEach(angle => spawnBullet(angle, megaOverride));
+}
+
+// ── Brimstone ─────────────────────────────────────────────────────────
+function fireBrimstone() {
+  const a = Math.atan2(mouseY-player.y, mouseX-player.x);
+  const chargedWidth = Math.min(t2("brimstone")?80:60, brimCharge*(t2("brimstone")?1.0:0.6));
+  brimBeam = {angle:a, life:28, width:chargedWidth};
+  brimCharge=0; brimCharging=false;
+
+  const brimOverrides = {
+    spd:         16,
+    r:           Math.max(bulletRadius()*2, chargedWidth*0.5+10),
+    dmg:         bulletDamage() * 8,
+    life:        150,
+    pierce:      true,
+    pierceCount: 99,
+    isBrim:      true,
+  };
+  // Uses buildAngles so 20/20, quad_shot, etc. all apply!
+  buildAngles(a).forEach(angle => spawnBullet(angle, brimOverrides));
+}
+
+// ── Spawn helpers ─────────────────────────────────────────────────────
+function edgePos(){
+  const e=Math.floor(Math.random()*4);
+  if(e===0)return{x:Math.random()*W,y:-35};
+  if(e===1)return{x:W+35,y:Math.random()*H};
+  if(e===2)return{x:Math.random()*W,y:H+35};
+  return{x:-35,y:Math.random()*H};
+}
+function spawnRegular(){
+  const pos=edgePos(), tier=Math.min(Math.floor(wave/5),5);
+  const maxHp = 3 + tier*4 + Math.floor(wave/3);   // much more HP
+  const colors=["#ff6b6b","#ff9f43","#ee5a24","#e55039","#c0392b","#922b21"];
+  const speedMult = tier===1 ? 0.5 : 1;
+  const spd = (1.4 + tier*0.35 + Math.random()*0.5) * speedMult;
+  enemies.push({...pos, r:16+tier*3, speed:spd, baseSpeed:spd,
+    color:colors[tier], hp:maxHp, maxHp, isBoss:false});
+}
+function spawnBoss(){
+  const pos=edgePos(), bossHp=wave*20;
+  const bSpd=1.1+wave*0.025;
+  enemies.push({...pos, r:52, speed:bSpd, baseSpeed:bSpd,
+    color:"#8e44ad", hp:bossHp, maxHp:bossHp, isBoss:true});
+}
+
+// ── Particles ─────────────────────────────────────────────────────────
+function burst(x,y,color,n=10){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2,s=1+Math.random()*4;
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,
+      r:3+Math.random()*4,color,life:28+Math.random()*24});
+  }
+}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+
+// ── Draw ──────────────────────────────────────────────────────────────
+function drawYard(){
+  const g=ctx.createRadialGradient(W/2,H/2,60,W/2,H/2,Math.max(W,H)*0.7);
+  g.addColorStop(0,"#4a7c59"); g.addColorStop(1,"#2d5a3d");
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle="#8b6914"; ctx.lineWidth=8;
+  ctx.strokeRect(20,20,W-40,H-40);
+  ctx.fillStyle="#8b6914";
+  for(let x=20;x<=W-20;x+=60){ctx.fillRect(x-4,12,8,16);ctx.fillRect(x-4,H-28,8,16);}
+  for(let y=20;y<=H-20;y+=60){ctx.fillRect(12,y-4,16,8);ctx.fillRect(W-28,y-4,16,8);}
+  if(running){
+    ctx.save(); ctx.setLineDash([6,10]);
+    ctx.strokeStyle="rgba(255,255,255,0.18)"; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(player.x,player.y); ctx.lineTo(mouseX,mouseY); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawPlayer(){
+  const{x,y,r}=player;
+  ctx.beginPath(); ctx.ellipse(x,y+r*0.8,r*0.7,r*0.25,0,0,Math.PI*2);
+  ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.fill();
+  ctx.beginPath(); ctx.arc(x,y+r*0.2,r*0.65,0,Math.PI*2);
+  ctx.fillStyle="#3498db"; ctx.fill();
+  ctx.beginPath(); ctx.arc(x,y-r*0.45,r*0.5,0,Math.PI*2);
+  ctx.fillStyle=player.color; ctx.fill();
+  const ea=Math.atan2(mouseY-y,mouseX-x);
+  const ex=x+Math.cos(ea)*7-Math.sin(ea)*4;
+  const ey=y-r*0.45+Math.sin(ea)*7+Math.cos(ea)*4;
+  ctx.fillStyle="#1a1a2e";
+  ctx.beginPath(); ctx.arc(ex,ey,3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(ex+Math.sin(ea)*4,ey-Math.cos(ea)*4,3,0,Math.PI*2); ctx.fill();
+
+  // Brimstone charge indicator
+  if(hasMod("brimstone")&&brimCharging&&brimCharge>0){
+    const pct=Math.min(brimCharge/80,1);
+    ctx.beginPath(); ctx.arc(x,y,r+10+pct*8,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(255,${100-pct*100},0,${0.3+pct*0.7})`; ctx.lineWidth=3+pct*4;
+    ctx.stroke();
+  }
+}
+
+function drawEnemy(e){
+  ctx.beginPath(); ctx.ellipse(e.x,e.y+e.r*0.8,e.r*0.7,e.r*0.25,0,0,Math.PI*2);
+  ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.fill();
+  if(e.isBoss){
+    ctx.save(); ctx.translate(e.x,e.y);
+    ctx.beginPath();
+    for(let i=0;i<8;i++){
+      const a1=(i/8)*Math.PI*2-Math.PI/2,a2=((i+0.5)/8)*Math.PI*2-Math.PI/2;
+      if(i===0)ctx.moveTo(Math.cos(a1)*e.r,Math.sin(a1)*e.r);
+      else ctx.lineTo(Math.cos(a1)*e.r,Math.sin(a1)*e.r);
+      ctx.lineTo(Math.cos(a2)*e.r*0.65,Math.sin(a2)*e.r*0.65);
+    }
+    ctx.closePath(); ctx.fillStyle=e.color; ctx.fill();
+    ctx.strokeStyle="rgba(255,255,255,0.3)"; ctx.lineWidth=3; ctx.stroke();
+    ctx.fillStyle="#fff";
+    ctx.beginPath(); ctx.arc(-e.r*0.25,-e.r*0.1,e.r*0.18,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( e.r*0.25,-e.r*0.1,e.r*0.18,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#000";
+    ctx.beginPath(); ctx.arc(-e.r*0.25,-e.r*0.1,e.r*0.09,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( e.r*0.25,-e.r*0.1,e.r*0.09,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#f00"; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(-e.r*0.42,-e.r*0.28); ctx.lineTo(-e.r*0.08,-e.r*0.22); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( e.r*0.42,-e.r*0.28); ctx.lineTo( e.r*0.08,-e.r*0.22); ctx.stroke();
+    ctx.restore();
+  } else {
+    ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+    ctx.fillStyle=e.color; ctx.fill();
+    ctx.strokeStyle="rgba(0,0,0,0.4)"; ctx.lineWidth=2; ctx.stroke();
+    const ap=Math.atan2(player.y-e.y,player.x-e.x);
+    for(const s of[-1,1]){
+      const ox=e.x+Math.cos(ap)*e.r*0.3-Math.sin(ap)*e.r*0.35*s;
+      const oy=e.y+Math.sin(ap)*e.r*0.3+Math.cos(ap)*e.r*0.35*s;
+      ctx.beginPath(); ctx.arc(ox,oy,e.r*0.18,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill();
+      ctx.beginPath(); ctx.arc(ox+Math.cos(ap)*1.5,oy+Math.sin(ap)*1.5,e.r*0.09,0,Math.PI*2);
+      ctx.fillStyle="#000"; ctx.fill();
+    }
+  }
+  // Status effect glow
+  if(e.burning){
+    ctx.beginPath(); ctx.arc(e.x,e.y,e.r+5,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(255,100,0,${0.4+0.3*Math.sin(Date.now()/80)})`; ctx.lineWidth=4; ctx.stroke();
+  }
+  if(e.poisoned){
+    ctx.beginPath(); ctx.arc(e.x,e.y,e.r+5,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(68,255,136,${0.4+0.3*Math.sin(Date.now()/100)})`; ctx.lineWidth=4; ctx.stroke();
+  }
+  if(e.frozen){
+    ctx.beginPath(); ctx.arc(e.x,e.y,e.r+4,0,Math.PI*2);
+    ctx.strokeStyle="rgba(100,180,255,0.7)"; ctx.lineWidth=3; ctx.stroke();
+  }
+  const barW=e.r*2.4;
+  ctx.fillStyle="#333"; ctx.fillRect(e.x-barW/2,e.y-e.r-12,barW,7);
+  ctx.fillStyle=e.isBoss?"#e040fb":"#2ecc71";
+  ctx.fillRect(e.x-barW/2,e.y-e.r-12,barW*(e.hp/e.maxHp),7);
+  if(e.isBoss){
+    ctx.strokeStyle="#fff4"; ctx.lineWidth=1;
+    ctx.strokeRect(e.x-barW/2,e.y-e.r-12,barW,7);
+    ctx.fillStyle="#fff"; ctx.font="bold 13px system-ui"; ctx.textAlign="center";
+    ctx.fillText("BOSS",e.x,e.y-e.r-16);
+  }
+}
+
+function drawBrimBeam(){
+  if(!brimBeam||brimBeam.life<=0) return;
+  const{x,y}=player; const{angle,width,life}=brimBeam;
+  const alpha=life/28;
+  const len=Math.max(W,H)*1.5;
+  ctx.save();
+  ctx.globalAlpha=alpha*0.4;
+  ctx.strokeStyle="#ff4400"; ctx.lineWidth=width+10;
+  ctx.beginPath(); ctx.moveTo(x,y);
+  ctx.lineTo(x+Math.cos(angle)*len, y+Math.sin(angle)*len); ctx.stroke();
+  ctx.globalAlpha=alpha*0.9;
+  ctx.strokeStyle="#ffaa00"; ctx.lineWidth=width*0.5;
+  ctx.beginPath(); ctx.moveTo(x,y);
+  ctx.lineTo(x+Math.cos(angle)*len, y+Math.sin(angle)*len); ctx.stroke();
+  ctx.globalAlpha=1; ctx.restore();
+}
+
+// ── Game loop ─────────────────────────────────────────────────────────
+function frame(){
+  if(!running) return;
+  frameId=requestAnimationFrame(frame);
+
+  if(wavePhase==="announce"){
+    announceTimer--;
+    if(announceTimer<=0){
+      hideAnnounce(); wavePhase="spawning";
+      if(wave%BOSS_EVERY===0){
+        spawnBoss();
+        const extras=Math.floor(wave/10)*3;
+        for(let i=0;i<extras;i++) spawnRegular();
+        toSpawn=0;
+      }
+    }
+    drawYard(); enemies.forEach(drawEnemy); drawPlayer();
+    return;
+  }
+
+  // Brimstone charge / normal shoot
+  if(mouseDown){
+    if(hasMod("brimstone")){ brimCharging=true; brimCharge=Math.min(brimCharge+1,80); }
+    else shoot(mouseX,mouseY);
+  } else {
+    brimCharging=false;
+  }
+
+  // Spawn phase
+  if(wavePhase==="spawning"){
+    spawnTimer++;
+    if(spawnTimer>=spawnInterval&&toSpawn>0){
+      spawnTimer=0; toSpawn--;
+      spawnRegular();
+      if(wave>20&&toSpawn>0&&Math.random()<0.4){toSpawn--;spawnRegular();}
+      if(wave>35&&toSpawn>0&&Math.random()<0.4){toSpawn--;spawnRegular();}
+    }
+    if(toSpawn<=0) wavePhase="fighting";
+  }
+
+  // Move bullets
+  bullets.forEach(b=>{
+    // Homing
+    if(b.homing&&enemies.length>0){
+      let near=enemies[0],nd=dist(b,enemies[0]);
+      for(const e of enemies){const d=dist(b,e);if(d<nd){nd=d;near=e;}}
+      const ta=Math.atan2(near.y-b.y,near.x-b.x);
+      const ca=Math.atan2(b.vy,b.vx);
+      const diff=((ta-ca+Math.PI*3)%(Math.PI*2))-Math.PI;
+      const turn = t2("homing") ? 0.05 : 0.025;
+      const na=ca+Math.max(-turn,Math.min(turn,diff));
+      const spd=Math.hypot(b.vx,b.vy);
+      b.vx=Math.cos(na)*spd; b.vy=Math.sin(na)*spd;
+    }
+    // Wiggle: offset perpendicular to motion
+    if(b.wiggle){
+      b.wt+=0.22;
+      const perp=Math.atan2(b.vy,b.vx)+Math.PI/2;
+      b.x+=Math.cos(perp)*Math.sin(b.wt)*(b.wiggleAmp||2.5);
+      b.y+=Math.sin(perp)*Math.sin(b.wt)*(b.wiggleAmp||2.5);
+    }
+    b.x+=b.vx; b.y+=b.vy; b.life--;
+
+    // Wall bounce
+    if(b.bounce && b.bounceLeft>0){
+      if(b.x<0||b.x>W){ b.vx*=-1; b.x=Math.max(0,Math.min(W,b.x)); b.bounceLeft--; }
+      if(b.y<0||b.y>H){ b.vy*=-1; b.y=Math.max(0,Math.min(H,b.y)); b.bounceLeft--; }
+    }
+  });
+
+  // Remove expired bullets; spawn split children
+  const expired = bullets.filter(b=>b.life<=0||((!b.bounce||b.bounceLeft<=0)&&(b.x<-20||b.x>W+20||b.y<-20||b.y>H+20)));
+  expired.forEach(b=>{
+    if(b.split){
+      const parts = t2("pop") ? 8 : 4;
+      for(let i=0;i<parts;i++){
+        const a=(i/parts)*Math.PI*2;
+        spawnBullet(a,{r:b.r*0.65, dmg:b.dmg*0.5, life:50, split:false, bounce:false, pierceCount:1});
+      }
+    }
+  });
+  bullets=bullets.filter(b=>b.life>0&&(b.bounce&&b.bounceLeft>0||b.x>-20&&b.x<W+20&&b.y>-20&&b.y<H+20));
+
+  // Move enemies + status effects
+  enemies.forEach(e=>{
+    e.speed = e.baseSpeed; // reset before status modifiers
+    if(e.poisoned){
+      e.speed*=0.5; e.poisoned.timer++;
+      if(e.poisoned.timer%25===0){
+        e.hp-=e.poisoned.dmg; burst(e.x,e.y,"#44ff88",2);
+        if(--e.poisoned.ticks<=0) delete e.poisoned;
+      }
+    }
+    if(e.burning){
+      e.burning.timer++;
+      if(e.burning.timer%18===0){
+        e.hp-=e.burning.dmg; burst(e.x,e.y-e.r*0.5,"#ff6600",3);
+        if(--e.burning.ticks<=0) delete e.burning;
+      }
+    }
+    if(e.frozen){ e.speed*=0.3; if(--e.frozen<=0) delete e.frozen; }
+    const a=Math.atan2(player.y-e.y,player.x-e.x);
+    e.x+=Math.cos(a)*e.speed; e.y+=Math.sin(a)*e.speed;
+  });
+  // Status-effect kills
+  enemies=enemies.filter(e=>{
+    if(e.hp<=0){ burst(e.x,e.y,e.color,e.isBoss?30:14); score+=e.isBoss?wave*5:1; updateUI(); return false; }
+    return true;
+  });
+
+  // Bullet–enemy collisions
+  outer: for(let bi=bullets.length-1;bi>=0;bi--){
+    const b=bullets[bi];
+    for(let ei=enemies.length-1;ei>=0;ei--){
+      const e=enemies[ei];
+      if(dist(b,e)<b.r+e.r){
+        e.hp-=b.dmg;
+        // Apply status effects
+        if(b.onFire)   e.burning  = {ticks:5+modCount("fire_tear"),   dmg:b.dmg*0.4, timer:0};
+        if(b.onPoison) e.poisoned = {ticks:8+modCount("poison_tear")*3, dmg:b.dmg*0.25, timer:0};
+        if(b.onFreeze) e.frozen   = t2("ice_crystal")?200:100;
+        // Chain lightning
+        if(hasMod("static_elec")){
+          const chainCount=t2("static_elec")?3:2;
+          enemies.filter(o=>o!==e).sort((a,b)=>dist(e,a)-dist(e,b)).slice(0,chainCount).forEach(o=>{
+            o.hp-=b.dmg*0.5; burst(o.x,o.y,"#88aaff",5);
+          });
+        }
+        // Explosive splash
+        if(b.explosive){
+          burst(e.x,e.y,"#ff9f00",16);
+          const splashR = b.chain ? 130 : 90;
+          for(let ej=enemies.length-1;ej>=0;ej--){
+            if(ej!==ei&&dist({x:e.x,y:e.y},enemies[ej])<splashR){
+              enemies[ej].hp-=b.dmg*0.5;
+              if(enemies[ej].hp<=0){
+                // chain: each killed enemy also explodes
+                if(b.chain) burst(enemies[ej].x,enemies[ej].y,"#ff6600",12);
+                burst(enemies[ej].x,enemies[ej].y,enemies[ej].color,12);
+                score+=enemies[ej].isBoss?wave*5:1;
+                enemies.splice(ej,1);
+                if(ej<ei)ei--;
+                updateUI();
+              }
+            }
+          }
+        }
+        if(e.hp<=0){
+          burst(e.x,e.y,e.color,e.isBoss?30:14);
+          score+=e.isBoss?wave*5:1;
+          // Crickets Kropp: burst of bullets from corpse
+          if(hasMod("crickets")){
+            const count=t2("crickets")?8:4;
+            const dmg=bulletDamage()*(t2("crickets")?2:1);
+            for(let i=0;i<count;i++){
+              spawnBullet((i/count)*Math.PI*2,{
+                x:e.x, y:e.y, // spawn from enemy position
+                dmg, r:bulletRadius()*0.8, life:70,
+                pierce:false, bounce:false, split:false,
+              });
+              // hack: fix position since spawnBullet uses player.x/y
+              bullets[bullets.length-1].x=e.x;
+              bullets[bullets.length-1].y=e.y;
+            }
+          }
+          enemies.splice(ei,1); updateUI();
+        }
+        if(b.pierce&&b.pierceCount>0){ b.pierceCount--; continue outer; }
+        bullets.splice(bi,1); continue outer;
+      }
+    }
+  }
+
+  // Player–enemy collisions
+  for(let ei=enemies.length-1;ei>=0;ei--){
+    const e=enemies[ei];
+    if(dist(player,e)<player.r+e.r-4){
+      burst(e.x,e.y,"#ff6b6b",16);
+      // Shield absorbs one hit
+      if(player.shield){
+        player.shield=false;
+        // Tier 2: re-apply shield after short delay
+        if(t2("bandage")) setTimeout(()=>{ player.shield=true; },3000);
+        enemies.splice(ei,1); player.hit=20; continue;
+      }
+      const dmg = e.isBoss ? 2 : 1;
+      enemies.splice(ei,1); lives-=dmg; updateUI(); player.hit=20;
+      if(lives<=0){gameOver();return;}
+    }
+  }
+
+  // Svart Håla — pull enemies toward center
+  if(hasMod("black_hole")){
+    const pull=t2("black_hole")?0.6:0.3;
+    enemies.forEach(e=>{
+      const a=Math.atan2(H/2-e.y,W/2-e.x);
+      e.x+=Math.cos(a)*pull; e.y+=Math.sin(a)*pull;
+    });
+  }
+
+  // Kontakt aura — damage nearby enemies each second
+  if(hasMod("contact") && frameId%60===0){
+    const auraR = t2("contact") ? 120 : 70;
+    const auraDmg = t2("contact") ? 4 : 2;
+    for(let ei=enemies.length-1;ei>=0;ei--){
+      if(dist(player,enemies[ei])<auraR+enemies[ei].r){
+        enemies[ei].hp-=auraDmg;
+        burst(enemies[ei].x,enemies[ei].y,"#a020f0",4);
+        if(enemies[ei].hp<=0){
+          burst(enemies[ei].x,enemies[ei].y,enemies[ei].color,14);
+          score+=enemies[ei].isBoss?wave*5:1;
+          enemies.splice(ei,1); updateUI();
+        }
+      }
+    }
+  }
+
+  // Wave clear check
+  if(wavePhase==="fighting"&&enemies.length===0){
+    if(wave>=MAX_WAVES){winGame();return;}
+    wavePhase="between";
+    // Godis Hjärta heal
+    if(hasMod("candy_heart")){ lives+=t2("candy_heart")?2:1; updateUI(); }
+
+    if(wave%3===0){
+      setTimeout(()=>{ if(running||wavePhase==="between") showModifierPicker(); },400);
+    } else {
+      setTimeout(()=>{ if(running) startNextWave(); },600);
+    }
+  }
+
+  // Brimstone beam decay
+  if(brimBeam) brimBeam.life--;
+
+  // Particles
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.life--;});
+  particles=particles.filter(p=>p.life>0);
+
+  // Draw
+  drawYard();
+  drawBrimBeam();
+
+  bullets.forEach(b=>{
+    if(b.isBrim){
+      // Draw as a laser beam — long rectangle along velocity direction
+      const angle = Math.atan2(b.vy, b.vx);
+      const len   = b.r * 5;
+      const hw    = b.r * 0.45; // half-width
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(angle);
+      // Outer glow
+      ctx.beginPath();
+      ctx.roundRect(-len, -hw*2, len*2, hw*4, hw*2);
+      ctx.fillStyle = "rgba(255,80,0,0.25)";
+      ctx.fill();
+      // Core beam
+      ctx.beginPath();
+      ctx.roundRect(-len, -hw, len*2, hw*2, hw);
+      ctx.fillStyle = "#ff6600";
+      ctx.fill();
+      // Bright center line
+      ctx.beginPath();
+      ctx.roundRect(-len, -hw*0.3, len*2, hw*0.6, hw*0.3);
+      ctx.fillStyle = "#ffcc00";
+      ctx.fill();
+      ctx.restore();
+    } else {
+      const glow=b.homing?"rgba(200,100,255,0.35)":b.pierce?"rgba(100,200,255,0.35)":"rgba(255,241,118,0.3)";
+      const core=b.homing?"#df80ff":b.pierce?"#80dfff":"#fff176";
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.r+3,0,Math.PI*2);
+      ctx.fillStyle=glow; ctx.fill();
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+      ctx.fillStyle=core; ctx.fill();
+    }
+  });
+
+  enemies.forEach(drawEnemy);
+
+  // Kontakt aura visual
+  if(hasMod("contact")){
+    const auraR=t2("contact")?120:70;
+    ctx.beginPath(); ctx.arc(player.x,player.y,auraR,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(160,32,240,${0.15+0.1*Math.sin(Date.now()/300)})`; ctx.lineWidth=3; ctx.stroke();
+    ctx.fillStyle=`rgba(160,32,240,0.05)`; ctx.fill();
+  }
+
+  if(player.shield){
+    ctx.beginPath(); ctx.arc(player.x,player.y,player.r+10,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(100,200,255,${0.5+0.3*Math.sin(Date.now()/200)})`; ctx.lineWidth=4; ctx.stroke();
+  }
+  if(player.hit>0){player.color=player.hit%4<2?"#ff6b6b":"#ffd86b";player.hit--;}
+  else{player.color="#ffd86b";}
+  drawPlayer();
+
+  particles.forEach(p=>{
+    ctx.globalAlpha=Math.max(0,p.life/50);
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=p.color; ctx.fill();
+  });
+  ctx.globalAlpha=1;
+}
+
+// ── End screens ───────────────────────────────────────────────────────
+function gameOver(){
+  running=false; cancelAnimationFrame(frameId);
+  pickedIds=[];
+  const ov=document.getElementById("overlay");
+  ov.querySelector("h1").textContent="Game Over!";
+  ov.querySelector("p").textContent=`Du tog dig till våg ${wave} och fick ${score} poäng.`;
+  ov.querySelector("button").textContent="Försök igen";
+  ov.classList.remove("hidden");
+}
+function winGame(){
+  running=false; cancelAnimationFrame(frameId);
+  pickedIds=[];
+  const ov=document.getElementById("overlay");
+  ov.querySelector("h1").textContent="🏆 DU VANN!";
+  ov.querySelector("p").textContent=`Alla 50 vågor klarade! Totalpoäng: ${score}`;
+  ov.querySelector("button").textContent="Spela igen";
+  ov.classList.remove("hidden");
+}
+
+document.getElementById("startBtn").addEventListener("click",()=>{
+  pickedIds=[];
+  document.getElementById("overlay").classList.add("hidden");
+  initGame(); running=true; frame();
+});
+</script>
+</body>
+</html>

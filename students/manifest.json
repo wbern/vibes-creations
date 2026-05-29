@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "stadiga-fenixen",
+          "boilerplate": false,
+          "student": "stadiga-fenixen",
+          "display_name": "Anonym kreatör",
+          "title": "Gårdsförsvararen",
+          "description": "Ett roligt tower defense-spel där du försvarar en gård genom att skjuta mot fiender i 50 vågor och välja föremål var tredje våg.",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T12:00:00Z",
+          "published_at": "2026-05-29T20:25:36Z",
+          "thumbnail": "students/pilot/stadiga-fenixen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "stolta-storen",
           "boilerplate": false,
           "student": "stolta-storen",

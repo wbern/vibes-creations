@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-05-29T20:25:26Z",
+  "generated_at": "2026-05-29T20:25:36Z",
   "entries": [
+    {
+      "slug": "stadiga-fenixen",
+      "title": "Gårdsförsvararen",
+      "display_name": "Anonym kreatör",
+      "thumbnail": "students/pilot/stadiga-fenixen/thumbnail.webp",
+      "live_url": "https://public.vibes.bernting.se/students/pilot/stadiga-fenixen/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/stadiga-fenixen",
+      "date": "2026-05-29T20:25:36Z",
+      "persona": "kladd",
+      "description": "Ett roligt tower defense-spel där du försvarar en gård genom att skjuta mot fiender i 50 vågor och välja föremål var tredje våg."
+    },
     {
       "slug": "stolta-storen",
       "title": "Blockvärlden 3D",
