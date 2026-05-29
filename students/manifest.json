@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "stolta-storen",
+          "boilerplate": false,
+          "student": "stolta-storen",
+          "display_name": "Anonym kreatör",
+          "title": "Blockvärlden 3D",
+          "description": "Ett roligt 3D-spel där du kan utforska, gräva block och hoppa runt i en blockig värld.",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T12:00:00Z",
+          "published_at": "2026-05-29T20:25:26Z",
+          "thumbnail": "students/pilot/stolta-storen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "muntra-eldflugan",
           "boilerplate": true,
           "student": "smokec5a1d9",

@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Blockvärlden 3D</title>
+  <style>
+    html,body{margin:0;padding:0;overflow:hidden;background:#000;
+      -webkit-user-select:none;user-select:none;touch-action:none;
+      -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
+    #ui{position:fixed;inset:0;pointer-events:none;z-index:5;}
+    /* Kors i mitten */
+    #cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      width:20px;height:20px;pointer-events:none;}
+    #cross::before,#cross::after{content:'';position:absolute;background:rgba(255,255,255,.8);}
+    #cross::before{width:2px;height:100%;left:50%;transform:translateX(-50%);}
+    #cross::after{width:100%;height:2px;top:50%;transform:translateY(-50%);}
+    /* Rörelseknappar */
+    .btn{position:fixed;z-index:10;pointer-events:auto;
+      width:62px;height:56px;border-radius:12px;
+      background:rgba(0,0,0,.4);border:2px solid rgba(255,255,255,.3);
+      color:#fff;font-size:1.4rem;display:flex;align-items:center;
+      justify-content:center;cursor:pointer;
+      -webkit-tap-highlight-color:transparent;box-shadow:0 3px 0 rgba(0,0,0,.5);}
+    .btn:active,.btn.on{background:rgba(255,255,255,.25);transform:translateY(3px);box-shadow:none;}
+    #bf{bottom:168px;left:68px;}
+    #bb{bottom:106px;left:68px;}
+    #bsl{bottom:106px;left:0px;}
+    #bsr{bottom:106px;left:136px;}
+    #bj{bottom:168px;right:8px;width:80px;font-size:.85rem;}
+    #bplace{bottom:106px;right:8px;width:80px;font-size:.85rem;background:rgba(0,100,200,.5);}
+    #bportal{top:12px;right:8px;width:90px;height:48px;font-size:.75rem;background:rgba(120,0,200,.6);}
+    #belytra{top:68px;right:8px;width:90px;height:48px;font-size:.8rem;background:rgba(30,80,180,.55);}
+    #belytra.on{background:rgba(80,180,255,.8);box-shadow:0 0 12px #80dfff;}
+    /* Hotbar */
+    #hotbar{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);
+      display:flex;gap:4px;z-index:10;pointer-events:auto;}
+    .hs{width:44px;height:44px;border:2px solid rgba(255,255,255,.35);
+      border-radius:8px;cursor:pointer;background:rgba(0,0,0,.55);
+      display:flex;align-items:center;justify-content:center;font-size:1.2rem;
+      -webkit-tap-highlight-color:transparent;}
+    .hs.on{border-color:#ffd700;box-shadow:0 0 8px #ffd700;}
+    /* Info-text */
+    #info{position:fixed;top:8px;left:50%;transform:translateX(-50%);
+      background:rgba(0,0,0,.5);color:#fff;font:bold 12px system-ui;
+      padding:4px 12px;border-radius:20px;pointer-events:none;z-index:10;}
+    /* Dra-yta höger sida */
+    #looker{position:fixed;right:0;top:0;width:40%;height:100%;z-index:8;
+      pointer-events:auto;}
+  </style>
+  <script type="importmap">
+  {"imports":{
+    "three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
+    "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"
+  }}</script>
+</head>
+<body>
+<div id="ui"><div id="cross"></div></div>
+<div id="info">Dra höger sida för att titta runt 👁 | Tryck på block för att gräva</div>
+<!-- Rörelse -->
+<button class="btn" id="bf">▲</button>
+<button class="btn" id="bb">▼</button>
+<button class="btn" id="bsl">◄</button>
+<button class="btn" id="bsr">►</button>
+<button class="btn" id="bj">⬆ HOPPA</button>
+<button class="btn" id="bportal">🌀 PORTAL</button>
+<button class="btn" id="belytra">🪽 ELYTRA</button>
+<button class="btn" id="bplace">🧱 BYGG</button>
+<!-- Titta-yta -->
+<div id="looker"></div>
+<!-- Hotbar -->
+<div id="hotbar"></div>
+
+<script type="module">
+import * as THREE from "three";
+
+// ── Renderer ──────────────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+renderer.domElement.style.position = 'fixed';
+renderer.domElement.style.top = '0';
+renderer.domElement.style.left = '0';
+renderer.domElement.style.zIndex = '1';
+
+// ── Scen ─────────────────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+scene.fog = new THREE.Fog(0x87ceeb, 20, 60);
+
+// ── Ljus ─────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const sun = new THREE.DirectionalLight(0xfffde0, 1.0);
+sun.position.set(20, 40, 20);
+sun.castShadow = true;
+scene.add(sun);
+
+// ── Kamera (förstaperson) ─────────────────────────────────────────
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.05, 80);
+let camYaw = 0, camPitch = 0; // grader
+
+// ── Pixel-texturer ────────────────────────────────────────────────
+// Skapar en 16×16 canvas-textur (Minecraft-stil, skarp pixelgrafik)
+function makeTex(fn){
+  const cv=document.createElement('canvas');
+  cv.width=cv.height=16;
+  const c=cv.getContext('2d');
+  fn(c);
+  const t=new THREE.CanvasTexture(cv);
+  t.magFilter=t.minFilter=THREE.NearestFilter; // skarp pixelgrafik, ingen blur
+  return t;
+}
+// Enkel seed-slump så att texturer ser likadana ut varje gång
+function sr(seed){let s=seed+1;return()=>{s=(s*16807)%2147483647;return(s-1)/2147483646;};}
+
+const T={
+  // Gräs uppifrån: gröna pixlar med variation
+  grassTop: makeTex(c=>{
+    const r=sr(1);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r();
+      c.fillStyle=`rgb(${45+~~(v*25)},${95+~~(v*55)},${20+~~(v*15)})`;
+      c.fillRect(x,y,1,1);
+    }
+  }),
+  // Gräs sida: grön topp + brun smuts
+  grassSide: makeTex(c=>{
+    const r=sr(2);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r();
+      if(y<4){
+        c.fillStyle=`rgb(${45+~~(v*20)},${90+~~(v*40)},${15+~~(v*10)})`;
+      } else {
+        const b=95+~~(v*50);
+        c.fillStyle=`rgb(${b},${~~(b*.72)},${~~(b*.5)})`;
+      }
+      c.fillRect(x,y,1,1);
+    }
+  }),
+  // Smuts: brun med variation
+  dirt: makeTex(c=>{
+    const r=sr(3);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r();
+      const b=95+~~(v*55);
+      c.fillStyle=`rgb(${b},${~~(b*.72)},${~~(b*.5)})`;
+      c.fillRect(x,y,1,1);
+    }
+  }),
+  // Sten: grå med sprickor
+  stone: makeTex(c=>{
+    const r=sr(4);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r(); const g=100+~~(v*55);
+      c.fillStyle=`rgb(${g},${g},${g})`; c.fillRect(x,y,1,1);
+    }
+    // sprickor
+    c.strokeStyle='rgba(50,50,50,0.5)'; c.lineWidth=1;
+    c.beginPath();c.moveTo(4,1);c.lineTo(7,6);c.lineTo(2,10);c.stroke();
+    c.beginPath();c.moveTo(10,3);c.lineTo(14,7);c.lineTo(11,14);c.stroke();
+  }),
+  // Sand: gul med lite variation
+  sand: makeTex(c=>{
+    const r=sr(5);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r(); const b=195+~~(v*35);
+      c.fillStyle=`rgb(${b},${~~(b*.94)},${~~(b*.52)})`; c.fillRect(x,y,1,1);
+    }
+  }),
+  // Trä: bruna ringar
+  wood: makeTex(c=>{
+    const r=sr(6);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r();
+      const dist=Math.hypot(x-7.5,y-7.5);
+      const ring=Math.sin(dist*1.1)*0.2;
+      const b=75+~~((v*0.25+ring+0.5)*45);
+      c.fillStyle=`rgb(${b+18},${~~(b*.70)},${~~(b*.36)})`; c.fillRect(x,y,1,1);
+    }
+  }),
+  // Löv: grön med hål
+  leaves: makeTex(c=>{
+    const r=sr(7);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r();
+      if(v<0.18){ c.clearRect(x,y,1,1); }
+      else {
+        const g=75+~~(v*75);
+        c.fillStyle=`rgb(${15+~~(v*20)},${g},${10+~~(v*12)})`; c.fillRect(x,y,1,1);
+      }
+    }
+  }),
+  // Kol: stengrå med svarta fläckar
+  coal: makeTex(c=>{
+    const r=sr(8);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r(); const g=85+~~(v*45);
+      c.fillStyle=`rgb(${g},${g},${g})`; c.fillRect(x,y,1,1);
+    }
+    c.fillStyle='rgb(28,28,28)';
+    [[3,4,3,3],[9,2,3,3],[5,9,4,4],[12,11,2,2]].forEach(([x,y,w,h])=>c.fillRect(x,y,w,h));
+  }),
+  // Tegel: röda tegelstenar med ljusa fogar
+  brick: makeTex(c=>{
+    const r=sr(9);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r();
+      // foglinjer horisontellt var 4:e px, vertikalt växlande var 8:e
+      const mortarH=(y%4===0);
+      const offset=(Math.floor(y/4)%2===0)?0:4;
+      const mortarV=(x%8===offset);
+      if(mortarH||mortarV){c.fillStyle=`rgb(${190+~~(v*20)},${175+~~(v*15)},${155+~~(v*10)})`;}
+      else {const rv=150+~~(v*40);c.fillStyle=`rgb(${rv},${~~(rv*.42)},${~~(rv*.32)})`;}
+      c.fillRect(x,y,1,1);
+    }
+  }),
+  // Snö: vit med ljusblå skugga
+  snow: makeTex(c=>{
+    const r=sr(10);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r(); const b=220+~~(v*35);
+      c.fillStyle=`rgb(${b},${b},${Math.min(255,b+10)})`; c.fillRect(x,y,1,1);
+    }
+  }),
+  // Träplankor: horisontella ränder
+  planks: makeTex(c=>{
+    const r=sr(11);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r();
+      const plank=Math.floor(y/4);
+      const base=[100,85,70,115][plank%4];
+      const b=base+~~(v*25);
+      c.fillStyle=y%4===0?`rgb(55,35,15)`:`rgb(${b+15},${~~(b*.68)},${~~(b*.33)})`;
+      c.fillRect(x,y,1,1);
+    }
+  }),
+  // Grus: grå/brun fläckig
+  gravel: makeTex(c=>{
+    const r=sr(12);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r();
+      const t=v<0.5?0:1; // två toner
+      const g=t?110+~~(r()*40):70+~~(r()*35);
+      c.fillStyle=`rgb(${g},${~~(g*.9)},${~~(g*.82)})`; c.fillRect(x,y,1,1);
+    }
+  }),
+  // Netherrack: mörkt rött med sprickor
+  netherrack: makeTex(c=>{
+    const r=sr(14);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r(); const rv=90+~~(v*50);
+      c.fillStyle=`rgb(${rv},${~~(rv*.22)},${~~(rv*.22)})`; c.fillRect(x,y,1,1);
+    }
+    c.strokeStyle='rgba(40,0,0,0.6)'; c.lineWidth=1;
+    c.beginPath();c.moveTo(2,3);c.lineTo(6,8);c.lineTo(3,13);c.stroke();
+    c.beginPath();c.moveTo(10,1);c.lineTo(13,6);c.lineTo(9,12);c.stroke();
+  }),
+  // Glödsten: lysande gul
+  glowstone: makeTex(c=>{
+    const r=sr(15);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r(); const b=200+~~(v*55);
+      c.fillStyle=`rgb(${b},${~~(b*.82)},${~~(b*.2)})`; c.fillRect(x,y,1,1);
+    }
+    // ljusa kors-mönster
+    c.fillStyle='rgba(255,255,200,0.4)';
+    [[6,6,4,4],[1,1,2,2],[12,10,2,2]].forEach(([x,y,w,h])=>c.fillRect(x,y,w,h));
+  }),
+  // End-sten: blek gulvit
+  endstone: makeTex(c=>{
+    const r=sr(16);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r(); const b=190+~~(v*40);
+      c.fillStyle=`rgb(${~~(b*.97)},${~~(b*.95)},${~~(b*.78)})`; c.fillRect(x,y,1,1);
+    }
+    c.fillStyle='rgba(140,130,80,0.3)';
+    [[3,5,2,2],[9,2,3,2],[6,11,2,3],[13,8,2,2]].forEach(([x,y,w,h])=>c.fillRect(x,y,w,h));
+  }),
+  // Moln: vit mjuk textur med ljusblå nyans
+  cloud: makeTex(c=>{
+    const r=sr(17);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r(); const b=235+~~(v*20);
+      c.fillStyle=`rgba(${b},${b},${Math.min(255,b+15)},${0.7+v*0.3})`;
+      c.fillRect(x,y,1,1);
+    }
+  }),
+  // Obsidian: mörklila med glans
+  obsidian: makeTex(c=>{
+    const r=sr(13);
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++){
+      const v=r(); const b=18+~~(v*25);
+      c.fillStyle=`rgb(${b},${~~(b*.7)},${~~(b*1.4)})`; c.fillRect(x,y,1,1);
+    }
+    // glansreflektion
+    c.fillStyle='rgba(150,130,200,0.15)';
+    c.fillRect(2,2,5,3); c.fillRect(10,8,4,3);
+  }),
+};
+
+// Hjälp: skapa material med textur
+function mmat(tex,opts={}){return new THREE.MeshLambertMaterial({map:tex,...opts});}
+
+// ── Block-material ────────────────────────────────────────────────
+const MATS = {
+  grass_top:  mmat(T.grassTop),
+  grass_side: mmat(T.grassSide),
+  dirt:       mmat(T.dirt),
+  stone:      mmat(T.stone),
+  sand:       mmat(T.sand),
+  wood:       mmat(T.wood),
+  leaves:     mmat(T.leaves,{transparent:true,alphaTest:0.1}),
+  bedrock:    new THREE.MeshLambertMaterial({color:0x222222}),
+  coal:       mmat(T.coal),
+  water:      new THREE.MeshLambertMaterial({color:0x2255cc,transparent:true,opacity:.7}),
+  glass:      new THREE.MeshLambertMaterial({color:0xaaddff,transparent:true,opacity:.35}),
+  brick:      mmat(T.brick),
+  snow:       mmat(T.snow),
+  planks:     mmat(T.planks),
+  gravel:     mmat(T.gravel),
+  obsidian:   mmat(T.obsidian),
+  netherrack: mmat(T.netherrack),
+  glowstone:  mmat(T.glowstone),
+  endstone:   mmat(T.endstone),
+  cloud:      mmat(T.cloud,{transparent:true,opacity:.88}),
+};
+// Gräs-kubens material: [höger,vänster,top,botten,fram,bak]
+const _grassMatArr=[MATS.grass_side,MATS.grass_side,MATS.grass_top,MATS.dirt,MATS.grass_side,MATS.grass_side];
+function grassMat(){ return _grassMatArr; }
+
+// ── Värld ─────────────────────────────────────────────────────────
+const WW=60, WD=60, WH=12;
+const AIR=0,GRASS=1,DIRT=2,STONE=3,SAND=4,WOOD=5,LEAVES=6,BEDROCK=7,COAL=8,
+      WATER=10,GLASS=11,BRICK=12,SNOW=13,PLANKS=14,GRAVEL=15,OBSIDIAN=16,
+      NETHERRACK=17,GLOWSTONE=18,ENDSTONE=19,CLOUD=20;
+// Tre dimensioner: 0=Overworld, 1=Nether, 2=The End
+const allWorlds=[new Uint8Array(WW*WD*WH),new Uint8Array(WW*WD*WH),new Uint8Array(WW*WD*WH),new Uint8Array(WW*WD*WH)];
+let world=allWorlds[0];
+let currentDim=0;
+const idx=(x,y,z)=>y*WW*WD+z*WW+x;
+const getB=(x,y,z)=>(x<0||x>=WW||y<0||y>=WH||z<0||z>=WD)?BEDROCK:world[idx(x,y,z)];
+const setB=(x,y,z,v)=>{if(x>=0&&x<WW&&y>=0&&y<WH&&z>=0&&z<WD)world[idx(x,y,z)]=v;};
+const isSolid=v=>v!==AIR&&v!==LEAVES&&v!==GLASS;
+
+// ── Generera Overworld ────────────────────────────────────────────
+function generateOverworld(){
+  world=allWorlds[0]; world.fill(0);
+  for(let x=0;x<WW;x++) for(let z=0;z<WD;z++){
+    const h=Math.max(4,5+Math.round(Math.sin(x*.18)*1.5+Math.cos(z*.14)*1.2+Math.sin(x*.07-z*.11)*1.0));
+    for(let y=0;y<WH;y++){
+      if(y===0)       setB(x,y,z,BEDROCK);
+      else if(y<h-2)  setB(x,y,z,(Math.sin(x*.5+y*1.2)*Math.cos(z*.4-y*.8))>.7?COAL:STONE);
+      else if(y<h)    setB(x,y,z,DIRT);
+      else if(y===h)  setB(x,y,z,h<5?SAND:GRASS);
+      else            setB(x,y,z,AIR);
+    }
+    if(h>=5&&Math.random()<.05&&getB(x,h,z)===GRASS){
+      const th=3+Math.floor(Math.random()*2);
+      for(let ty=h+1;ty<=h+th;ty++) setB(x,ty,z,WOOD);
+      for(let lx=x-2;lx<=x+2;lx++) for(let lz=z-2;lz<=z+2;lz++) for(let ly=h+th-1;ly<=h+th+1;ly++)
+        if(getB(lx,ly,lz)===AIR) setB(lx,ly,lz,LEAVES);
+    }
+  }
+}
+
+// ── Generera Nether (eldsdimension) ─────────────────────────────
+function generateNether(){
+  world=allWorlds[1]; world.fill(0);
+  for(let x=0;x<WW;x++) for(let z=0;z<WD;z++){
+    // Golv: bedrock + netherrack
+    setB(x,0,z,BEDROCK); setB(x,1,z,BEDROCK);
+    for(let y=2;y<=4;y++) setB(x,y,z,NETHERRACK);
+    // Grottrum i mitten
+    for(let y=5;y<=8;y++){
+      const cave=Math.sin(x*.4+y*.9)*Math.cos(z*.3-y*.5)+Math.sin(x*.13-z*.19)*.6;
+      if(cave>0.15) setB(x,y,z,NETHERRACK);
+    }
+    // Tak: netherrack + glödsten
+    const glow=Math.sin(x*.55+1)*Math.cos(z*.55+2);
+    setB(x,9,z,glow>0.55?GLOWSTONE:NETHERRACK);
+    setB(x,10,z,NETHERRACK);
+    setB(x,11,z,BEDROCK);
+  }
+  world=allWorlds[0]; // återställ
+}
+
+// ── Generera The End (svart rymd med öar) ────────────────────────
+function generateEnd(){
+  world=allWorlds[2]; world.fill(0);
+  const cx=WW/2, cz=WD/2;
+  for(let x=0;x<WW;x++) for(let z=0;z<WD;z++){
+    const dx=x-cx, dz=z-cz;
+    const dist=Math.hypot(dx,dz);
+    // Stor central ö
+    if(dist<11){
+      const h=5+Math.round((1-dist/11)*3);
+      for(let y=3;y<=h;y++) setB(x,y,z,ENDSTONE);
+    }
+    // Mindre flytande öar runt om
+    const isle=Math.sin(x*.28+1.3)*Math.cos(z*.28+0.7)*Math.sin((x-z)*.17);
+    if(isle>0.52&&dist>14&&dist<26){
+      const ih=4+Math.round(isle*3);
+      for(let y=ih-1;y<=ih+1;y++) setB(x,y,z,ENDSTONE);
+      if(isle>0.65) setB(x,ih+2,z,OBSIDIAN); // pelar-tips
+    }
+  }
+  world=allWorlds[0]; // återställ
+}
+
+// ── Generera Himlen (flytande moln-öar) ─────────────────────────
+function generateSky(){
+  world=allWorlds[3]; world.fill(0);
+  for(let x=0;x<WW;x++) for(let z=0;z<WD;z++){
+    // Moln-öar — bara ett block tjocka så det är lätt att landa
+    const c1=Math.sin(x*.22+.5)*Math.cos(z*.22+1.2);
+    const c2=Math.sin(x*.15-1)*Math.cos(z*.13+.3)*Math.sin((x+z)*.09);
+    const c3=Math.cos(x*.31+.8)*Math.sin(z*.27+.4)*Math.cos((x-z)*.11);
+    if(c1>0.25){
+      const h=7+Math.round(c1*2);
+      setB(x,h,z,CLOUD);           // landningsyta
+      setB(x,h-1,z,CLOUD);          // en block tjock under
+      if(c1>0.55) setB(x,h+1,z,SNOW); // snötopp
+    }
+    if(c2>0.35){
+      const h=5+Math.round(c2*2);
+      setB(x,h,z,CLOUD);
+    }
+    if(c3>0.4){
+      const h=9+Math.round(c3*1.5);
+      setB(x,h,z,CLOUD);
+      if(c3>0.6) setB(x,h+1,z,GLASS); // glasi-topp
+    }
+  }
+  // Garanterad spawn-platta i mitten — alltid något att landa på
+  const cx=~~(WW/2), cz=~~(WD/2);
+  for(let x=cx-5;x<=cx+5;x++) for(let z=cz-5;z<=cz+5;z++){
+    setB(x,7,z,CLOUD);
+  }
+  world=allWorlds[0];
+}
+
+generateOverworld();
+generateNether();
+generateEnd();
+generateSky();
+
+// Bygg 3D-meshes för synliga block
+const blockMeshes=[];
+const blockMap=new Map(); // "x,y,z" -> mesh index
+function matFor(v){
+  if(v===GRASS)    return grassMat();
+  if(v===DIRT)     return MATS.dirt;
+  if(v===STONE)    return MATS.stone;
+  if(v===SAND)     return MATS.sand;
+  if(v===WOOD)     return MATS.wood;
+  if(v===LEAVES)   return MATS.leaves;
+  if(v===BEDROCK)  return MATS.bedrock;
+  if(v===COAL)     return MATS.coal;
+  if(v===WATER)    return MATS.water;
+  if(v===GLASS)    return MATS.glass;
+  if(v===BRICK)    return MATS.brick;
+  if(v===SNOW)     return MATS.snow;
+  if(v===PLANKS)   return MATS.planks;
+  if(v===GRAVEL)   return MATS.gravel;
+  if(v===OBSIDIAN)    return MATS.obsidian;
+  if(v===NETHERRACK)  return MATS.netherrack;
+  if(v===GLOWSTONE)   return MATS.glowstone;
+  if(v===ENDSTONE)    return MATS.endstone;
+  if(v===CLOUD)       return MATS.cloud;
+  return MATS.stone;
+}
+const boxGeo = new THREE.BoxGeometry(1,1,1);
+function buildWorld(){
+  // Ta bort gamla
+  blockMeshes.forEach(m=>scene.remove(m));
+  blockMeshes.length=0; blockMap.clear();
+  for(let y=0;y<WH;y++) for(let z=0;z<WD;z++) for(let x=0;x<WW;x++){
+    const v=getB(x,y,z);
+    if(v===AIR||v===0) continue;
+    // Rendera bara om minst en granne är luft (synligt block)
+    if(getB(x+1,y,z)===AIR||getB(x-1,y,z)===AIR||
+       getB(x,y+1,z)===AIR||getB(x,y-1,z)===AIR||
+       getB(x,y,z+1)===AIR||getB(x,y,z-1)===AIR||
+       v===LEAVES){
+      const mat=matFor(v,x,y,z);
+      const m=new THREE.Mesh(boxGeo,mat);
+      m.position.set(x+.5,y+.5,z+.5);
+      m.userData={bx:x,by:y,bz:z,btype:v};
+      scene.add(m);
+      blockMeshes.push(m);
+      blockMap.set(`${x},${y},${z}`,m);
+    }
+  }
+}
+buildWorld();
+
+// ── Spelare ──────────────────────────────────────────────────────
+const PLR={
+  x:WW/2, y:8, z:WD/2,
+  vx:0,vy:0,vz:0,
+  onGround:false,
+  radius:.3, height:1.7
+};
+// Placera ovanför mark
+for(let yy=WH-1;yy>=0;yy--){
+  if(isSolid(getB(Math.floor(PLR.x),yy,Math.floor(PLR.z)))){
+    PLR.y=yy+1.8; break;
+  }
+}
+
+// ── Hotbar ───────────────────────────────────────────────────────
+const HBLOCKS=[DIRT,STONE,WOOD,SAND,LEAVES,COAL,BRICK,SNOW,PLANKS,GRAVEL,GLASS,OBSIDIAN];
+const HEMOJI= ['🟫','🪨','🪵','🟡','🌿','🔳','🧱','❄️','📋','🪨','🔷','🟪'];
+let selSlot=0;
+const hbar=document.getElementById('hotbar');
+HBLOCKS.forEach((b,i)=>{
+  const d=document.createElement('div');
+  d.className='hs'+(i===0?' on':'');
+  d.textContent=HEMOJI[i];
+  d.addEventListener('pointerdown',e=>{
+    e.preventDefault();
+    selSlot=i;
+    document.querySelectorAll('.hs').forEach((s,j)=>s.classList.toggle('on',j===i));
+  });
+  hbar.appendChild(d);
+});
+
+// ── Touch-input ──────────────────────────────────────────────────
+const inp={fwd:false,back:false,left:false,right:false,up:false};
+let elytraOn=false;
+function hold(id,k){
+  const b=document.getElementById(id);
+  b.addEventListener('pointerdown',e=>{e.preventDefault();inp[k]=true;b.classList.add('on');});
+  b.addEventListener('pointerup',  ()=>{inp[k]=false;b.classList.remove('on');});
+  b.addEventListener('pointerleave',()=>{inp[k]=false;b.classList.remove('on');});
+}
+hold('bf','fwd'); hold('bb','back'); hold('bsl','left'); hold('bsr','right');
+const bjEl=document.getElementById('bj');
+bjEl.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(elytraOn){ inp.up=true; bjEl.classList.add('on'); }
+  else if(PLR.onGround){ PLR.vy=7; PLR.onGround=false; }
+});
+bjEl.addEventListener('pointerup',  ()=>{ inp.up=false; bjEl.classList.remove('on'); });
+bjEl.addEventListener('pointerleave',()=>{ inp.up=false; bjEl.classList.remove('on'); });
+
+// Elytra-toggle
+document.getElementById('belytra').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  elytraOn=!elytraOn;
+  document.getElementById('belytra').classList.toggle('on',elytraOn);
+  document.getElementById('belytra').textContent=elytraOn?'🪽 FLY ✓':'🪽 ELYTRA';
+});
+
+// Titta-kontroll (drag höger sida)
+let lookPrev=null;
+const looker=document.getElementById('looker');
+looker.addEventListener('pointerdown',e=>{lookPrev={x:e.clientX,y:e.clientY};});
+looker.addEventListener('pointermove',e=>{
+  if(!lookPrev) return;
+  const dx=e.clientX-lookPrev.x, dy=e.clientY-lookPrev.y;
+  camYaw  -=dx*.25;
+  camPitch-=dy*.25;
+  camPitch=Math.max(-80,Math.min(80,camPitch));
+  lookPrev={x:e.clientX,y:e.clientY};
+});
+looker.addEventListener('pointerup',  ()=>lookPrev=null);
+looker.addEventListener('pointerleave',()=>lookPrev=null);
+
+// Raycast-verktyg
+const raycaster=new THREE.Raycaster();
+const center=new THREE.Vector2(0,0);
+
+// Hjälp: ta bort ett block vid (bx,by,bz)
+function mineBlock(bx,by,bz){
+  const btype=getB(bx,by,bz);
+  if(btype===BEDROCK||btype===AIR) return;
+  setB(bx,by,bz,AIR);
+  const m=blockMap.get(`${bx},${by},${bz}`);
+  if(m){scene.remove(m);blockMeshes.splice(blockMeshes.indexOf(m),1);blockMap.delete(`${bx},${by},${bz}`);}
+  // Avslöja grannar
+  [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(([dx,dy,dz])=>{
+    const nx=bx+dx,ny=by+dy,nz=bz+dz;
+    const nv=getB(nx,ny,nz);
+    if(nv!==AIR&&nv!==0&&!blockMap.has(`${nx},${ny},${nz}`)){
+      const nm=new THREE.Mesh(boxGeo,matFor(nv,nx,ny,nz));
+      nm.position.set(nx+.5,ny+.5,nz+.5);
+      nm.userData={bx:nx,by:ny,bz:nz,btype:nv};
+      scene.add(nm); blockMeshes.push(nm); blockMap.set(`${nx},${ny},${nz}`,nm);
+    }
+  });
+}
+
+// Hjälp: placera ett block mot korsiktet
+function placeBlock(){
+  raycaster.setFromCamera(center,camera);
+  const hits=raycaster.intersectObjects(blockMeshes);
+  if(hits.length===0) return;
+  const h=hits[0];
+  // Kamera måste ha quaternion applicerat för face.normal
+  const n=h.face.normal.clone();
+  n.transformDirection(h.object.matrixWorld);
+  n.round();
+  const px=h.object.userData.bx+n.x;
+  const py=h.object.userData.by+n.y;
+  const pz=h.object.userData.bz+n.z;
+  // Inte inuti spelaren
+  const pdx=px+.5-PLR.x,pdy=py-PLR.y,pdz=pz+.5-PLR.z;
+  if(Math.abs(pdx)<.8&&pdy>-0.3&&pdy<PLR.height&&Math.abs(pdz)<.8) return;
+  if(getB(px,py,pz)===AIR){
+    setB(px,py,pz,HBLOCKS[selSlot]);
+    const nm=new THREE.Mesh(boxGeo,matFor(HBLOCKS[selSlot],px,py,pz));
+    nm.position.set(px+.5,py+.5,pz+.5);
+    nm.userData={bx:px,by:py,bz:pz,btype:HBLOCKS[selSlot]};
+    scene.add(nm); blockMeshes.push(nm); blockMap.set(`${px},${py},${pz}`,nm);
+  }
+}
+
+// Bryta block: tap på canvasen (inte rörelseknapp-zonen eller looker-zonen)
+renderer.domElement.addEventListener('pointerdown',e=>{
+  if(e.clientX>innerWidth*.6) return; // looker-yta
+  if(e.clientX<200) return;           // rörelseknappar
+  raycaster.setFromCamera(center,camera);
+  const hits=raycaster.intersectObjects(blockMeshes);
+  if(hits.length>0){
+    const {bx,by,bz}=hits[0].object.userData;
+    mineBlock(bx,by,bz);
+  }
+});
+
+// Bygga block: BYGG-knapp
+document.getElementById('bplace').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  placeBlock();
+});
+
+// ── Fysik ─────────────────────────────────────────────────────────
+const GRAV=0.3, SPEED=5.5, FLY_SPEED=7;
+function updatePlayer(dt){
+  const yawRad=camYaw*Math.PI/180;
+  const pitchRad=camPitch*Math.PI/180;
+
+  if(elytraOn){
+    // ── Elytra-läge: flyg fritt ──────────────────────────────────
+    // ▲ = flyg i kamerariktning (pitch styr upp/ned)
+    // HOPPA (håll) = rakt upp, ▼ = rakt ned
+    const fx=-Math.sin(yawRad)*Math.cos(pitchRad);
+    const fy=-Math.sin(pitchRad); // negativ pitch=uppåt
+    const fz=-Math.cos(yawRad)*Math.cos(pitchRad);
+    const rx= Math.cos(yawRad), rz=-Math.sin(yawRad);
+    PLR.vx=0; PLR.vy=-0.06; PLR.vz=0; // lätt sjunkning
+    if(inp.fwd)  {PLR.vx+=fx*FLY_SPEED; PLR.vy+=fy*FLY_SPEED; PLR.vz+=fz*FLY_SPEED;}
+    if(inp.back) {PLR.vy-=FLY_SPEED*.6;}
+    if(inp.left) {PLR.vx-=rx*FLY_SPEED*.7; PLR.vz-=rz*FLY_SPEED*.7;}
+    if(inp.right){PLR.vx+=rx*FLY_SPEED*.7; PLR.vz+=rz*FLY_SPEED*.7;}
+    if(inp.up)   {PLR.vy=FLY_SPEED;}
+  } else {
+    // ── Normalt läge ────────────────────────────────────────────
+    const fwd={x:-Math.sin(yawRad),z:-Math.cos(yawRad)};
+    const right={x:Math.cos(yawRad),z:-Math.sin(yawRad)};
+    let mx=0,mz=0;
+    if(inp.fwd)  {mx+=fwd.x;mz+=fwd.z;}
+    if(inp.back) {mx-=fwd.x;mz-=fwd.z;}
+    if(inp.left) {mx-=right.x;mz-=right.z;}
+    if(inp.right){mx+=right.x;mz+=right.z;}
+    const ml=Math.hypot(mx,mz)||1;
+    PLR.vx=mx/ml*SPEED*(mx||mz?1:0);
+    PLR.vz=mz/ml*SPEED*(mx||mz?1:0);
+    PLR.vy-=GRAV;
+    if(PLR.vy<-20) PLR.vy=-20;
+  }
+
+  // Flytta X
+  PLR.x+=PLR.vx*dt;
+  const fx0=Math.floor(PLR.x-PLR.radius),fx1=Math.floor(PLR.x+PLR.radius);
+  const fy0=Math.floor(PLR.y),fy1=Math.floor(PLR.y+PLR.height-.01);
+  const fz0=Math.floor(PLR.z-PLR.radius),fz1=Math.floor(PLR.z+PLR.radius);
+  outer: for(let y=fy0;y<=fy1;y++) for(let z=fz0;z<=fz1;z++)
+    for(let xb of[fx0,fx1]) if(isSolid(getB(xb,y,z))){
+      PLR.x=PLR.vx<0?xb+1+PLR.radius:xb-PLR.radius; PLR.vx=0; break outer;
+    }
+
+  // Flytta Z
+  PLR.z+=PLR.vz*dt;
+  const gz0=Math.floor(PLR.z-PLR.radius),gz1=Math.floor(PLR.z+PLR.radius);
+  const gx0=Math.floor(PLR.x-PLR.radius),gx1=Math.floor(PLR.x+PLR.radius);
+  outer2: for(let y=fy0;y<=fy1;y++) for(let x=gx0;x<=gx1;x++)
+    for(let zb of[gz0,gz1]) if(isSolid(getB(x,y,zb))){
+      PLR.z=PLR.vz<0?zb+1+PLR.radius:zb-PLR.radius; PLR.vz=0; break outer2;
+    }
+
+  // Flytta Y
+  PLR.y+=PLR.vy*dt;
+  PLR.onGround=false;
+  const cx0=Math.floor(PLR.x-PLR.radius),cx1=Math.floor(PLR.x+PLR.radius);
+  const cz0=Math.floor(PLR.z-PLR.radius),cz1=Math.floor(PLR.z+PLR.radius);
+  if(PLR.vy<0){
+    const yb=Math.floor(PLR.y);
+    outer3: for(let x=cx0;x<=cx1;x++) for(let z=cz0;z<=cz1;z++)
+      if(isSolid(getB(x,yb,z))){PLR.y=yb+1;PLR.vy=0;PLR.onGround=true;break outer3;}
+  } else {
+    const yb=Math.floor(PLR.y+PLR.height);
+    outer4: for(let x=cx0;x<=cx1;x++) for(let z=cz0;z<=cz1;z++)
+      if(isSolid(getB(x,yb,z))){PLR.y=yb-PLR.height;PLR.vy=0;break outer4;}
+  }
+  if(PLR.y<-5||PLR.y>WH+4){  // återföds om faller av eller hamnar utanför världen
+    PLR.x=WW/2; PLR.z=WD/2;
+    PLR.y=findSpawnY(Math.floor(PLR.x),Math.floor(PLR.z));
+    PLR.vy=0;
+  }
+
+  // Kamerans position = spelarens ögon
+  camera.position.set(PLR.x, PLR.y+PLR.height*.9, PLR.z);
+  camera.rotation.order='YXZ';
+  camera.rotation.y=camYaw*Math.PI/180;
+  camera.rotation.x=pitchRad;
+}
+
+// ── Dimensionsväxling ─────────────────────────────────────────────
+const dimNames=['🌍 Overworld','🔥 Nether','🌌 The End','☁️ Himlen'];
+const dimSkies=[0x87ceeb, 0x1a0000, 0x050008, 0xd0f4ff];
+const dimFogs= [0x87ceeb, 0x440000, 0x0a0018, 0xe8faff];
+const dimInfoEl=document.getElementById('info');
+
+// Hitta en säker spawnposition: solid block med luft ovanför
+function findSpawnY(bx,bz){
+  // Sök nerifrån och upp — hittar golv, inte tak
+  for(let yy=1;yy<WH-2;yy++){
+    if(isSolid(getB(bx,yy,bz))&&!isSolid(getB(bx,yy+1,bz))&&!isSolid(getB(bx,yy+2,bz)))
+      return yy+1.8;
+  }
+  return 6; // nödvärde
+}
+
+function switchDimension(n){
+  currentDim=n;
+  world=allWorlds[n];
+  scene.background=new THREE.Color(dimSkies[n]);
+  scene.fog=new THREE.Fog(dimFogs[n], n===1?8:n===3?15:20, n===1?35:n===3?50:60);
+  buildWorld();
+  PLR.x=WW/2; PLR.z=WD/2; PLR.vx=0; PLR.vy=0; PLR.vz=0;
+  PLR.y=findSpawnY(Math.floor(PLR.x),Math.floor(PLR.z));
+  dimInfoEl.textContent=dimNames[n]+' — Dra höger för att titta runt';
+}
+
+document.getElementById('bportal').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  switchDimension((currentDim+1)%4);
+});
+
+// ── Mobs ─────────────────────────────────────────────────────────
+// Bygger en mob av boxar: huvud + ögon + kropp
+function makeMobMesh(headCol, bodyCol, eyeCol){
+  const g=new THREE.Group();
+  // Huvud
+  const head=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.5),
+    new THREE.MeshLambertMaterial({color:headCol}));
+  head.position.set(0,.95,0);
+  g.add(head);
+  // Ögon
+  const eyeMat=new THREE.MeshLambertMaterial({color:eyeCol});
+  [-1,1].forEach(s=>{
+    const eye=new THREE.Mesh(new THREE.BoxGeometry(.12,.12,.05),eyeMat);
+    eye.position.set(s*.13,.98,.26);
+    g.add(eye);
+  });
+  // Kropp
+  const body=new THREE.Mesh(new THREE.BoxGeometry(.45,.7,.3),
+    new THREE.MeshLambertMaterial({color:bodyCol}));
+  body.position.set(0,.35,0);
+  g.add(body);
+  return g;
+}
+
+class Mob {
+  constructor(type,x,z){
+    this.type=type; this.x=x; this.z=z; this.y=WH;
+    this.vx=0; this.vy=0; this.vz=0;
+    this.yaw=Math.random()*Math.PI*2;
+    this.timer=Math.random()*2;
+    this.onGround=false;
+    const cfg={
+      creeper:{head:0x44bb44,body:0x2a8a2a,eye:0x111111},
+      pig:    {head:0xffbbaa,body:0xffccbb,eye:0x552222},
+      zombie: {head:0x88aa55,body:0x335577,eye:0xff2222},
+    }[type]||{head:0xaaaaaa,body:0x666666,eye:0x000000};
+    this.mesh=makeMobMesh(cfg.head,cfg.body,cfg.eye);
+    scene.add(this.mesh);
+  }
+
+  update(dt){
+    // AI: välj ny riktning med jämna mellanrum
+    this.timer-=dt;
+    if(this.timer<=0){
+      this.timer=1.5+Math.random()*2;
+      const dx=PLR.x-this.x, dz=PLR.z-this.z;
+      const dist=Math.hypot(dx,dz);
+      if((this.type==='creeper'||this.type==='zombie') && dist<12){
+        // Följ spelaren
+        this.yaw=Math.atan2(dx,dz);
+        const spd=this.type==='creeper'?2.0:1.2;
+        this.vx=Math.sin(this.yaw)*spd; this.vz=Math.cos(this.yaw)*spd;
+      } else {
+        if(Math.random()<.3){this.vx=0;this.vz=0;}
+        else{
+          this.yaw=Math.random()*Math.PI*2;
+          const spd=1.4;
+          this.vx=Math.sin(this.yaw)*spd; this.vz=Math.cos(this.yaw)*spd;
+        }
+      }
+      if(this.onGround&&Math.random()<.25) this.vy=5; // hoppa ibland
+    }
+    // Gravitation
+    this.vy-=GRAV; if(this.vy<-20)this.vy=-20;
+    const R=.22;
+    // Flytta X
+    this.x+=this.vx*dt;
+    const bx0=Math.floor(this.x-R),bx1=Math.floor(this.x+R);
+    const by0=Math.floor(this.y),by1=Math.floor(this.y+.9);
+    const bz0=Math.floor(this.z-R),bz1=Math.floor(this.z+R);
+    outer: for(let y=by0;y<=by1;y++) for(let z=bz0;z<=bz1;z++)
+      for(const xb of[bx0,bx1]) if(isSolid(getB(xb,y,z))){
+        this.x=this.vx<0?xb+1+R:xb-R; this.vx=0; break outer;}
+    // Flytta Z
+    this.z+=this.vz*dt;
+    const gz0=Math.floor(this.z-R),gz1=Math.floor(this.z+R);
+    const gx0=Math.floor(this.x-R),gx1=Math.floor(this.x+R);
+    outer2: for(let y=by0;y<=by1;y++) for(let x=gx0;x<=gx1;x++)
+      for(const zb of[gz0,gz1]) if(isSolid(getB(x,y,zb))){
+        this.z=this.vz<0?zb+1+R:zb-R; this.vz=0; break outer2;}
+    // Flytta Y
+    this.y+=this.vy*dt; this.onGround=false;
+    const cx0=Math.floor(this.x-R),cx1=Math.floor(this.x+R);
+    const cz0=Math.floor(this.z-R),cz1=Math.floor(this.z+R);
+    if(this.vy<0){
+      const yb=Math.floor(this.y);
+      outer3: for(let x=cx0;x<=cx1;x++) for(let z=cz0;z<=cz1;z++)
+        if(isSolid(getB(x,yb,z))){this.y=yb+1;this.vy=0;this.onGround=true;break outer3;}
+    } else {
+      const yb=Math.floor(this.y+1);
+      outer4: for(let x=cx0;x<=cx1;x++) for(let z=cz0;z<=cz1;z++)
+        if(isSolid(getB(x,yb,z))){this.y=yb-1;this.vy=0;break outer4;}
+    }
+    if(this.y<-5){this.y=WH;this.vy=0;} // återfödelse
+    this.mesh.position.set(this.x,this.y,this.z);
+    this.mesh.rotation.y=this.yaw;
+  }
+}
+
+// Spawna: 3 creepers, 4 grisar, 3 zombies
+const mobs=[];
+['creeper','creeper','creeper','pig','pig','pig','pig','zombie','zombie','zombie'].forEach(type=>{
+  let sx,sz;
+  do{sx=5+Math.random()*(WW-10);sz=5+Math.random()*(WD-10);}
+  while(Math.hypot(sx-PLR.x,sz-PLR.z)<10);
+  mobs.push(new Mob(type,sx,sz));
+});
+
+// ── Loop ──────────────────────────────────────────────────────────
+let last=0;
+renderer.setAnimationLoop(ts=>{
+  const dt=Math.min((ts-last)/1000,.05); last=ts;
+  updatePlayer(dt);
+  mobs.forEach(m=>m.update(dt));
+  renderer.render(scene,camera);
+});
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
