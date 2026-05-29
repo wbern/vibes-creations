@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "bruna-lammeln",
+          "boilerplate": false,
+          "student": "bruna-lammeln",
+          "display_name": "Anonym kreatör",
+          "title": "Elsa",
+          "description": "En rolig sida där du kan leka med katten Elsa genom att klappa henne, ge henne fisk eller kasta ett nystan.",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T12:00:00Z",
+          "published_at": "2026-05-29T20:27:09Z",
+          "thumbnail": "students/pilot/bruna-lammeln/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "smala-albatrossen",
           "boilerplate": false,
           "student": "smala-albatrossen",

@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Elsa</title>
+  <style>
+    html, body { margin: 0; padding: 0; min-height: 100%; overscroll-behavior: none; }
+    body {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    button { min-width: 44px; min-height: 44px; font-size: 1rem; }
+
+    :root {
+      --bg: #f4ecd8;
+      --ink: #2b2b2b;
+      --card: #ffffff;
+      --accent: #ff7a5a;
+      --accent-2: #58a4ff;
+      --radius: 16px;
+      --lip: 6px;
+    }
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    h1 { font: 900 2.5rem/1.05 system-ui, sans-serif; letter-spacing: -0.02em; margin: 0 0 .5rem; }
+    p  { line-height: 1.45; margin: 0 0 .75rem; }
+
+    .page   { max-width: 36rem; margin: 0 auto; padding: 1.25rem; box-sizing: border-box; }
+    .stack  { display: flex; flex-direction: column; gap: 1rem; }
+    .center { text-align: center; }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--ink) 14%, transparent);
+    }
+
+    .btn-chunky {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 56px; padding: 14px 22px;
+      border: 0; border-radius: var(--radius);
+      font: 800 18px/1 system-ui, sans-serif; color: #fff;
+      letter-spacing: .5px; text-transform: uppercase;
+      background: var(--c, var(--accent));
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--accent)) 70%, black);
+      cursor: pointer;
+      transition: transform 80ms, box-shadow 80ms;
+    }
+    .btn-chunky:active { transform: translateY(var(--lip)); box-shadow: 0 0 0 transparent; }
+
+    .pop        { transition: transform 80ms; }
+    .pop:active { transform: scale(.94); }
+
+    @keyframes wobble {
+      0%,100% { transform: rotate(0); }
+      25%     { transform: rotate(8deg); }
+      75%     { transform: rotate(-8deg); }
+    }
+    .wobble { animation: wobble 2.4s ease-in-out infinite; transform-origin: 50% 85%; }
+
+    @keyframes pop-in {
+      from { transform: scale(.6); opacity: 0; }
+      to   { transform: scale(1);  opacity: 1; }
+    }
+    .pop-in { animation: pop-in 300ms cubic-bezier(.5,1.6,.4,1) both; }
+
+    /* Texten som visar vad katten "säger" */
+    #purr {
+      font: 700 1.5rem/1.2 system-ui, sans-serif;
+      color: var(--accent);
+      min-height: 2.5rem;
+    }
+
+    /* Lekplan — Elsa springer runt här */
+    #lekplan {
+      position: relative;
+      width: 100%;
+      height: 260px;
+      background: #e8f5e9;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, #3f8a4a 30%, transparent);
+      border: 2px solid #c8e6c9;
+      touch-action: none;
+    }
+
+    /* Gräsmatta längst ner */
+    #lekplan::after {
+      content: "";
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 40px;
+      background: #a5d6a7;
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+
+    /* Elsa i lekplanen */
+    #elsa-lek {
+      position: absolute;
+      width: 80px;
+      height: 84px;
+      transition: left 0.6s cubic-bezier(.3,1.4,.5,1), top 0.6s cubic-bezier(.3,1.4,.5,1);
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    /* Nöstanet */
+    #nostan {
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      z-index: 3;
+      transition: left 0.25s, top 0.25s;
+      cursor: pointer;
+      display: none;
+    }
+
+    /* Hjärtan som flyger upp */
+    .hjarta {
+      position: absolute;
+      font-size: 1.4rem;
+      pointer-events: none;
+      animation: flyUp 1.2s ease-out forwards;
+      z-index: 10;
+    }
+    @keyframes flyUp {
+      0%   { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-80px) scale(1.4); }
+    }
+
+    /* Lyckometer */
+    #lycko-bar {
+      height: 14px;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width 0.4s;
+      width: 50%;
+    }
+    #lycko-wrap {
+      background: #eee;
+      border-radius: 99px;
+      overflow: hidden;
+      height: 14px;
+    }
+  </style>
+</head>
+<body>
+<div class="page stack">
+
+  <div class="center">
+    <h1>Elsa 🐱</h1>
+  </div>
+
+  <!-- Katten — en ritad SVG. Tryck på den! -->
+  <div class="center">
+    <svg id="katten" class="wobble pop"
+         width="200" height="210" viewBox="0 0 200 210"
+         style="cursor:pointer; display:inline-block;"
+         onclick="kattKlick()">
+
+      <!-- Kropp — vit -->
+      <ellipse cx="100" cy="150" rx="55" ry="46" fill="white"/>
+
+      <!-- Svart fläck på vänster sida av kroppen -->
+      <ellipse cx="68" cy="145" rx="28" ry="24" fill="#2b2b2b"/>
+
+      <!-- Huvud — vit -->
+      <circle cx="100" cy="88" r="44" fill="white"/>
+
+      <!-- Svart fläck runt vänster öga -->
+      <ellipse cx="80" cy="82" rx="20" ry="18" fill="#2b2b2b"/>
+
+      <!-- Svart topp på huvudet -->
+      <ellipse cx="108" cy="58" rx="22" ry="16" fill="#2b2b2b"/>
+
+      <!-- Vänster öra — svart -->
+      <polygon points="66,52 54,16 90,46" fill="#2b2b2b"/>
+      <polygon points="68,49 60,24 86,44" fill="#d8a0a0"/>
+
+      <!-- Höger öra — vit -->
+      <polygon points="134,52 146,16 110,46" fill="white"/>
+      <polygon points="132,49 140,24 114,44" fill="#ffb3c1"/>
+
+      <!-- Ögon -->
+      <ellipse cx="84"  cy="86" rx="9" ry="10" fill="#2b2b2b"/>
+      <ellipse cx="116" cy="86" rx="9" ry="10" fill="#2b2b2b"/>
+      <!-- Ögonglans -->
+      <circle cx="87"  cy="82" r="3" fill="white"/>
+      <circle cx="119" cy="82" r="3" fill="white"/>
+
+      <!-- Näsa — rosa -->
+      <polygon points="100,97 95,104 105,104" fill="#ffb3c1"/>
+
+      <!-- Mun -->
+      <path d="M95,104 Q89,112 83,110" stroke="#555" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M105,104 Q111,112 117,110" stroke="#555" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+      <!-- Morrhår vänster — vita (syns mot svart) -->
+      <line x1="92" y1="100" x2="58" y2="95"  stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="92" y1="103" x2="56" y2="103" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="92" y1="106" x2="58" y2="111" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+
+      <!-- Morrhår höger — grå -->
+      <line x1="108" y1="100" x2="142" y2="95"  stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="108" y1="103" x2="144" y2="103" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="108" y1="106" x2="142" y2="111" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+
+      <!-- Svans — svart med vit spets -->
+      <path d="M148,172 Q185,135 175,100 Q169,82 158,90 Q165,100 162,118 Q155,148 143,170"
+            fill="#2b2b2b" stroke="#111" stroke-width="1"/>
+      <!-- Vit svanstopp -->
+      <circle cx="170" cy="96" r="7" fill="white"/>
+
+      <!-- Mage — vit fläck -->
+      <ellipse cx="108" cy="158" rx="26" ry="20" fill="white" opacity="0.9"/>
+
+      <!-- Tassar — vänster svart, höger vit -->
+      <ellipse cx="75"  cy="192" rx="16" ry="10" fill="#2b2b2b"/>
+      <ellipse cx="125" cy="192" rx="16" ry="10" fill="white" stroke="#ccc" stroke-width="1"/>
+    </svg>
+  </div>
+
+  <!-- Vad Elsa "säger" -->
+  <div class="center">
+    <p id="purr">Tryck på Elsa eller lek med henne! 👇</p>
+  </div>
+
+  <!-- Lyckometer -->
+  <div class="card stack" style="gap:.4rem">
+    <p style="margin:0; font-weight:700;">Elsas humör:</p>
+    <div id="lycko-wrap"><div id="lycko-bar"></div></div>
+    <p style="margin:0; font-size:.9rem;" id="lycko-text">😐 Neutral</p>
+  </div>
+
+  <!-- Lekplan — Elsa springer runt här -->
+  <div id="lekplan">
+    <!-- Nöstanet (dolt från början) -->
+    <div id="nostan">
+      <!-- Nöstan av garn, ritad som SVG -->
+      <svg viewBox="0 0 38 38" width="38" height="38">
+        <circle cx="19" cy="19" r="17" fill="#ff7a5a"/>
+        <path d="M8,12 Q19,4 30,12 Q38,22 28,30 Q19,36 10,28 Q2,18 8,12Z"
+              fill="none" stroke="#c0392b" stroke-width="2" opacity="0.6"/>
+        <path d="M6,20 Q14,10 26,16 Q34,22 24,32"
+              fill="none" stroke="#c0392b" stroke-width="1.5" opacity="0.5"/>
+        <path d="M14,8 Q22,18 14,28" fill="none" stroke="#e74c3c" stroke-width="1.5" opacity="0.6"/>
+      </svg>
+    </div>
+
+    <!-- Elsa som springer i lekplanen -->
+    <svg id="elsa-lek" onclick="klappElsa()" viewBox="0 0 200 210" preserveAspectRatio="xMidYMid meet">
+      <ellipse cx="100" cy="150" rx="55" ry="46" fill="white"/>
+      <ellipse cx="68" cy="145" rx="28" ry="24" fill="#2b2b2b"/>
+      <circle cx="100" cy="88" r="44" fill="white"/>
+      <ellipse cx="80" cy="82" rx="20" ry="18" fill="#2b2b2b"/>
+      <ellipse cx="108" cy="58" rx="22" ry="16" fill="#2b2b2b"/>
+      <polygon points="66,52 54,16 90,46" fill="#2b2b2b"/>
+      <polygon points="68,49 60,24 86,44" fill="#d8a0a0"/>
+      <polygon points="134,52 146,16 110,46" fill="white"/>
+      <polygon points="132,49 140,24 114,44" fill="#ffb3c1"/>
+      <ellipse cx="84"  cy="86" rx="9" ry="10" fill="#2b2b2b"/>
+      <ellipse cx="116" cy="86" rx="9" ry="10" fill="#2b2b2b"/>
+      <circle cx="87"  cy="82" r="3" fill="white"/>
+      <circle cx="119" cy="82" r="3" fill="white"/>
+      <polygon points="100,97 95,104 105,104" fill="#ffb3c1"/>
+      <path d="M95,104 Q89,112 83,110" stroke="#555" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M105,104 Q111,112 117,110" stroke="#555" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <line x1="92" y1="100" x2="58" y2="95"  stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="92" y1="103" x2="56" y2="103" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="92" y1="106" x2="58" y2="111" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="108" y1="100" x2="142" y2="95"  stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="108" y1="103" x2="144" y2="103" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="108" y1="106" x2="142" y2="111" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M148,172 Q185,135 175,100 Q169,82 158,90 Q165,100 162,118 Q155,148 143,170" fill="#2b2b2b"/>
+      <circle cx="170" cy="96" r="7" fill="white"/>
+      <ellipse cx="108" cy="158" rx="26" ry="20" fill="white" opacity="0.9"/>
+      <ellipse cx="75"  cy="192" rx="16" ry="10" fill="#2b2b2b"/>
+      <ellipse cx="125" cy="192" rx="16" ry="10" fill="white" stroke="#ccc" stroke-width="1"/>
+    </svg>
+  </div>
+
+  <!-- Lekknapparna -->
+  <div class="row" style="justify-content:center">
+    <button class="btn-chunky pop" style="--c:#ff7a5a" onclick="kastaNöstan()">
+      🧶 Kasta nöstan
+    </button>
+    <button class="btn-chunky pop" style="--c:#4caf50" onclick="geGodis()">
+      🐟 Ge fisk
+    </button>
+    <button class="btn-chunky pop" style="--c:#9c27b0" onclick="klappElsa()">
+      ✋ Klappa Elsa
+    </button>
+  </div>
+
+</div>
+
+<script>
+  // ── Lycka ──────────────────────────────────────────────────────────
+  let lycka = 50; // 0–100
+
+  function uppdateraLycka(förändring) {
+    lycka = Math.max(0, Math.min(100, lycka + förändring));
+    document.getElementById("lycko-bar").style.width = lycka + "%";
+
+    // Färg och text beroende på humör
+    const bar = document.getElementById("lycko-bar");
+    const text = document.getElementById("lycko-text");
+    if (lycka >= 80) {
+      bar.style.background = "#e91e63";
+      text.textContent = "😻 Överlycklig!";
+    } else if (lycka >= 50) {
+      bar.style.background = "#ff7a5a";
+      text.textContent = "😸 Glad";
+    } else if (lycka >= 25) {
+      bar.style.background = "#ffa726";
+      text.textContent = "😐 Okej";
+    } else {
+      bar.style.background = "#78909c";
+      text.textContent = "😿 Ledsen... kela lite!";
+    }
+  }
+
+  // ── Elsas position i lekplanen ─────────────────────────────────────
+  const lekplan = document.getElementById("lekplan");
+  const elsa    = document.getElementById("elsa-lek");
+  const nostan  = document.getElementById("nostan");
+
+  // Starta Elsa i mitten
+  let elsaX = 100, elsaY = 80;
+  elsa.style.left = elsaX + "px";
+  elsa.style.top  = elsaY + "px";
+
+  function flyttaElsa(målX, målY) {
+    // Håll Elsa inom lekplanens gränser (80x84 är Elsas storlek)
+    const maxX = lekplan.offsetWidth  - 80;
+    const maxY = lekplan.offsetHeight - 84;
+    elsaX = Math.max(0, Math.min(maxX, målX));
+    elsaY = Math.max(0, Math.min(maxY, målY));
+    elsa.style.left = elsaX + "px";
+    elsa.style.top  = elsaY + "px";
+  }
+
+  // ── Kasta nöstan ────────────────────────────────────────────────────
+  function kastaNöstan() {
+    const maxX = lekplan.offsetWidth  - 38;
+    const maxY = lekplan.offsetHeight - 60; // ovanför gräsmattan
+
+    // Slumpa en ny position för nöstanet
+    const nx = Math.random() * maxX;
+    const ny = Math.random() * (maxY - 20) + 10;
+
+    nostan.style.display = "block";
+    nostan.style.left = nx + "px";
+    nostan.style.top  = ny + "px";
+
+    // Elsa springer mot nöstanet (lite offset så hon "tar" det)
+    setTimeout(() => {
+      flyttaElsa(nx - 20, ny - 20);
+    }, 100);
+
+    // Elsa "fångar" nöstanet efter en stund
+    setTimeout(() => {
+      nostan.style.display = "none";
+      säg("Mjau! Jag fick det! 🧶😸");
+      uppdateraLycka(15);
+      sprutaHjärtan(elsaX + 40, elsaY);
+    }, 900);
+
+    uppdateraLycka(5);
+    document.getElementById("purr").textContent = "Åh ett nöstan! 🧶😼";
+  }
+
+  // ── Ge fisk ─────────────────────────────────────────────────────────
+  function geGodis() {
+    säg("FISK! Min favorit! 🐟😻");
+    uppdateraLycka(25);
+    sprutaHjärtan(elsaX + 40, elsaY + 20);
+    // Elsa hoppar av glädje
+    elsa.style.transition = "none";
+    elsa.style.transform = "scale(1.15) rotate(-5deg)";
+    setTimeout(() => {
+      elsa.style.transition = "";
+      elsa.style.transform = "";
+    }, 300);
+  }
+
+  // ── Klappa Elsa ─────────────────────────────────────────────────────
+  function klappElsa() {
+    const ljud = [
+      "Purrrr... 😸",
+      "Mjau! 🐾",
+      "Purrr purrr...",
+      "Mrrrow! 😺",
+      "Mer klappar tack! 😻",
+      "Hssssss! 🙀",
+      "Prr-mjau! 😄",
+    ];
+    säg(ljud[Math.floor(Math.random() * ljud.length)]);
+    uppdateraLycka(10);
+    sprutaHjärtan(elsaX + 40, elsaY);
+  }
+
+  // ── Hjärtan som flyger upp ───────────────────────────────────────────
+  function sprutaHjärtan(x, y) {
+    const antal = 3;
+    for (let i = 0; i < antal; i++) {
+      setTimeout(() => {
+        const h = document.createElement("div");
+        h.className = "hjarta";
+        h.textContent = ["❤️","💕","💖","✨"][Math.floor(Math.random()*4)];
+        h.style.left = (x + (Math.random()-0.5)*40) + "px";
+        h.style.top  = (y + 10) + "px";
+        lekplan.appendChild(h);
+        setTimeout(() => h.remove(), 1300);
+      }, i * 120);
+    }
+  }
+
+  // ── Hjälpfunktion: uppdatera pratbubblan ───────────────────────────
+  function säg(text) {
+    document.getElementById("purr").textContent = text;
+  }
+
+  // Starta lyckometern
+  uppdateraLycka(0);
+</script>
+
+</body>
+</html>
