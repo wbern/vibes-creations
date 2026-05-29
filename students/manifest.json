@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "snalla-raven",
+          "boilerplate": false,
+          "student": "snalla-raven",
+          "display_name": "Anonym kreatör",
+          "title": "Ekorren Nilsson vs Monstren",
+          "description": "Ett roligt spel där ekorren Nilsson hoppar på grenar och skjuter ekollon mot monster.",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T12:00:00Z",
+          "published_at": "2026-05-29T20:27:30Z",
+          "thumbnail": "students/pilot/snalla-raven/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "milda-albatrossen",
           "boilerplate": false,
           "student": "milda-albatrossen",
