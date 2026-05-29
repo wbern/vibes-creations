@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-05-29T20:25:54Z",
+  "generated_at": "2026-05-29T20:26:09Z",
   "entries": [
+    {
+      "slug": "sakra-ormen",
+      "title": "Bird Shooter 🐦",
+      "display_name": "Anonym kreatör",
+      "thumbnail": "students/pilot/sakra-ormen/thumbnail.webp",
+      "live_url": "https://public.vibes.bernting.se/students/pilot/sakra-ormen/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/sakra-ormen",
+      "date": "2026-05-29T20:26:09Z",
+      "persona": "kladd",
+      "description": "Ett roligt skjutspel där du försöker träffa fåglar och samla poäng."
+    },
     {
       "slug": "rara-eldflugan",
       "title": "Godisfotboll ⚽🍬",

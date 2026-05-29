@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "sakra-ormen",
+          "boilerplate": false,
+          "student": "sakra-ormen",
+          "display_name": "Anonym kreatör",
+          "title": "Bird Shooter 🐦",
+          "description": "Ett roligt skjutspel där du försöker träffa fåglar och samla poäng.",
+          "persona": "kladd",
+          "archived_at": "2026-05-28T12:00:00Z",
+          "published_at": "2026-05-29T20:26:09Z",
+          "thumbnail": "students/pilot/sakra-ormen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 95,
+              "ner": 0,
+              "total": 95
+            },
+            "finding_count": 95,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "rara-eldflugan",
           "boilerplate": false,
           "student": "rara-eldflugan",
