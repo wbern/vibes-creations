@@ -3,499 +3,461 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Grattis Hilda! 🎀 Dress to Impress</title>
-  <script type="importmap">
-  {
-    "imports": {
-      "three":         "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"
-    }
-  }
-  </script>
+  <title>Python Funktioner 🐍</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #1a0a2e; }
-
-    /* ── HUD overlay ─────────────────────────────────────── */
-    #hud {
-      position: fixed; inset: 0; pointer-events: none;
-      z-index: 10;
-    }
-
-    /* Birthday banner */
-    #banner {
-      position: fixed; top: 0; left: 0; right: 0;
-      text-align: center; padding: 10px 0 8px;
-      background: linear-gradient(90deg, #ff69b4, #c084fc, #60a5fa, #34d399, #fbbf24, #ff69b4);
-      background-size: 300% 100%;
-      animation: rainbow 3s linear infinite;
-      font: 900 1.5rem/1 ui-sans-serif, system-ui, sans-serif;
-      color: #fff;
-      text-shadow: 0 2px 6px rgba(0,0,0,.4);
-      letter-spacing: .05em;
-      pointer-events: none;
-      z-index: 20;
-    }
-    @keyframes rainbow { to { background-position: -300% 0; } }
-
-    /* Score + instructions */
-    #score-box {
-      position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
-      background: rgba(255,255,255,.12);
-      backdrop-filter: blur(8px);
-      border: 2px solid rgba(255,255,255,.25);
-      border-radius: 14px; padding: 8px 24px;
-      color: #fff; font: 700 1.1rem ui-sans-serif, system-ui, sans-serif;
-      text-align: center; pointer-events: none;
-    }
-
-    /* Outfit buttons */
-    #outfit-btns {
-      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
-      pointer-events: all;
-    }
-    .outfit-btn {
-      min-width: 80px; min-height: 52px; padding: 10px 16px;
-      border: 2px solid #fff;
-      border-radius: 12px;
-      font: 700 .9rem ui-sans-serif, system-ui, sans-serif;
-      color: #fff; cursor: pointer;
-      box-shadow: 0 4px 0 rgba(0,0,0,.35);
-      transition: transform 100ms, box-shadow 100ms;
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      overscroll-behavior: none;
+      -webkit-user-select: none; user-select: none;
       -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    .outfit-btn:hover  { filter: brightness(1.15); }
-    .outfit-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.35); }
+    :root {
+      --bg:      #0e1117;
+      --card:    #161b22;
+      --border:  rgba(255,255,255,.12);
+      --ink:     #e6edf3;
+      --muted:   #8b949e;
+      --accent:  #3b82f6;
+      --green:   #3fb950;
+      --yellow:  #f0c000;
+      --purple:  #a78bfa;
+      --orange:  #f97316;
+      --radius:  14px;
+    }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      display: flex; flex-direction: column;
+      height: 100vh; overflow: hidden;
+    }
 
-    /* Rate button */
-    #rate-btn {
-      position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%);
-      min-height: 52px; padding: 12px 36px;
-      background: linear-gradient(135deg, #ff69b4, #c084fc);
-      border: 2px solid #fff; border-radius: 14px;
-      font: 800 1.1rem ui-sans-serif, system-ui, sans-serif;
-      color: #fff; cursor: pointer;
-      box-shadow: 0 4px 0 rgba(0,0,0,.4);
-      transition: transform 100ms, box-shadow 100ms;
+    /* ── Top bar ─────────────────────────────────────── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 8px;
+      font: 800 1rem/1 ui-sans-serif, system-ui, sans-serif;
+    }
+    .brand-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: linear-gradient(135deg,#3b82f6,#a78bfa);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .slide-counter {
+      font: 700 .85rem/1 ui-monospace, monospace;
+      color: var(--muted);
+    }
+    .slide-counter span { color: var(--accent); }
+
+    /* ── Progress bar ────────────────────────────────── */
+    .progress-track {
+      height: 3px; background: rgba(255,255,255,.07); flex-shrink: 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #a78bfa);
+      transition: width 350ms cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Slide area ──────────────────────────────────── */
+    .slides-wrap {
+      flex: 1; overflow: hidden; position: relative;
+    }
+    .slide {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: 20px;
+      opacity: 0; transform: translateX(60px);
+      transition: opacity 300ms, transform 300ms cubic-bezier(.4,0,.2,1);
+      pointer-events: none;
+      overflow-y: auto;
+    }
+    .slide.active {
+      opacity: 1; transform: translateX(0);
       pointer-events: all;
     }
-    #rate-btn:active { transform: translateX(-50%) translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.4); }
-
-    /* Rating popup */
-    #popup {
-      position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      background: rgba(20,5,40,.92);
-      backdrop-filter: blur(12px);
-      border: 3px solid #ff69b4;
-      border-radius: 20px; padding: 28px 36px;
-      color: #fff; text-align: center;
-      font: 700 1.3rem ui-sans-serif, system-ui, sans-serif;
-      transition: transform 220ms cubic-bezier(.34,1.56,.64,1);
-      pointer-events: none; z-index: 30;
-      min-width: 260px;
+    .slide.exit {
+      opacity: 0; transform: translateX(-60px);
     }
-    #popup.show { transform: translate(-50%, -50%) scale(1); }
-    #popup .stars { font-size: 2rem; letter-spacing: .1em; display: block; margin-bottom: 8px; }
-    #popup .label { font-size: 1.4rem; font-weight: 900; }
+    .slide-inner {
+      max-width: 680px; width: 100%;
+    }
 
-    /* Confetti canvas */
-    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 40; }
+    /* ── Slide type: title ───────────────────────────── */
+    .slide-title-screen { text-align: center; }
+    .big-icon { font-size: 4rem; display: block; margin-bottom: .5rem; }
+    .slide-heading {
+      font: 900 2.6rem/1.1 ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: -.03em; margin: 0 0 .5rem;
+    }
+    .slide-heading .hl-blue   { color: #3b82f6; }
+    .slide-heading .hl-green  { color: #3fb950; }
+    .slide-heading .hl-purple { color: #a78bfa; }
+    .slide-heading .hl-yellow { color: #f0c000; }
+    .slide-sub {
+      color: var(--muted); font-size: 1.05rem; margin: 0;
+      line-height: 1.55;
+    }
+
+    /* ── Slide type: content ─────────────────────────── */
+    .slide-label {
+      display: inline-block;
+      font: 700 .72rem/1 ui-sans-serif, system-ui, sans-serif;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--accent); background: rgba(59,130,246,.12);
+      border: 1px solid rgba(59,130,246,.3);
+      border-radius: 6px; padding: 3px 10px; margin-bottom: .7rem;
+    }
+    .slide-label.green  { color: var(--green);  background: rgba(63,185,80,.1);  border-color: rgba(63,185,80,.3); }
+    .slide-label.purple { color: var(--purple); background: rgba(167,139,250,.1); border-color: rgba(167,139,250,.3); }
+    .slide-label.yellow { color: var(--yellow); background: rgba(240,192,0,.1);  border-color: rgba(240,192,0,.3); }
+    .slide-label.orange { color: var(--orange); background: rgba(249,115,22,.1); border-color: rgba(249,115,22,.3); }
+
+    h2.content-title {
+      font: 800 1.9rem/1.15 ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: -.02em; margin: 0 0 1rem;
+    }
+
+    /* ── Code block ──────────────────────────────────── */
+    .code-block {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.3rem;
+      margin: .8rem 0;
+      overflow-x: auto;
+    }
+    .code-block pre {
+      margin: 0;
+      font: 500 .92rem/1.75 "JetBrains Mono", ui-monospace, monospace;
+      -webkit-user-select: text; user-select: text;
+    }
+    /* Syntax colors */
+    .kw  { color: #ff7b72; font-weight: 700; }   /* def, return, if */
+    .fn  { color: #d2a8ff; }                       /* function name */
+    .pn  { color: #ffa657; }                       /* param name */
+    .st  { color: #a5d6ff; }                       /* string */
+    .nm  { color: #79c0ff; }                       /* number */
+    .cm  { color: #6e7681; font-style: italic; }   /* comment */
+    .bi  { color: #3fb950; }                       /* builtin print etc */
+    .op  { color: #ff7b72; }                       /* operators */
+
+    /* ── Info cards ──────────────────────────────────── */
+    .cards-row { display: flex; gap: .7rem; flex-wrap: wrap; margin: .8rem 0; }
+    .info-card {
+      flex: 1; min-width: 160px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .9rem 1rem;
+    }
+    .info-card .ic-icon { font-size: 1.5rem; display: block; margin-bottom: .3rem; }
+    .info-card .ic-title { font: 700 .88rem/1 ui-sans-serif, system-ui, sans-serif; margin-bottom: .25rem; }
+    .info-card .ic-desc  { color: var(--muted); font-size: .82rem; line-height: 1.45; }
+
+    /* ── Bullet list ─────────────────────────────────── */
+    .bullet-list { list-style: none; padding: 0; margin: .5rem 0; }
+    .bullet-list li {
+      display: flex; gap: .6rem; align-items: flex-start;
+      padding: .5rem 0; border-bottom: 1px solid var(--border);
+      font-size: .97rem; line-height: 1.5;
+      color: var(--ink);
+    }
+    .bullet-list li:last-child { border-bottom: none; }
+    .bullet-list .bul { flex-shrink: 0; font-size: 1rem; }
+
+    /* ── Two-col layout ──────────────────────────────── */
+    .two-col { display: flex; gap: 1rem; align-items: flex-start; }
+    .two-col > * { flex: 1; }
+    @media (max-width: 520px) { .two-col { flex-direction: column; } }
+
+    /* ── Highlight box ───────────────────────────────── */
+    .highlight-box {
+      background: rgba(59,130,246,.08);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: var(--radius); padding: .8rem 1rem;
+      margin: .7rem 0; font-size: .92rem; line-height: 1.55;
+    }
+    .highlight-box strong { color: var(--accent); }
+
+    /* ── Nav bar ─────────────────────────────────────── */
+    .navbar {
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px; padding: 14px 20px;
+      border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    .nav-btn {
+      min-width: 48px; min-height: 48px; padding: 0 20px;
+      background: var(--card); border: 2px solid var(--border);
+      border-radius: 10px;
+      font: 700 .9rem/1 ui-sans-serif, system-ui, sans-serif;
+      color: var(--ink); cursor: pointer;
+      transition: background 120ms, transform 80ms;
+    }
+    .nav-btn:hover:not(:disabled) { background: rgba(255,255,255,.08); }
+    .nav-btn:active:not(:disabled) { transform: scale(.95); }
+    .nav-btn:disabled { opacity: .3; cursor: default; }
+    .nav-btn.primary {
+      background: linear-gradient(135deg,#3b82f6,#6366f1);
+      border-color: rgba(255,255,255,.2); color: #fff;
+      padding: 0 28px;
+    }
+    .nav-btn.primary:hover { filter: brightness(1.1); }
+
+    /* Dot indicators */
+    .dots {
+      display: flex; gap: 6px; align-items: center;
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--border); transition: background 200ms, transform 200ms;
+      cursor: pointer;
+    }
+    .dot.active { background: var(--accent); transform: scale(1.4); }
   </style>
 </head>
 <body>
 
-<div id="banner">🎂 Grattis på födelsedagen, Hilda! 🎀✨</div>
-
-<div id="hud">
-  <div id="score-box">
-    ⭐ Poäng: <span id="score">0</span> &nbsp;|&nbsp; Välj kläder nedan och klicka "Betygsätt!"
+<!-- Top bar -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🐍</div>
+    Python Funktioner
   </div>
-
-  <div id="outfit-btns">
-    <!-- Top row: tops -->
-    <button class="outfit-btn" style="background:#e91e8c" data-cat="top" data-val="0">🩷 Rosa klänning</button>
-    <button class="outfit-btn" style="background:#7c3aed" data-cat="top" data-val="1">💜 Lila klänning</button>
-    <button class="outfit-btn" style="background:#0ea5e9" data-cat="top" data-val="2">💙 Blå klänning</button>
-    <button class="outfit-btn" style="background:#f59e0b" data-cat="top" data-val="3">💛 Gul klänning</button>
-    <!-- Bottom row: accessories -->
-    <button class="outfit-btn" style="background:#10b981" data-cat="acc" data-val="0">🌸 Blomkrans</button>
-    <button class="outfit-btn" style="background:#f43f5e" data-cat="acc" data-val="1">👑 Krona</button>
-    <button class="outfit-btn" style="background:#6366f1" data-cat="acc" data-val="2">⭐ Glittrande hatt</button>
-  </div>
-
-  <button id="rate-btn">✨ Betygsätt outfit!</button>
+  <div class="slide-counter">Slide <span id="cur">1</span> / <span id="tot">7</span></div>
 </div>
 
-<div id="popup">
-  <span class="stars" id="popup-stars">⭐⭐⭐</span>
-  <div class="label" id="popup-label">Super!</div>
+<!-- Progress -->
+<div class="progress-track">
+  <div class="progress-fill" id="pbar" style="width:14%"></div>
 </div>
 
-<canvas id="confetti"></canvas>
+<!-- Slides -->
+<div class="slides-wrap" id="slides-wrap">
 
-<script type="module">
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+  <!-- 1 · Titel -->
+  <div class="slide active" data-slide="0">
+    <div class="slide-inner slide-title-screen">
+      <span class="big-icon">🐍</span>
+      <h1 class="slide-heading">Python<br><span class="hl-blue">Funktioner</span></h1>
+      <p class="slide-sub">Lär dig skriva återanvändbara kodblock som gör ett jobb åt dig — hur som helst, hur många gånger du vill.</p>
+    </div>
+  </div>
 
-// ── Scene setup ──────────────────────────────────────────────────
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a0a2e);
+  <!-- 2 · Vad är en funktion? -->
+  <div class="slide" data-slide="1">
+    <div class="slide-inner">
+      <div class="slide-label">Intro</div>
+      <h2 class="content-title">Vad är en funktion?</h2>
+      <p style="color:var(--muted);margin:0 0 .8rem;line-height:1.6">En funktion är ett namngivet kodblock som du kan anropa när du vill. Istället för att skriva samma kod om och om igen — skriv den en gång i en funktion!</p>
+      <div class="cards-row">
+        <div class="info-card">
+          <span class="ic-icon">♻️</span>
+          <div class="ic-title">Återanvändbar</div>
+          <div class="ic-desc">Skriv koden en gång, använd tusen gånger.</div>
+        </div>
+        <div class="info-card">
+          <span class="ic-icon">📦</span>
+          <div class="ic-title">Organiserad</div>
+          <div class="ic-desc">Delar upp koden i logiska delar som är lätta att förstå.</div>
+        </div>
+        <div class="info-card">
+          <span class="ic-icon">🧪</span>
+          <div class="ic-title">Testbar</div>
+          <div class="ic-desc">Enkel att testa och felsöka separat.</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-// Soft purple fog for depth
-scene.fog = new THREE.Fog(0x1a0a2e, 12, 30);
+  <!-- 3 · Syntax -->
+  <div class="slide" data-slide="2">
+    <div class="slide-inner">
+      <div class="slide-label green">Syntax</div>
+      <h2 class="content-title">Skapa en funktion</h2>
+      <p style="color:var(--muted);margin:0 0 .5rem;line-height:1.6">Använd nyckelordet <code style="color:#d2a8ff;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:4px">def</code> för att definiera en funktion, följt av ett namn och parenteser.</p>
+      <div class="code-block"><pre><span class="cm"># Definiera en funktion</span>
+<span class="kw">def</span> <span class="fn">säg_hej</span>():
+    <span class="bi">print</span>(<span class="st">"Hej, världen!"</span>)
 
-const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 100);
-camera.position.set(0, 2.2, 6.5);
-camera.lookAt(0, 1, 0);
+<span class="cm"># Anropa funktionen</span>
+<span class="fn">säg_hej</span>()   <span class="cm"># skriver ut: Hej, världen!</span>
+<span class="fn">säg_hej</span>()   <span class="cm"># anropa hur många gånger som helst</span>
+<span class="fn">säg_hej</span>()</pre></div>
+      <div class="highlight-box">
+        <strong>Kom ihåg:</strong> Koden inuti funktionen måste vara indragen med 4 mellanslag (eller ett tab). Python är känsligt för indragning!
+      </div>
+    </div>
+  </div>
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-document.body.appendChild(renderer.domElement);
+  <!-- 4 · Parametrar -->
+  <div class="slide" data-slide="3">
+    <div class="slide-inner">
+      <div class="slide-label purple">Parametrar</div>
+      <h2 class="content-title">Funktioner med parametrar</h2>
+      <p style="color:var(--muted);margin:0 0 .5rem;line-height:1.6">Parametrar är variabler du skickar in i en funktion så att den kan jobba med olika värden.</p>
+      <div class="code-block"><pre><span class="cm"># En parameter: namn</span>
+<span class="kw">def</span> <span class="fn">hälsa</span>(<span class="pn">namn</span>):
+    <span class="bi">print</span>(<span class="st">"Hej,"</span>, <span class="pn">namn</span>)
 
-// ── Lights ───────────────────────────────────────────────────────
-scene.add(new THREE.AmbientLight(0xffeeff, 0.7));
+<span class="fn">hälsa</span>(<span class="st">"Hilda"</span>)   <span class="cm"># → Hej, Hilda</span>
+<span class="fn">hälsa</span>(<span class="st">"Erik"</span>)    <span class="cm"># → Hej, Erik</span>
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
-keyLight.position.set(4, 8, 6);
-keyLight.castShadow = true;
-scene.add(keyLight);
+<span class="cm"># Två parametrar</span>
+<span class="kw">def</span> <span class="fn">addera</span>(<span class="pn">a</span>, <span class="pn">b</span>):
+    <span class="bi">print</span>(<span class="pn">a</span> <span class="op">+</span> <span class="pn">b</span>)
 
-const fillLight = new THREE.DirectionalLight(0xc084fc, 0.6);
-fillLight.position.set(-4, 3, -3);
-scene.add(fillLight);
+<span class="fn">addera</span>(<span class="nm">3</span>, <span class="nm">5</span>)    <span class="cm"># → 8</span>
+<span class="fn">addera</span>(<span class="nm">10</span>, <span class="nm">20</span>)  <span class="cm"># → 30</span></pre></div>
+    </div>
+  </div>
 
-const rimLight = new THREE.PointLight(0xff69b4, 2, 10);
-rimLight.position.set(0, 5, -4);
-scene.add(rimLight);
+  <!-- 5 · Return -->
+  <div class="slide" data-slide="4">
+    <div class="slide-inner">
+      <div class="slide-label yellow">Return</div>
+      <h2 class="content-title">Returnera ett värde</h2>
+      <p style="color:var(--muted);margin:0 0 .5rem;line-height:1.6">Med <code style="color:#ff7b72;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:4px">return</code> kan en funktion skicka tillbaka ett värde som du kan spara eller använda vidare.</p>
+      <div class="two-col">
+        <div>
+          <p style="color:var(--muted);font-size:.85rem;margin:0 0 .3rem">Utan return:</p>
+          <div class="code-block"><pre><span class="kw">def</span> <span class="fn">dubbla</span>(<span class="pn">x</span>):
+    <span class="bi">print</span>(<span class="pn">x</span> <span class="op">*</span> <span class="nm">2</span>)
 
-// ── Floor ────────────────────────────────────────────────────────
-const floorGeo = new THREE.CircleGeometry(6, 64);
-const floorMat = new THREE.MeshStandardMaterial({ color: 0x2d1050, roughness: 0.9 });
-const floor = new THREE.Mesh(floorGeo, floorMat);
-floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
-scene.add(floor);
+<span class="fn">dubbla</span>(<span class="nm">4</span>)  <span class="cm"># skriver ut 8</span>
+<span class="cm"># men inget värde sparas</span></pre></div>
+        </div>
+        <div>
+          <p style="color:var(--muted);font-size:.85rem;margin:0 0 .3rem">Med return:</p>
+          <div class="code-block"><pre><span class="kw">def</span> <span class="fn">dubbla</span>(<span class="pn">x</span>):
+    <span class="kw">return</span> <span class="pn">x</span> <span class="op">*</span> <span class="nm">2</span>
 
-// Sparkle ring on floor
-const ringGeo = new THREE.RingGeometry(2.3, 2.5, 64);
-const ringMat = new THREE.MeshStandardMaterial({ color: 0xff69b4, emissive: 0xff69b4, emissiveIntensity: 0.6, side: THREE.DoubleSide });
-const ring = new THREE.Mesh(ringGeo, ringMat);
-ring.rotation.x = -Math.PI / 2;
-ring.position.y = 0.01;
-scene.add(ring);
+svar <span class="op">=</span> <span class="fn">dubbla</span>(<span class="nm">4</span>)
+<span class="bi">print</span>(svar)  <span class="cm"># → 8</span></pre></div>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <strong>Tips:</strong> Använd <code style="color:#ff7b72">return</code> när du vill använda resultatet senare i koden!
+      </div>
+    </div>
+  </div>
 
-// ── Character body (geometric doll) ──────────────────────────────
-const charGroup = new THREE.Group();
-scene.add(charGroup);
+  <!-- 6 · Defaultvärden -->
+  <div class="slide" data-slide="5">
+    <div class="slide-inner">
+      <div class="slide-label orange">Standardvärden</div>
+      <h2 class="content-title">Parametrar med standardvärden</h2>
+      <p style="color:var(--muted);margin:0 0 .5rem;line-height:1.6">Du kan ge parametrar ett standardvärde (default). Då behöver man inte alltid skicka in det.</p>
+      <div class="code-block"><pre><span class="kw">def</span> <span class="fn">hälsa</span>(<span class="pn">namn</span>, <span class="pn">hälsning</span><span class="op">=</span><span class="st">"Hej"</span>):
+    <span class="bi">print</span>(<span class="pn">hälsning</span>, <span class="pn">namn</span>)
 
-// Skin color
-const skinMat = new THREE.MeshStandardMaterial({ color: 0xfad5b0 });
+<span class="fn">hälsa</span>(<span class="st">"Hilda"</span>)               <span class="cm"># → Hej Hilda</span>
+<span class="fn">hälsa</span>(<span class="st">"Erik"</span>, <span class="st">"God morgon"</span>)   <span class="cm"># → God morgon Erik</span>
 
-// Head
-const head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 32, 32), skinMat);
-head.position.set(0, 3.42, 0);
-head.castShadow = true;
-charGroup.add(head);
+<span class="cm"># Räkna med standardvärde</span>
+<span class="kw">def</span> <span class="fn">upphöjt</span>(<span class="pn">tal</span>, <span class="pn">exp</span><span class="op">=</span><span class="nm">2</span>):
+    <span class="kw">return</span> <span class="pn">tal</span> <span class="op">**</span> <span class="pn">exp</span>
 
-// Eyes
-const eyeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e });
-[-0.13, 0.13].forEach(x => {
-  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.065, 16, 16), eyeMat);
-  eye.position.set(x, 3.48, 0.34);
-  charGroup.add(eye);
-});
+<span class="bi">print</span>(<span class="fn">upphöjt</span>(<span class="nm">3</span>))     <span class="cm"># → 9  (3²)</span>
+<span class="bi">print</span>(<span class="fn">upphöjt</span>(<span class="nm">2</span>, <span class="nm">10</span>)) <span class="cm"># → 1024 (2¹⁰)</span></pre></div>
+    </div>
+  </div>
 
-// Smile
-const smileGeo = new THREE.TorusGeometry(0.13, 0.025, 8, 20, Math.PI);
-const smileMat = new THREE.MeshStandardMaterial({ color: 0xcc3366 });
-const smile = new THREE.Mesh(smileGeo, smileMat);
-smile.position.set(0, 3.24, 0.35);
-smile.rotation.z = Math.PI;
-charGroup.add(smile);
+  <!-- 7 · Sammanfattning -->
+  <div class="slide" data-slide="6">
+    <div class="slide-inner">
+      <div class="slide-label green">Sammanfattning</div>
+      <h2 class="content-title">Det du lärt dig 🎉</h2>
+      <ul class="bullet-list">
+        <li><span class="bul">🔵</span><span><strong>def</strong> — nyckelordet för att skapa en funktion</span></li>
+        <li><span class="bul">📦</span><span><strong>Parametrar</strong> — variabler du skickar in i funktionen</span></li>
+        <li><span class="bul">↩️</span><span><strong>return</strong> — skickar tillbaka ett värde från funktionen</span></li>
+        <li><span class="bul">⚙️</span><span><strong>Standardvärden</strong> — parametrar med ett förvalt värde</span></li>
+        <li><span class="bul">♻️</span><span>Funktioner gör koden <strong>återanvändbar</strong> och lättare att läsa</span></li>
+      </ul>
+      <div class="code-block"><pre><span class="cm"># En komplett funktion med allt!</span>
+<span class="kw">def</span> <span class="fn">presentera</span>(<span class="pn">namn</span>, <span class="pn">ålder</span><span class="op">=</span><span class="nm">0</span>):
+    <span class="kw">return</span> <span class="st">f"Jag heter </span><span class="pn">{namn}</span><span class="st"> och är </span><span class="pn">{ålder}</span><span class="st"> år gammal."</span>
 
-// Neck
-const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.22, 16), skinMat);
-neck.position.set(0, 3.0, 0);
-charGroup.add(neck);
+<span class="bi">print</span>(<span class="fn">presentera</span>(<span class="st">"Hilda"</span>, <span class="nm">12</span>))
+<span class="cm"># → Jag heter Hilda och är 12 år gammal.</span></pre></div>
+    </div>
+  </div>
 
-// Dress (body) — cone
-const dressMat = new THREE.MeshStandardMaterial({ color: 0xe91e8c, roughness: 0.5, metalness: 0.1 });
-const dressGeo = new THREE.ConeGeometry(0.7, 2.0, 32);
-const dress = new THREE.Mesh(dressGeo, dressMat);
-dress.position.set(0, 1.85, 0);
-dress.castShadow = true;
-charGroup.add(dress);
+</div>
 
-// Bodice (upper body)
-const bodice = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 0.7, 24), dressMat);
-bodice.position.set(0, 2.75, 0);
-charGroup.add(bodice);
+<!-- Nav bar -->
+<div class="navbar">
+  <button class="nav-btn" id="btn-prev" onclick="go(-1)" disabled>← Föregående</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav-btn primary" id="btn-next" onclick="go(1)">Nästa →</button>
+</div>
 
-// Arms
-const armMat = new THREE.MeshStandardMaterial({ color: 0xfad5b0 });
-[[-0.55, 2.65, 0, 0.18], [0.55, 2.65, 0, -0.18]].forEach(([x, y, z, rz]) => {
-  const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.5, 8, 16), armMat);
-  arm.position.set(x, y, z);
-  arm.rotation.z = rz * 3;
-  charGroup.add(arm);
-});
+<script>
+  const TOTAL   = 7;
+  let current   = 0;
 
-// Legs
-[-0.18, 0.18].forEach(x => {
-  const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.55, 8, 16), skinMat);
-  leg.position.set(x, 0.5, 0);
-  charGroup.add(leg);
-});
+  const slides  = document.querySelectorAll(".slide");
+  const dotsEl  = document.getElementById("dots");
+  const btnPrev = document.getElementById("btn-prev");
+  const btnNext = document.getElementById("btn-next");
+  const pbar    = document.getElementById("pbar");
+  const curEl   = document.getElementById("cur");
 
-// Hair
-const hairMat = new THREE.MeshStandardMaterial({ color: 0x5c2d0e, roughness: 0.8 });
-const hair = new THREE.Mesh(new THREE.SphereGeometry(0.40, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.55), hairMat);
-hair.position.set(0, 3.55, 0);
-charGroup.add(hair);
-
-// Long hair back
-const hairBack = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.08, 0.9, 16), hairMat);
-hairBack.position.set(0, 3.1, -0.25);
-charGroup.add(hairBack);
-
-// ── Accessory group ───────────────────────────────────────────────
-const accGroup = new THREE.Group();
-charGroup.add(accGroup);
-
-// Flower crown (default)
-function makeFlowerCrown() {
-  const g = new THREE.Group();
-  const colors = [0xff69b4, 0xfbbf24, 0xf43f5e, 0xa78bfa];
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2;
-    const petal = new THREE.Mesh(
-      new THREE.SphereGeometry(0.08, 8, 8),
-      new THREE.MeshStandardMaterial({ color: colors[i % 4], emissive: colors[i % 4], emissiveIntensity: 0.3 })
-    );
-    petal.position.set(Math.cos(a) * 0.32, 3.75, Math.sin(a) * 0.32);
-    g.add(petal);
+  // Build dots
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement("div");
+    d.className = "dot" + (i === 0 ? " active" : "");
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
   }
-  return g;
-}
 
-// Crown
-function makeCrown() {
-  const g = new THREE.Group();
-  const goldMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xfbbf24, emissiveIntensity: 0.4, metalness: 0.8, roughness: 0.2 });
-  const base = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.04, 8, 32), goldMat);
-  base.position.set(0, 3.72, 0);
-  g.add(base);
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
-    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.22, 8), goldMat);
-    spike.position.set(Math.cos(a) * 0.34, 3.86, Math.sin(a) * 0.34);
-    spike.rotation.x = 0.2;
-    spike.rotation.y = -a;
-    g.add(spike);
+  function go(dir) { goTo(current + dir); }
+
+  function goTo(idx) {
+    if (idx < 0 || idx >= TOTAL) return;
+
+    slides[current].classList.remove("active");
+    slides[current].classList.add("exit");
+    setTimeout(() => slides[current]?.classList.remove("exit"), 320);
+
+    current = idx;
+    slides[current].classList.add("active");
+
+    // Update UI
+    document.querySelectorAll(".dot").forEach((d, i) =>
+      d.classList.toggle("active", i === current));
+
+    pbar.style.width = ((current + 1) / TOTAL * 100) + "%";
+    curEl.textContent = current + 1;
+    btnPrev.disabled = current === 0;
+    btnNext.textContent = current === TOTAL - 1 ? "Börja om 🔄" : "Nästa →";
+    if (current === TOTAL - 1) {
+      btnNext.onclick = () => goTo(0);
+    } else {
+      btnNext.onclick = () => go(1);
+    }
   }
-  return g;
-}
 
-// Glitter hat
-function makeGlitterHat() {
-  const g = new THREE.Group();
-  const hatMat = new THREE.MeshStandardMaterial({ color: 0x6366f1, emissive: 0x6366f1, emissiveIntensity: 0.3, metalness: 0.3 });
-  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.06, 32), hatMat);
-  brim.position.set(0, 3.73, 0);
-  g.add(brim);
-  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.33, 0.75, 32), hatMat);
-  cone.position.set(0, 4.08, 0);
-  g.add(cone);
-  // Stars on hat
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
-    const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.05), new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xfbbf24, emissiveIntensity: 1 }));
-    star.position.set(Math.cos(a) * 0.2, 3.98 + i * 0.08, Math.sin(a) * 0.2);
-    g.add(star);
-  }
-  return g;
-}
-
-// ── Floating stars in background ─────────────────────────────────
-const starParticles = [];
-for (let i = 0; i < 60; i++) {
-  const s = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.04 + Math.random() * 0.06),
-    new THREE.MeshStandardMaterial({
-      color: [0xff69b4, 0xfbbf24, 0xc084fc, 0x60a5fa][Math.floor(Math.random() * 4)],
-      emissive: 0xffffff, emissiveIntensity: 0.5
-    })
-  );
-  s.position.set((Math.random() - 0.5) * 14, Math.random() * 8, (Math.random() - 0.5) * 10 - 4);
-  s.userData.speed = 0.005 + Math.random() * 0.01;
-  s.userData.offset = Math.random() * Math.PI * 2;
-  scene.add(s);
-  starParticles.push(s);
-}
-
-// ── State ─────────────────────────────────────────────────────────
-let currentTop = 0;   // 0=pink,1=purple,2=blue,3=yellow
-let currentAcc = 0;   // 0=flower,1=crown,2=hat
-let totalScore = 0;
-
-const dressColors = [0xe91e8c, 0x7c3aed, 0x0ea5e9, 0xf59e0b];
-const accFactories = [makeFlowerCrown, makeCrown, makeGlitterHat];
-const outfitRatings = [
-  ["⭐⭐⭐⭐⭐", "Perfekt! Hilda ser ut som en prinsessa! 👑"],
-  ["⭐⭐⭐⭐", "Wow, superfin outfit! 💜"],
-  ["⭐⭐⭐⭐⭐", "Bästa looken ever! 🌟"],
-  ["⭐⭐⭐", "Snyggt val! Prova en annan kombination! 🌸"],
-  ["⭐⭐⭐⭐", "Så elegent! Hilda är en stjärna! ✨"],
-  ["⭐⭐⭐⭐⭐", "Absolut fantastisk! 🎂🎀"],
-];
-
-// Set initial accessory
-let accMesh = makeFlowerCrown();
-accGroup.add(accMesh);
-
-function setDressColor(idx) {
-  currentTop = idx;
-  dress.material.color.setHex(dressColors[idx]);
-  dress.material.emissive.setHex(dressColors[idx]);
-  dress.material.emissiveIntensity = 0.15;
-  bodice.material = dress.material;
-  // Highlight button
-  document.querySelectorAll('[data-cat="top"]').forEach((b, i) => {
-    b.style.outline = i === idx ? "3px solid #fff" : "none";
-  });
-}
-
-function setAccessory(idx) {
-  currentAcc = idx;
-  accGroup.clear();
-  accMesh = accFactories[idx]();
-  accGroup.add(accMesh);
-  document.querySelectorAll('[data-cat="acc"]').forEach((b, i) => {
-    b.style.outline = i === idx ? "3px solid #fff" : "none";
-  });
-}
-
-// Wire up buttons
-document.querySelectorAll(".outfit-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const cat = btn.dataset.cat;
-    const val = parseInt(btn.dataset.val);
-    if (cat === "top") setDressColor(val);
-    else setAccessory(val);
-  });
-});
-
-// Initial highlight
-setDressColor(0);
-setAccessory(0);
-
-// ── Rating ────────────────────────────────────────────────────────
-const popup    = document.getElementById("popup");
-const popStars = document.getElementById("popup-stars");
-const popLabel = document.getElementById("popup-label");
-const scoreEl  = document.getElementById("score");
-
-document.getElementById("rate-btn").addEventListener("click", () => {
-  const combo = (currentTop + currentAcc * 4) % outfitRatings.length;
-  const [stars, label] = outfitRatings[combo];
-  popStars.textContent = stars;
-  popLabel.textContent = label;
-  popup.classList.add("show");
-  const pts = stars.length * 20;
-  totalScore += pts;
-  scoreEl.textContent = totalScore;
-  launchConfetti();
-  setTimeout(() => popup.classList.remove("show"), 2800);
-});
-
-// ── Confetti ─────────────────────────────────────────────────────
-const confCanvas = document.getElementById("confetti");
-const confCtx = confCanvas.getContext("2d");
-confCanvas.width = innerWidth;
-confCanvas.height = innerHeight;
-let confPieces = [];
-
-function launchConfetti() {
-  const colors = ["#ff69b4","#c084fc","#60a5fa","#fbbf24","#34d399","#f43f5e"];
-  for (let i = 0; i < 90; i++) {
-    confPieces.push({
-      x: Math.random() * confCanvas.width,
-      y: -10,
-      w: 8 + Math.random() * 10,
-      h: 5 + Math.random() * 6,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      vy: 3 + Math.random() * 5,
-      vx: (Math.random() - 0.5) * 4,
-      rot: Math.random() * 360,
-      rspeed: (Math.random() - 0.5) * 8,
-    });
-  }
-}
-
-function drawConfetti() {
-  confCtx.clearRect(0, 0, confCanvas.width, confCanvas.height);
-  confPieces = confPieces.filter(p => p.y < confCanvas.height + 20);
-  confPieces.forEach(p => {
-    p.x += p.vx; p.y += p.vy; p.rot += p.rspeed;
-    confCtx.save();
-    confCtx.translate(p.x, p.y);
-    confCtx.rotate(p.rot * Math.PI / 180);
-    confCtx.fillStyle = p.color;
-    confCtx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
-    confCtx.restore();
-  });
-}
-
-// ── OrbitControls (gentle, limited) ───────────────────────────────
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 1.5, 0);
-controls.minDistance = 3;
-controls.maxDistance = 10;
-controls.maxPolarAngle = Math.PI * 0.75;
-controls.enablePan = false;
-controls.enableDamping = true;
-controls.dampingFactor = 0.08;
-controls.update();
-
-// ── Resize ────────────────────────────────────────────────────────
-window.addEventListener("resize", () => {
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-  confCanvas.width = innerWidth;
-  confCanvas.height = innerHeight;
-});
-
-// ── Animation loop ────────────────────────────────────────────────
-let t = 0;
-renderer.setAnimationLoop(() => {
-  t += 0.016;
-
-  // Character gentle bob
-  charGroup.position.y = Math.sin(t * 1.2) * 0.04;
-  charGroup.rotation.y = Math.sin(t * 0.4) * 0.08;
-
-  // Accessory spin
-  if (accMesh) accMesh.rotation.y += 0.02;
-
-  // Ring pulse
-  ring.material.emissiveIntensity = 0.4 + Math.sin(t * 2) * 0.3;
-
-  // Stars float
-  starParticles.forEach(s => {
-    s.position.y += Math.sin(t * s.userData.speed * 60 + s.userData.offset) * 0.005;
-    s.rotation.x += s.userData.speed;
-    s.rotation.y += s.userData.speed * 0.7;
+  // Keyboard nav
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") go(1);
+    if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   go(-1);
   });
 
-  controls.update();
-  renderer.render(scene, camera);
-  drawConfetti();
-});
+  // Swipe support
+  let touchX = 0;
+  document.addEventListener("touchstart", e => touchX = e.touches[0].clientX);
+  document.addEventListener("touchend",   e => {
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+  });
 </script>
 </body>
 </html>

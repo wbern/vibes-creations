@@ -5,16 +5,16 @@
       "display_name": "pilot",
       "published": [
         {
-          "slug": "milda-lejonet",
-          "boilerplate": true,
-          "student": "student03",
-          "display_name": "student03",
-          "title": "min sida",
-          "description": null,
+          "slug": "modiga-lammeln",
+          "boilerplate": false,
+          "student": "student08",
+          "display_name": "student08",
+          "title": "Python Funktioner 🐍",
+          "description": "En lärande webbsida som visar hur man skriver och använder Python-funktioner med tydliga exempel och förklaringar.",
           "persona": "clay",
-          "archived_at": "2026-06-04T10:48:18Z",
-          "published_at": "2026-06-04T10:48:23Z",
-          "thumbnail": "students/pilot/milda-lejonet/thumbnail.webp",
+          "archived_at": "2026-06-04T10:49:21Z",
+          "published_at": "2026-06-04T10:49:30Z",
+          "thumbnail": "students/pilot/modiga-lammeln/thumbnail.webp",
           "scan": {
             "counts": {
               "personnummer": 0,
@@ -30,16 +30,16 @@
           }
         },
         {
-          "slug": "modiga-lammeln",
-          "boilerplate": false,
-          "student": "student08",
-          "display_name": "student08",
-          "title": "Grattis Hilda! 🎀 Dress to Impress",
-          "description": "Ett roligt klädspel där du väljer outfit och får poäng — gjort för att fira Hildas födelsedag!",
+          "slug": "milda-lejonet",
+          "boilerplate": true,
+          "student": "student03",
+          "display_name": "student03",
+          "title": "min sida",
+          "description": null,
           "persona": "clay",
-          "archived_at": "2026-06-04T10:19:13Z",
-          "published_at": "2026-06-04T10:19:22Z",
-          "thumbnail": "students/pilot/modiga-lammeln/thumbnail.webp",
+          "archived_at": "2026-06-04T10:48:18Z",
+          "published_at": "2026-06-04T10:48:23Z",
+          "thumbnail": "students/pilot/milda-lejonet/thumbnail.webp",
           "scan": {
             "counts": {
               "personnummer": 0,
