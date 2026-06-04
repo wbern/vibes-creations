@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Python Funktioner 🐍</title>
+  <title>Webb Säkerhet 🔒</title>
   <style>
     html, body {
       margin: 0; padding: 0; height: 100%;
@@ -13,14 +13,15 @@
       touch-action: manipulation;
     }
     :root {
-      --bg:      #0e1117;
-      --card:    #161b22;
-      --border:  rgba(255,255,255,.12);
-      --ink:     #e6edf3;
-      --muted:   #8b949e;
-      --accent:  #3b82f6;
-      --green:   #3fb950;
-      --yellow:  #f0c000;
+      --bg:      #0b0f1a;
+      --card:    #111827;
+      --border:  rgba(255,255,255,.1);
+      --ink:     #e2e8f0;
+      --muted:   #64748b;
+      --accent:  #06b6d4;
+      --red:     #f43f5e;
+      --green:   #10b981;
+      --yellow:  #f59e0b;
       --purple:  #a78bfa;
       --orange:  #f97316;
       --radius:  14px;
@@ -33,366 +34,626 @@
       height: 100vh; overflow: hidden;
     }
 
-    /* ── Top bar ─────────────────────────────────────── */
+    /* ── Top bar ─────────────────────────────────── */
     .topbar {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 20px;
-      border-bottom: 1px solid var(--border);
+      padding: 10px 18px; border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
-    .brand {
-      display: flex; align-items: center; gap: 8px;
-      font: 800 1rem/1 ui-sans-serif, system-ui, sans-serif;
-    }
+    .brand { display: flex; align-items: center; gap: 8px; font: 800 .95rem/1 ui-sans-serif, system-ui, sans-serif; }
     .brand-icon {
-      width: 30px; height: 30px; border-radius: 8px;
-      background: linear-gradient(135deg,#3b82f6,#a78bfa);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem;
+      width: 28px; height: 28px; border-radius: 7px;
+      background: linear-gradient(135deg,#06b6d4,#6366f1);
+      display: flex; align-items: center; justify-content: center; font-size: .9rem;
     }
-    .slide-counter {
-      font: 700 .85rem/1 ui-monospace, monospace;
-      color: var(--muted);
-    }
+    .slide-counter { font: 700 .82rem/1 ui-monospace, monospace; color: var(--muted); }
     .slide-counter span { color: var(--accent); }
 
-    /* ── Progress bar ────────────────────────────────── */
-    .progress-track {
-      height: 3px; background: rgba(255,255,255,.07); flex-shrink: 0;
-    }
+    /* ── Progress ─────────────────────────────────── */
+    .progress-track { height: 3px; background: rgba(255,255,255,.06); flex-shrink: 0; }
     .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #3b82f6, #a78bfa);
-      transition: width 350ms cubic-bezier(.4,0,.2,1);
+      height: 100%; background: linear-gradient(90deg,#06b6d4,#6366f1);
+      transition: width 320ms cubic-bezier(.4,0,.2,1);
     }
 
-    /* ── Slide area ──────────────────────────────────── */
-    .slides-wrap {
-      flex: 1; overflow: hidden; position: relative;
-    }
+    /* ── Slides ───────────────────────────────────── */
+    .slides-wrap { flex: 1; overflow: hidden; position: relative; }
     .slide {
       position: absolute; inset: 0;
       display: flex; flex-direction: column;
       justify-content: center; align-items: center;
-      padding: 20px;
-      opacity: 0; transform: translateX(60px);
-      transition: opacity 300ms, transform 300ms cubic-bezier(.4,0,.2,1);
-      pointer-events: none;
-      overflow-y: auto;
+      padding: 16px 18px;
+      opacity: 0; transform: translateX(50px);
+      transition: opacity 280ms, transform 280ms cubic-bezier(.4,0,.2,1);
+      pointer-events: none; overflow-y: auto;
     }
-    .slide.active {
-      opacity: 1; transform: translateX(0);
-      pointer-events: all;
-    }
-    .slide.exit {
-      opacity: 0; transform: translateX(-60px);
-    }
-    .slide-inner {
-      max-width: 680px; width: 100%;
-    }
+    .slide.active  { opacity: 1; transform: translateX(0); pointer-events: all; }
+    .slide.exit    { opacity: 0; transform: translateX(-50px); }
+    .slide-inner   { max-width: 700px; width: 100%; }
 
-    /* ── Slide type: title ───────────────────────────── */
-    .slide-title-screen { text-align: center; }
-    .big-icon { font-size: 4rem; display: block; margin-bottom: .5rem; }
-    .slide-heading {
-      font: 900 2.6rem/1.1 ui-sans-serif, system-ui, sans-serif;
-      letter-spacing: -.03em; margin: 0 0 .5rem;
-    }
-    .slide-heading .hl-blue   { color: #3b82f6; }
-    .slide-heading .hl-green  { color: #3fb950; }
-    .slide-heading .hl-purple { color: #a78bfa; }
-    .slide-heading .hl-yellow { color: #f0c000; }
-    .slide-sub {
-      color: var(--muted); font-size: 1.05rem; margin: 0;
-      line-height: 1.55;
-    }
-
-    /* ── Slide type: content ─────────────────────────── */
+    /* ── Typography ───────────────────────────────── */
     .slide-label {
       display: inline-block;
-      font: 700 .72rem/1 ui-sans-serif, system-ui, sans-serif;
+      font: 700 .7rem/1 ui-sans-serif, system-ui, sans-serif;
       text-transform: uppercase; letter-spacing: .1em;
-      color: var(--accent); background: rgba(59,130,246,.12);
-      border: 1px solid rgba(59,130,246,.3);
-      border-radius: 6px; padding: 3px 10px; margin-bottom: .7rem;
+      border-radius: 5px; padding: 3px 9px; margin-bottom: .6rem;
+      color: var(--accent); background: rgba(6,182,212,.1); border: 1px solid rgba(6,182,212,.25);
     }
-    .slide-label.green  { color: var(--green);  background: rgba(63,185,80,.1);  border-color: rgba(63,185,80,.3); }
-    .slide-label.purple { color: var(--purple); background: rgba(167,139,250,.1); border-color: rgba(167,139,250,.3); }
-    .slide-label.yellow { color: var(--yellow); background: rgba(240,192,0,.1);  border-color: rgba(240,192,0,.3); }
-    .slide-label.orange { color: var(--orange); background: rgba(249,115,22,.1); border-color: rgba(249,115,22,.3); }
+    .slide-label.red    { color: var(--red);    background: rgba(244,63,94,.1);   border-color: rgba(244,63,94,.25); }
+    .slide-label.green  { color: var(--green);  background: rgba(16,185,129,.1);  border-color: rgba(16,185,129,.25); }
+    .slide-label.yellow { color: var(--yellow); background: rgba(245,158,11,.1);  border-color: rgba(245,158,11,.25); }
+    .slide-label.purple { color: var(--purple); background: rgba(167,139,250,.1); border-color: rgba(167,139,250,.25); }
+    .slide-label.orange { color: var(--orange); background: rgba(249,115,22,.1);  border-color: rgba(249,115,22,.25); }
 
-    h2.content-title {
-      font: 800 1.9rem/1.15 ui-sans-serif, system-ui, sans-serif;
-      letter-spacing: -.02em; margin: 0 0 1rem;
+    .big-icon { font-size: 3.8rem; display: block; margin-bottom: .4rem; text-align: center; }
+    h1.hero {
+      font: 900 2.8rem/1.05 ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: -.035em; margin: 0 0 .5rem; text-align: center;
+      background: linear-gradient(90deg,#06b6d4,#6366f1,#a78bfa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
+    h2.title {
+      font: 800 1.75rem/1.15 ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: -.02em; margin: 0 0 .7rem;
+    }
+    .lead { color: var(--muted); font-size: .94rem; line-height: 1.6; margin: 0 0 .8rem; }
 
-    /* ── Code block ──────────────────────────────────── */
+    /* ── Code ─────────────────────────────────────── */
     .code-block {
-      background: #0d1117;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.1rem 1.3rem;
-      margin: .8rem 0;
+      background: #060a12; border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .9rem 1.1rem; margin: .6rem 0;
       overflow-x: auto;
     }
     .code-block pre {
-      margin: 0;
-      font: 500 .92rem/1.75 "JetBrains Mono", ui-monospace, monospace;
+      margin: 0; font: 500 .85rem/1.7 "JetBrains Mono", ui-monospace, monospace;
       -webkit-user-select: text; user-select: text;
     }
-    /* Syntax colors */
-    .kw  { color: #ff7b72; font-weight: 700; }   /* def, return, if */
-    .fn  { color: #d2a8ff; }                       /* function name */
-    .pn  { color: #ffa657; }                       /* param name */
-    .st  { color: #a5d6ff; }                       /* string */
-    .nm  { color: #79c0ff; }                       /* number */
-    .cm  { color: #6e7681; font-style: italic; }   /* comment */
-    .bi  { color: #3fb950; }                       /* builtin print etc */
-    .op  { color: #ff7b72; }                       /* operators */
+    .kw { color: #ff7b72; font-weight: 700; }
+    .fn { color: #d2a8ff; }
+    .st { color: #a5d6ff; }
+    .nm { color: #79c0ff; }
+    .cm { color: #5c6370; font-style: italic; }
+    .tg { color: #7ee787; }
+    .at { color: #ffa657; }
+    .vl { color: #a5d6ff; }
+    .hl { background: rgba(244,63,94,.18); border-left: 3px solid var(--red); padding-left: 6px; display: block; }
+    .gl { background: rgba(16,185,129,.12); border-left: 3px solid var(--green); padding-left: 6px; display: block; }
 
-    /* ── Info cards ──────────────────────────────────── */
-    .cards-row { display: flex; gap: .7rem; flex-wrap: wrap; margin: .8rem 0; }
+    /* ── Cards ────────────────────────────────────── */
+    .cards-row { display: flex; gap: .6rem; flex-wrap: wrap; margin: .6rem 0; }
     .info-card {
-      flex: 1; min-width: 160px;
+      flex: 1; min-width: 140px;
       background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: .9rem 1rem;
+      border-radius: var(--radius); padding: .8rem .9rem;
     }
-    .info-card .ic-icon { font-size: 1.5rem; display: block; margin-bottom: .3rem; }
-    .info-card .ic-title { font: 700 .88rem/1 ui-sans-serif, system-ui, sans-serif; margin-bottom: .25rem; }
-    .info-card .ic-desc  { color: var(--muted); font-size: .82rem; line-height: 1.45; }
+    .info-card .ic-icon { font-size: 1.3rem; display: block; margin-bottom: .2rem; }
+    .info-card .ic-title { font: 700 .85rem/1 ui-sans-serif, system-ui, sans-serif; margin-bottom: .2rem; }
+    .info-card .ic-desc  { color: var(--muted); font-size: .8rem; line-height: 1.45; }
 
-    /* ── Bullet list ─────────────────────────────────── */
-    .bullet-list { list-style: none; padding: 0; margin: .5rem 0; }
-    .bullet-list li {
-      display: flex; gap: .6rem; align-items: flex-start;
-      padding: .5rem 0; border-bottom: 1px solid var(--border);
-      font-size: .97rem; line-height: 1.5;
-      color: var(--ink);
+    /* ── Bullet list ──────────────────────────────── */
+    .blist { list-style: none; padding: 0; margin: .4rem 0; }
+    .blist li {
+      display: flex; gap: .55rem; align-items: flex-start;
+      padding: .45rem 0; border-bottom: 1px solid var(--border);
+      font-size: .93rem; line-height: 1.5; color: var(--ink);
     }
-    .bullet-list li:last-child { border-bottom: none; }
-    .bullet-list .bul { flex-shrink: 0; font-size: 1rem; }
+    .blist li:last-child { border-bottom: none; }
+    .blist .bi { flex-shrink: 0; }
 
-    /* ── Two-col layout ──────────────────────────────── */
-    .two-col { display: flex; gap: 1rem; align-items: flex-start; }
+    /* ── Two-col ──────────────────────────────────── */
+    .two-col { display: flex; gap: .8rem; align-items: flex-start; }
     .two-col > * { flex: 1; }
-    @media (max-width: 520px) { .two-col { flex-direction: column; } }
+    @media (max-width: 540px) { .two-col { flex-direction: column; } }
 
-    /* ── Highlight box ───────────────────────────────── */
-    .highlight-box {
-      background: rgba(59,130,246,.08);
-      border: 1px solid rgba(59,130,246,.25);
-      border-radius: var(--radius); padding: .8rem 1rem;
-      margin: .7rem 0; font-size: .92rem; line-height: 1.55;
+    /* ── Highlight / warning box ──────────────────── */
+    .box {
+      border-radius: var(--radius); padding: .7rem 1rem;
+      margin: .6rem 0; font-size: .9rem; line-height: 1.55;
     }
-    .highlight-box strong { color: var(--accent); }
+    .box-red    { background: rgba(244,63,94,.08);   border: 1px solid rgba(244,63,94,.22);   }
+    .box-green  { background: rgba(16,185,129,.08);  border: 1px solid rgba(16,185,129,.22);  }
+    .box-yellow { background: rgba(245,158,11,.08);  border: 1px solid rgba(245,158,11,.22);  }
+    .box-blue   { background: rgba(6,182,212,.08);   border: 1px solid rgba(6,182,212,.22);   }
+    .box strong { color: inherit; }
+    .box-red strong    { color: var(--red); }
+    .box-green strong  { color: var(--green); }
+    .box-yellow strong { color: var(--yellow); }
+    .box-blue strong   { color: var(--accent); }
 
-    /* ── Nav bar ─────────────────────────────────────── */
+    /* ── Threat level badge ───────────────────────── */
+    .threat { display: inline-flex; align-items: center; gap: 5px;
+      font: 700 .75rem/1 ui-sans-serif, system-ui, sans-serif;
+      text-transform: uppercase; letter-spacing: .07em;
+      border-radius: 5px; padding: 2px 8px; margin-left: 8px; vertical-align: middle; }
+    .threat-high   { background: rgba(244,63,94,.2);  color: var(--red);    border: 1px solid rgba(244,63,94,.3); }
+    .threat-med    { background: rgba(245,158,11,.2); color: var(--yellow); border: 1px solid rgba(245,158,11,.3); }
+    .threat-low    { background: rgba(16,185,129,.2); color: var(--green);  border: 1px solid rgba(16,185,129,.3); }
+
+    /* ── OWASP table ──────────────────────────────── */
+    .owasp-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .owasp-table th { padding: 7px 10px; text-align: left; color: var(--muted); font: 600 .72rem ui-sans-serif,sans-serif; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); }
+    .owasp-table td { padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,.05); line-height: 1.4; }
+    .owasp-table tr:last-child td { border-bottom: none; }
+    .owasp-table tr:hover td { background: rgba(255,255,255,.03); }
+    .rank { font: 800 .8rem/1 ui-monospace, monospace; color: var(--accent); }
+
+    /* ── Nav ──────────────────────────────────────── */
     .navbar {
       display: flex; align-items: center; justify-content: center;
-      gap: 12px; padding: 14px 20px;
-      border-top: 1px solid var(--border); flex-shrink: 0;
+      gap: 10px; padding: 11px 18px; border-top: 1px solid var(--border); flex-shrink: 0;
     }
     .nav-btn {
-      min-width: 48px; min-height: 48px; padding: 0 20px;
-      background: var(--card); border: 2px solid var(--border);
-      border-radius: 10px;
-      font: 700 .9rem/1 ui-sans-serif, system-ui, sans-serif;
+      min-width: 44px; min-height: 44px; padding: 0 16px;
+      background: var(--card); border: 2px solid var(--border); border-radius: 9px;
+      font: 700 .88rem/1 ui-sans-serif, system-ui, sans-serif;
       color: var(--ink); cursor: pointer;
       transition: background 120ms, transform 80ms;
     }
-    .nav-btn:hover:not(:disabled) { background: rgba(255,255,255,.08); }
+    .nav-btn:hover:not(:disabled) { background: rgba(255,255,255,.07); }
     .nav-btn:active:not(:disabled) { transform: scale(.95); }
-    .nav-btn:disabled { opacity: .3; cursor: default; }
+    .nav-btn:disabled { opacity: .25; cursor: default; }
     .nav-btn.primary {
-      background: linear-gradient(135deg,#3b82f6,#6366f1);
-      border-color: rgba(255,255,255,.2); color: #fff;
-      padding: 0 28px;
+      background: linear-gradient(135deg,#0891b2,#6366f1);
+      border-color: rgba(255,255,255,.2); color: #fff; padding: 0 24px;
     }
     .nav-btn.primary:hover { filter: brightness(1.1); }
-
-    /* Dot indicators */
-    .dots {
-      display: flex; gap: 6px; align-items: center;
-    }
+    .dots { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: 200px; }
     .dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--border); transition: background 200ms, transform 200ms;
-      cursor: pointer;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--border); transition: background 180ms, transform 180ms; cursor: pointer;
     }
-    .dot.active { background: var(--accent); transform: scale(1.4); }
+    .dot.active { background: var(--accent); transform: scale(1.5); }
   </style>
 </head>
 <body>
 
-<!-- Top bar -->
 <div class="topbar">
-  <div class="brand">
-    <div class="brand-icon">🐍</div>
-    Python Funktioner
-  </div>
-  <div class="slide-counter">Slide <span id="cur">1</span> / <span id="tot">7</span></div>
+  <div class="brand"><div class="brand-icon">🔒</div> Webb Säkerhet</div>
+  <div class="slide-counter">Slide <span id="cur">1</span> / 20</div>
 </div>
+<div class="progress-track"><div class="progress-fill" id="pbar" style="width:5%"></div></div>
 
-<!-- Progress -->
-<div class="progress-track">
-  <div class="progress-fill" id="pbar" style="width:14%"></div>
-</div>
-
-<!-- Slides -->
 <div class="slides-wrap" id="slides-wrap">
 
-  <!-- 1 · Titel -->
-  <div class="slide active" data-slide="0">
-    <div class="slide-inner slide-title-screen">
-      <span class="big-icon">🐍</span>
-      <h1 class="slide-heading">Python<br><span class="hl-blue">Funktioner</span></h1>
-      <p class="slide-sub">Lär dig skriva återanvändbara kodblock som gör ett jobb åt dig — hur som helst, hur många gånger du vill.</p>
+<!-- ─── 1  TITEL ───────────────────────────────────────────────── -->
+<div class="slide active" data-slide="0">
+  <div class="slide-inner" style="text-align:center">
+    <span class="big-icon">🔒</span>
+    <h1 class="hero">Webb&shy;säkerhet</h1>
+    <p class="lead" style="text-align:center;max-width:480px;margin:0 auto">Lär dig hur attacker fungerar, vad de kan orsaka — och framför allt hur man skyddar sig.</p>
+    <div class="cards-row" style="margin-top:1rem;justify-content:center">
+      <div class="info-card" style="max-width:160px"><span class="ic-icon">⚔️</span><div class="ic-title">Attacker</div><div class="ic-desc">XSS, SQL Injection, CSRF och fler</div></div>
+      <div class="info-card" style="max-width:160px"><span class="ic-icon">🛡️</span><div class="ic-title">Försvar</div><div class="ic-desc">HTTPS, CSP, hashing, headers</div></div>
+      <div class="info-card" style="max-width:160px"><span class="ic-icon">📋</span><div class="ic-title">OWASP</div><div class="ic-desc">Branschstandard för web-risker</div></div>
     </div>
   </div>
-
-  <!-- 2 · Vad är en funktion? -->
-  <div class="slide" data-slide="1">
-    <div class="slide-inner">
-      <div class="slide-label">Intro</div>
-      <h2 class="content-title">Vad är en funktion?</h2>
-      <p style="color:var(--muted);margin:0 0 .8rem;line-height:1.6">En funktion är ett namngivet kodblock som du kan anropa när du vill. Istället för att skriva samma kod om och om igen — skriv den en gång i en funktion!</p>
-      <div class="cards-row">
-        <div class="info-card">
-          <span class="ic-icon">♻️</span>
-          <div class="ic-title">Återanvändbar</div>
-          <div class="ic-desc">Skriv koden en gång, använd tusen gånger.</div>
-        </div>
-        <div class="info-card">
-          <span class="ic-icon">📦</span>
-          <div class="ic-title">Organiserad</div>
-          <div class="ic-desc">Delar upp koden i logiska delar som är lätta att förstå.</div>
-        </div>
-        <div class="info-card">
-          <span class="ic-icon">🧪</span>
-          <div class="ic-title">Testbar</div>
-          <div class="ic-desc">Enkel att testa och felsöka separat.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3 · Syntax -->
-  <div class="slide" data-slide="2">
-    <div class="slide-inner">
-      <div class="slide-label green">Syntax</div>
-      <h2 class="content-title">Skapa en funktion</h2>
-      <p style="color:var(--muted);margin:0 0 .5rem;line-height:1.6">Använd nyckelordet <code style="color:#d2a8ff;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:4px">def</code> för att definiera en funktion, följt av ett namn och parenteser.</p>
-      <div class="code-block"><pre><span class="cm"># Definiera en funktion</span>
-<span class="kw">def</span> <span class="fn">säg_hej</span>():
-    <span class="bi">print</span>(<span class="st">"Hej, världen!"</span>)
-
-<span class="cm"># Anropa funktionen</span>
-<span class="fn">säg_hej</span>()   <span class="cm"># skriver ut: Hej, världen!</span>
-<span class="fn">säg_hej</span>()   <span class="cm"># anropa hur många gånger som helst</span>
-<span class="fn">säg_hej</span>()</pre></div>
-      <div class="highlight-box">
-        <strong>Kom ihåg:</strong> Koden inuti funktionen måste vara indragen med 4 mellanslag (eller ett tab). Python är känsligt för indragning!
-      </div>
-    </div>
-  </div>
-
-  <!-- 4 · Parametrar -->
-  <div class="slide" data-slide="3">
-    <div class="slide-inner">
-      <div class="slide-label purple">Parametrar</div>
-      <h2 class="content-title">Funktioner med parametrar</h2>
-      <p style="color:var(--muted);margin:0 0 .5rem;line-height:1.6">Parametrar är variabler du skickar in i en funktion så att den kan jobba med olika värden.</p>
-      <div class="code-block"><pre><span class="cm"># En parameter: namn</span>
-<span class="kw">def</span> <span class="fn">hälsa</span>(<span class="pn">namn</span>):
-    <span class="bi">print</span>(<span class="st">"Hej,"</span>, <span class="pn">namn</span>)
-
-<span class="fn">hälsa</span>(<span class="st">"Hilda"</span>)   <span class="cm"># → Hej, Hilda</span>
-<span class="fn">hälsa</span>(<span class="st">"Erik"</span>)    <span class="cm"># → Hej, Erik</span>
-
-<span class="cm"># Två parametrar</span>
-<span class="kw">def</span> <span class="fn">addera</span>(<span class="pn">a</span>, <span class="pn">b</span>):
-    <span class="bi">print</span>(<span class="pn">a</span> <span class="op">+</span> <span class="pn">b</span>)
-
-<span class="fn">addera</span>(<span class="nm">3</span>, <span class="nm">5</span>)    <span class="cm"># → 8</span>
-<span class="fn">addera</span>(<span class="nm">10</span>, <span class="nm">20</span>)  <span class="cm"># → 30</span></pre></div>
-    </div>
-  </div>
-
-  <!-- 5 · Return -->
-  <div class="slide" data-slide="4">
-    <div class="slide-inner">
-      <div class="slide-label yellow">Return</div>
-      <h2 class="content-title">Returnera ett värde</h2>
-      <p style="color:var(--muted);margin:0 0 .5rem;line-height:1.6">Med <code style="color:#ff7b72;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:4px">return</code> kan en funktion skicka tillbaka ett värde som du kan spara eller använda vidare.</p>
-      <div class="two-col">
-        <div>
-          <p style="color:var(--muted);font-size:.85rem;margin:0 0 .3rem">Utan return:</p>
-          <div class="code-block"><pre><span class="kw">def</span> <span class="fn">dubbla</span>(<span class="pn">x</span>):
-    <span class="bi">print</span>(<span class="pn">x</span> <span class="op">*</span> <span class="nm">2</span>)
-
-<span class="fn">dubbla</span>(<span class="nm">4</span>)  <span class="cm"># skriver ut 8</span>
-<span class="cm"># men inget värde sparas</span></pre></div>
-        </div>
-        <div>
-          <p style="color:var(--muted);font-size:.85rem;margin:0 0 .3rem">Med return:</p>
-          <div class="code-block"><pre><span class="kw">def</span> <span class="fn">dubbla</span>(<span class="pn">x</span>):
-    <span class="kw">return</span> <span class="pn">x</span> <span class="op">*</span> <span class="nm">2</span>
-
-svar <span class="op">=</span> <span class="fn">dubbla</span>(<span class="nm">4</span>)
-<span class="bi">print</span>(svar)  <span class="cm"># → 8</span></pre></div>
-        </div>
-      </div>
-      <div class="highlight-box">
-        <strong>Tips:</strong> Använd <code style="color:#ff7b72">return</code> när du vill använda resultatet senare i koden!
-      </div>
-    </div>
-  </div>
-
-  <!-- 6 · Defaultvärden -->
-  <div class="slide" data-slide="5">
-    <div class="slide-inner">
-      <div class="slide-label orange">Standardvärden</div>
-      <h2 class="content-title">Parametrar med standardvärden</h2>
-      <p style="color:var(--muted);margin:0 0 .5rem;line-height:1.6">Du kan ge parametrar ett standardvärde (default). Då behöver man inte alltid skicka in det.</p>
-      <div class="code-block"><pre><span class="kw">def</span> <span class="fn">hälsa</span>(<span class="pn">namn</span>, <span class="pn">hälsning</span><span class="op">=</span><span class="st">"Hej"</span>):
-    <span class="bi">print</span>(<span class="pn">hälsning</span>, <span class="pn">namn</span>)
-
-<span class="fn">hälsa</span>(<span class="st">"Hilda"</span>)               <span class="cm"># → Hej Hilda</span>
-<span class="fn">hälsa</span>(<span class="st">"Erik"</span>, <span class="st">"God morgon"</span>)   <span class="cm"># → God morgon Erik</span>
-
-<span class="cm"># Räkna med standardvärde</span>
-<span class="kw">def</span> <span class="fn">upphöjt</span>(<span class="pn">tal</span>, <span class="pn">exp</span><span class="op">=</span><span class="nm">2</span>):
-    <span class="kw">return</span> <span class="pn">tal</span> <span class="op">**</span> <span class="pn">exp</span>
-
-<span class="bi">print</span>(<span class="fn">upphöjt</span>(<span class="nm">3</span>))     <span class="cm"># → 9  (3²)</span>
-<span class="bi">print</span>(<span class="fn">upphöjt</span>(<span class="nm">2</span>, <span class="nm">10</span>)) <span class="cm"># → 1024 (2¹⁰)</span></pre></div>
-    </div>
-  </div>
-
-  <!-- 7 · Sammanfattning -->
-  <div class="slide" data-slide="6">
-    <div class="slide-inner">
-      <div class="slide-label green">Sammanfattning</div>
-      <h2 class="content-title">Det du lärt dig 🎉</h2>
-      <ul class="bullet-list">
-        <li><span class="bul">🔵</span><span><strong>def</strong> — nyckelordet för att skapa en funktion</span></li>
-        <li><span class="bul">📦</span><span><strong>Parametrar</strong> — variabler du skickar in i funktionen</span></li>
-        <li><span class="bul">↩️</span><span><strong>return</strong> — skickar tillbaka ett värde från funktionen</span></li>
-        <li><span class="bul">⚙️</span><span><strong>Standardvärden</strong> — parametrar med ett förvalt värde</span></li>
-        <li><span class="bul">♻️</span><span>Funktioner gör koden <strong>återanvändbar</strong> och lättare att läsa</span></li>
-      </ul>
-      <div class="code-block"><pre><span class="cm"># En komplett funktion med allt!</span>
-<span class="kw">def</span> <span class="fn">presentera</span>(<span class="pn">namn</span>, <span class="pn">ålder</span><span class="op">=</span><span class="nm">0</span>):
-    <span class="kw">return</span> <span class="st">f"Jag heter </span><span class="pn">{namn}</span><span class="st"> och är </span><span class="pn">{ålder}</span><span class="st"> år gammal."</span>
-
-<span class="bi">print</span>(<span class="fn">presentera</span>(<span class="st">"Hilda"</span>, <span class="nm">12</span>))
-<span class="cm"># → Jag heter Hilda och är 12 år gammal.</span></pre></div>
-    </div>
-  </div>
-
 </div>
 
-<!-- Nav bar -->
+<!-- ─── 2  VAD ÄR WEBB-SÄKERHET ───────────────────────────────── -->
+<div class="slide" data-slide="1">
+  <div class="slide-inner">
+    <div class="slide-label">Introduktion</div>
+    <h2 class="title">Vad är webb-säkerhet?</h2>
+    <p class="lead">Webb-säkerhet handlar om att skydda webbplatser, API:er och användares data mot obehörig åtkomst, manipulation och förstörelse.</p>
+    <ul class="blist">
+      <li><span class="bi">🌐</span><span>Nästan allt sker via webben idag — banker, sjukvård, sociala medier</span></li>
+      <li><span class="bi">💸</span><span>Dataintrång kan kosta företag miljarder kronor</span></li>
+      <li><span class="bi">👤</span><span>Användarnas personliga data och lösenord kan stjälas</span></li>
+      <li><span class="bi">⚖️</span><span>GDPR kräver att personuppgifter skyddas — annars böter</span></li>
+      <li><span class="bi">🔑</span><span>Säkerhet är inte ett tillägg — det måste byggas in från start</span></li>
+    </ul>
+    <div class="box box-yellow"><strong>⚠️ Fakta:</strong> År 2023 kostade cyberbrottslighet globalt mer än 8 biljoner USD.</div>
+  </div>
+</div>
+
+<!-- ─── 3  XSS ─────────────────────────────────────────────────── -->
+<div class="slide" data-slide="2">
+  <div class="slide-inner">
+    <div class="slide-label red">Attack</div>
+    <h2 class="title">XSS – Cross-Site Scripting <span class="threat threat-high">Hög risk</span></h2>
+    <p class="lead">XSS låter en angripare injicera skadlig JavaScript-kod i en webbsida som sedan körs i offrets webbläsare.</p>
+    <div class="two-col">
+      <div>
+        <p style="color:var(--muted);font-size:.82rem;margin:0 0 .3rem">❌ Sårbar kod:</p>
+        <div class="code-block"><pre><span class="cm">// Sätter in användarens text direkt</span>
+div.innerHTML = <span class="fn">userInput</span>;
+
+<span class="cm">// Angriparen skriver in:</span>
+<span class="hl">&lt;script&gt;stealCookies()&lt;/script&gt;</span></pre></div>
+      </div>
+      <div>
+        <p style="color:var(--muted);font-size:.82rem;margin:0 0 .3rem">✅ Säker kod:</p>
+        <div class="code-block"><pre><span class="cm">// Använd textContent istället</span>
+<span class="gl">div.textContent = userInput;</span>
+
+<span class="cm">// Eller escapa HTML-tecken</span>
+<span class="gl">input = input.replace(/&lt;/g, "&amp;lt;");</span></pre></div>
+      </div>
+    </div>
+    <div class="box box-red"><strong>Konsekvens:</strong> Stöld av sessioner, lösenord, cookies. Angriparen kan agera som inloggad användare.</div>
+  </div>
+</div>
+
+<!-- ─── 4  XSS TYPER ──────────────────────────────────────────── -->
+<div class="slide" data-slide="3">
+  <div class="slide-inner">
+    <div class="slide-label red">Attack</div>
+    <h2 class="title">XSS – tre typer</h2>
+    <div class="cards-row">
+      <div class="info-card">
+        <span class="ic-icon">💾</span>
+        <div class="ic-title">Stored XSS</div>
+        <div class="ic-desc">Skadlig kod sparas i databasen (t.ex. i ett kommentarsfält) och visas för alla besökare.</div>
+      </div>
+      <div class="info-card">
+        <span class="ic-icon">🔗</span>
+        <div class="ic-title">Reflected XSS</div>
+        <div class="ic-desc">Koden skickas via URL-parameter och reflekteras tillbaka i svaret utan att sparas.</div>
+      </div>
+      <div class="info-card">
+        <span class="ic-icon">⚙️</span>
+        <div class="ic-title">DOM-based XSS</div>
+        <div class="ic-desc">Koden manipulerar DOM-trädet direkt i webbläsaren via JavaScript utan att passera servern.</div>
+      </div>
+    </div>
+    <div class="box box-blue"><strong>Skydd:</strong> Escapa all användar-input. Använd Content Security Policy (CSP). Använd ramverk som React som automatiskt escapar output.</div>
+  </div>
+</div>
+
+<!-- ─── 5  SQL INJECTION ───────────────────────────────────────── -->
+<div class="slide" data-slide="4">
+  <div class="slide-inner">
+    <div class="slide-label red">Attack</div>
+    <h2 class="title">SQL Injection <span class="threat threat-high">Hög risk</span></h2>
+    <p class="lead">Angriparen skickar SQL-kod som input och manipulerar databasförfrågningar.</p>
+    <div class="code-block"><pre><span class="cm">-- Sårbar Python-kod:</span>
+query = <span class="st">"SELECT * FROM users WHERE email='"</span> + email + <span class="st">"'"</span>
+
+<span class="cm">-- Angriparen skriver in som email:</span>
+<span class="hl">' OR '1'='1</span>
+
+<span class="cm">-- Resulterar i:</span>
+<span class="hl">SELECT * FROM users WHERE email='' OR '1'='1'</span>
+<span class="cm">-- → returnerar ALLA användare!</span>
+
+<span class="cm">-- Säker lösning — parametriserade queries:</span>
+<span class="gl">cursor.execute("SELECT * FROM users WHERE email=?", (email,))</span></pre></div>
+    <div class="box box-red"><strong>Konsekvens:</strong> Hela databasen kan läsas, ändras eller raderas. Angriparen kan logga in som vem som helst.</div>
+  </div>
+</div>
+
+<!-- ─── 6  CSRF ────────────────────────────────────────────────── -->
+<div class="slide" data-slide="5">
+  <div class="slide-inner">
+    <div class="slide-label red">Attack</div>
+    <h2 class="title">CSRF – Cross-Site Request Forgery <span class="threat threat-high">Hög risk</span></h2>
+    <p class="lead">Angriparen lurar en inloggad användare att omedvetet skicka en skadlig förfrågan till en webbplats.</p>
+    <ul class="blist">
+      <li><span class="bi">1️⃣</span><span>Användaren är inloggad på sin bank (har en aktiv cookie)</span></li>
+      <li><span class="bi">2️⃣</span><span>Angriparen skickar ett mejl med en länk: <code style="color:var(--red);font-size:.8rem">bank.se/transfer?to=hacker&amount=10000</code></span></li>
+      <li><span class="bi">3️⃣</span><span>Användaren klickar — webbläsaren skickar cookie automatiskt</span></li>
+      <li><span class="bi">4️⃣</span><span>Banken tror det är en legitim förfrågan och genomför överföringen</span></li>
+    </ul>
+    <div class="box box-green"><strong>Skydd:</strong> CSRF-tokens (unik kod per formulär), SameSite-cookies, kontrollera Origin-header.</div>
+  </div>
+</div>
+
+<!-- ─── 7  HTTPS & TLS ─────────────────────────────────────────── -->
+<div class="slide" data-slide="6">
+  <div class="slide-inner">
+    <div class="slide-label">Kryptering</div>
+    <h2 class="title">HTTPS & TLS 🔐</h2>
+    <p class="lead">HTTPS krypterar all kommunikation mellan webbläsare och server med TLS (Transport Layer Security).</p>
+    <div class="two-col">
+      <div>
+        <div class="box box-red" style="margin-top:0">
+          <strong>HTTP (osäkert)</strong><br>
+          Data skickas i klartext.<br>
+          Vem som helst i nätverket kan läsa lösenord, kortuppgifter, meddelanden.
+        </div>
+      </div>
+      <div>
+        <div class="box box-green" style="margin-top:0">
+          <strong>HTTPS (säkert)</strong><br>
+          Data krypteras med TLS.<br>
+          Ingen kan läsa trafiken — inte ens internetleverantören.
+        </div>
+      </div>
+    </div>
+    <ul class="blist">
+      <li><span class="bi">📜</span><span>TLS använder certifikat utfärdade av betrodda CA:er (Certificate Authorities)</span></li>
+      <li><span class="bi">🆓</span><span>Let's Encrypt erbjuder gratis TLS-certifikat</span></li>
+      <li><span class="bi">🔒</span><span>HSTS-header tvingar alltid HTTPS även om användaren skriver http://</span></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ─── 8  LÖSENORD & HASHING ──────────────────────────────────── -->
+<div class="slide" data-slide="7">
+  <div class="slide-inner">
+    <div class="slide-label purple">Autentisering</div>
+    <h2 class="title">Lösenord &amp; Hashing 🔑</h2>
+    <p class="lead">Lösenord ska ALDRIG sparas i klartext. Använd alltid en säker hashfunktion.</p>
+    <div class="code-block"><pre><span class="cm">## Python — bcrypt för lösenordshashing</span>
+<span class="kw">import</span> bcrypt
+
+<span class="cm"># Hasha lösenordet innan lagring</span>
+<span class="gl">hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())</span>
+
+<span class="cm"># Verifiera vid inloggning</span>
+<span class="gl">bcrypt.checkpw(input_pw.encode(), hashed)  # True/False</span>
+
+<span class="cm"># SHA-256 räcker INTE för lösenord — för snabb!</span>
+<span class="hl">hashlib.sha256(password.encode()).hexdigest()  # OSÄKERT</span></pre></div>
+    <div class="box box-yellow"><strong>Varför bcrypt?</strong> Det är medvetet långsamt och har ett inbyggt "salt" som gör rainbow-table-attacker omöjliga.</div>
+  </div>
+</div>
+
+<!-- ─── 9  AUTENTISERING ───────────────────────────────────────── -->
+<div class="slide" data-slide="8">
+  <div class="slide-inner">
+    <div class="slide-label purple">Autentisering</div>
+    <h2 class="title">Säker autentisering</h2>
+    <ul class="blist">
+      <li><span class="bi">🔢</span><span><strong>MFA / 2FA</strong> — kräv en extra kod (SMS, app) utöver lösenordet</span></li>
+      <li><span class="bi">⏳</span><span><strong>Rate limiting</strong> — blockera efter för många misslyckade inloggningsförsök</span></li>
+      <li><span class="bi">🕐</span><span><strong>Session timeout</strong> — logga ut inaktiva användare automatiskt</span></li>
+      <li><span class="bi">🔏</span><span><strong>Starka lösenord</strong> — kräv minst 12 tecken, mix av typer</span></li>
+      <li><span class="bi">🔄</span><span><strong>Lösenordshanterare</strong> — uppmuntra användning av t.ex. Bitwarden</span></li>
+      <li><span class="bi">🚫</span><span><strong>Avslöja inte</strong> om email eller lösenord var fel — säg bara "felaktiga uppgifter"</span></li>
+    </ul>
+    <div class="box box-green"><strong>JWT (JSON Web Tokens)</strong> används ofta för stateless autentisering i API:er. Signera alltid med en stark hemlig nyckel.</div>
+  </div>
+</div>
+
+<!-- ─── 10  COOKIES & SESSIONS ────────────────────────────────── -->
+<div class="slide" data-slide="9">
+  <div class="slide-inner">
+    <div class="slide-label yellow">Sessions</div>
+    <h2 class="title">Cookies &amp; Sessions 🍪</h2>
+    <p class="lead">Cookies används för att hålla användaren inloggad. De måste skyddas noggrant.</p>
+    <div class="code-block"><pre><span class="cm">// Sätt cookie med alla säkerhetsflaggor</span>
+res.cookie(<span class="st">"session_id"</span>, token, {
+  <span class="at">httpOnly</span>: <span class="kw">true</span>,    <span class="cm">// kan ej läsas av JS</span>
+  <span class="at">secure</span>:   <span class="kw">true</span>,    <span class="cm">// bara över HTTPS</span>
+  <span class="at">sameSite</span>: <span class="st">"Strict"</span>, <span class="cm">// skyddar mot CSRF</span>
+  <span class="at">maxAge</span>:   <span class="nm">3600000</span>  <span class="cm">// löper ut efter 1h</span>
+});</pre></div>
+    <ul class="blist">
+      <li><span class="bi">🔴</span><span><strong>HttpOnly</strong> — förhindrar att JS läser cookien (skyddar mot XSS)</span></li>
+      <li><span class="bi">🔐</span><span><strong>Secure</strong> — skickar bara via HTTPS</span></li>
+      <li><span class="bi">🛡️</span><span><strong>SameSite=Strict</strong> — skyddar mot CSRF-attacker</span></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ─── 11  CORS ───────────────────────────────────────────────── -->
+<div class="slide" data-slide="10">
+  <div class="slide-inner">
+    <div class="slide-label">CORS</div>
+    <h2 class="title">CORS – Cross-Origin Resource Sharing</h2>
+    <p class="lead">Webbläsare blockerar som standard förfrågningar till andra domäner. CORS-headers bestämmer vad som är tillåtet.</p>
+    <div class="code-block"><pre><span class="cm"># Tillåter ALLA origins — OSÄKERT i produktion!</span>
+<span class="hl">Access-Control-Allow-Origin: *</span>
+
+<span class="cm"># Tillåt bara specifik domän — SÄKERT</span>
+<span class="gl">Access-Control-Allow-Origin: https://minapp.se</span>
+<span class="gl">Access-Control-Allow-Methods: GET, POST</span>
+<span class="gl">Access-Control-Allow-Headers: Content-Type, Authorization</span></pre></div>
+    <div class="box box-yellow"><strong>Viktigt:</strong> Sätt aldrig <code>Access-Control-Allow-Origin: *</code> på ett API som hanterar autentisering eller känslig data. Vitlista bara de domäner som faktiskt ska ha åtkomst.</div>
+  </div>
+</div>
+
+<!-- ─── 12  BRUTE FORCE ────────────────────────────────────────── -->
+<div class="slide" data-slide="11">
+  <div class="slide-inner">
+    <div class="slide-label orange">Attack</div>
+    <h2 class="title">Brute Force &amp; Credential Stuffing <span class="threat threat-med">Medel risk</span></h2>
+    <p class="lead">Angriparen provar automatiskt tusentals lösenord tills rätt hittas.</p>
+    <div class="two-col">
+      <div>
+        <p style="font:700 .82rem ui-sans-serif,sans-serif;color:var(--muted);margin:0 0 .3rem">Typer av attacker</p>
+        <ul class="blist">
+          <li><span class="bi">💪</span><span><strong>Brute force</strong> — provar alla kombinationer</span></li>
+          <li><span class="bi">📖</span><span><strong>Dictionary</strong> — lista med vanliga lösenord</span></li>
+          <li><span class="bi">🔄</span><span><strong>Credential stuffing</strong> — läckta lösenord från andra sajter</span></li>
+        </ul>
+      </div>
+      <div>
+        <p style="font:700 .82rem ui-sans-serif,sans-serif;color:var(--muted);margin:0 0 .3rem">Skyddsåtgärder</p>
+        <ul class="blist">
+          <li><span class="bi">⏱️</span><span>Rate limiting per IP</span></li>
+          <li><span class="bi">🔒</span><span>Lås konto efter X försök</span></li>
+          <li><span class="bi">🤖</span><span>CAPTCHA vid misstänkt aktivitet</span></li>
+          <li><span class="bi">📱</span><span>2FA som extra lager</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 13  CLICKJACKING ───────────────────────────────────────── -->
+<div class="slide" data-slide="12">
+  <div class="slide-inner">
+    <div class="slide-label orange">Attack</div>
+    <h2 class="title">Clickjacking <span class="threat threat-med">Medel risk</span></h2>
+    <p class="lead">Angriparen lägger din webbplats i en osynlig <code>&lt;iframe&gt;</code> ovanpå en annan sida. Användaren tror sig klicka på en knapp men klickar egentligen på din sida.</p>
+    <div class="code-block"><pre><span class="cm"><!-- Angripare gömmer din sida i en iframe --></span>
+<span class="hl">&lt;iframe src="https://dinbank.se" style="opacity:0"&gt;&lt;/iframe&gt;</span>
+<span class="hl">&lt;button&gt;Klicka för gratis present! 🎁&lt;/button&gt;</span>
+
+<span class="cm">/* Skydd — HTTP-header som förbjuder inbäddning */</span>
+<span class="gl">X-Frame-Options: DENY</span>
+<span class="cm">/* Eller den modernare varianten: */</span>
+<span class="gl">Content-Security-Policy: frame-ancestors 'none'</span></pre></div>
+    <div class="box box-green"><strong>Lösning:</strong> Sätt <code>X-Frame-Options: DENY</code> eller <code>frame-ancestors 'none'</code> i CSP på alla sidor som hanterar känsliga åtgärder.</div>
+  </div>
+</div>
+
+<!-- ─── 14  DDOS ───────────────────────────────────────────────── -->
+<div class="slide" data-slide="13">
+  <div class="slide-inner">
+    <div class="slide-label red">Attack</div>
+    <h2 class="title">DDoS – Distributed Denial of Service <span class="threat threat-high">Hög risk</span></h2>
+    <p class="lead">Angriparen skickar enorma mängder trafik från tusentals datorer (botnät) för att krascha servern.</p>
+    <div class="cards-row">
+      <div class="info-card">
+        <span class="ic-icon">🌊</span>
+        <div class="ic-title">Volymbaserat</div>
+        <div class="ic-desc">Översvämmar bandbredden med trafik. Mäts i Gbps.</div>
+      </div>
+      <div class="info-card">
+        <span class="ic-icon">📡</span>
+        <div class="ic-title">Protokollattack</div>
+        <div class="ic-desc">Utnyttjar svagheter i TCP/IP, t.ex. SYN flood.</div>
+      </div>
+      <div class="info-card">
+        <span class="ic-icon">🎯</span>
+        <div class="ic-title">Applikationsattack</div>
+        <div class="ic-desc">HTTP-requests som kräver mycket serverresurser.</div>
+      </div>
+    </div>
+    <div class="box box-blue"><strong>Skydd:</strong> CDN med DDoS-skydd (Cloudflare, AWS Shield), rate limiting, IP-blockering, lastbalansering.</div>
+  </div>
+</div>
+
+<!-- ─── 15  SÄKRA HTTP-HEADERS ────────────────────────────────── -->
+<div class="slide" data-slide="14">
+  <div class="slide-inner">
+    <div class="slide-label green">Försvar</div>
+    <h2 class="title">Säkra HTTP-headers 📋</h2>
+    <p class="lead">Rätt HTTP-headers skyddar automatiskt mot flera attacker.</p>
+    <div class="code-block"><pre><span class="cm"># Viktiga säkerhetsheaders att alltid sätta:</span>
+
+<span class="tg">Strict-Transport-Security</span>: max-age=31536000  <span class="cm"># HSTS</span>
+<span class="tg">X-Content-Type-Options</span>: nosniff              <span class="cm"># ingen MIME-sniffing</span>
+<span class="tg">X-Frame-Options</span>: DENY                        <span class="cm"># skyddar mot clickjacking</span>
+<span class="tg">Referrer-Policy</span>: strict-origin              <span class="cm"># begränsar referrer-info</span>
+<span class="tg">Permissions-Policy</span>: camera=(), mic=()       <span class="cm"># inaktivera APIs</span>
+<span class="tg">Content-Security-Policy</span>: default-src 'self' <span class="cm"># skyddar mot XSS</span></pre></div>
+    <div class="box box-blue"><strong>Verktyg:</strong> Testa dina headers på <code>securityheaders.com</code> — du får ett betyg A–F.</div>
+  </div>
+</div>
+
+<!-- ─── 16  CSP ────────────────────────────────────────────────── -->
+<div class="slide" data-slide="15">
+  <div class="slide-inner">
+    <div class="slide-label green">Försvar</div>
+    <h2 class="title">Content Security Policy (CSP) 🛡️</h2>
+    <p class="lead">CSP är ett kraftfullt verktyg som talar om för webbläsaren exakt var skript, bilder och stilar får laddas ifrån.</p>
+    <div class="code-block"><pre><span class="cm"># Strikt CSP — tillåt bara egna resurser</span>
+<span class="gl">Content-Security-Policy:</span>
+  <span class="gl">default-src 'self';</span>
+  <span class="gl">script-src 'self' https://cdn.exempel.se;</span>
+  <span class="gl">style-src  'self' 'unsafe-inline';</span>
+  <span class="gl">img-src    'self' data: https:;</span>
+  <span class="gl">frame-ancestors 'none';</span>
+
+<span class="cm"># Detta blockerar XSS-attacker även om</span>
+<span class="cm"># angriparen lyckas injicera &lt;script&gt;-taggar!</span></pre></div>
+    <div class="box box-yellow"><strong>Tips:</strong> Börja med <code>Content-Security-Policy-Report-Only</code> för att testa utan att blockera — du ser vilka resurser som skulle blockeras.</div>
+  </div>
+</div>
+
+<!-- ─── 17  INPUT-VALIDERING ─────────────────────────────────── -->
+<div class="slide" data-slide="16">
+  <div class="slide-inner">
+    <div class="slide-label green">Försvar</div>
+    <h2 class="title">Input-validering &amp; Sanitering</h2>
+    <p class="lead">Lita aldrig på data från användaren. Validera och sanera all input — både på klienten och servern.</p>
+    <div class="code-block"><pre><span class="cm">## Python — validering av email och ålder</span>
+<span class="kw">import</span> re
+
+<span class="kw">def</span> <span class="fn">validate_email</span>(email):
+    pattern = <span class="st">r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'</span>
+    <span class="kw">return</span> bool(re.match(pattern, email))
+
+<span class="kw">def</span> <span class="fn">validate_age</span>(age):
+    <span class="kw">return</span> <span class="kw">isinstance</span>(age, int) <span class="kw">and</span> <span class="nm">0</span> &lt;= age &lt;= <span class="nm">150</span>
+
+<span class="cm"># Sanitera HTML-input (ta bort farliga taggar)</span>
+<span class="kw">import</span> bleach
+<span class="gl">clean = bleach.clean(user_html, tags=[<span class="st">'b'</span>, <span class="st">'i'</span>, <span class="st">'p'</span>])</span></pre></div>
+    <div class="box box-yellow"><strong>Regel:</strong> Validera på klienten för UX, men alltid igen på servern. Klientvalidering kan kringgås av angriparen.</div>
+  </div>
+</div>
+
+<!-- ─── 18  OWASP TOP 10 ───────────────────────────────────────── -->
+<div class="slide" data-slide="17">
+  <div class="slide-inner">
+    <div class="slide-label red">OWASP</div>
+    <h2 class="title">OWASP Top 10 – 2021</h2>
+    <p class="lead">OWASP (Open Web Application Security Project) listar de 10 allvarligaste webb-sårbarheterna.</p>
+    <div style="overflow-x:auto">
+    <table class="owasp-table">
+      <thead><tr><th>#</th><th>Sårbarhet</th><th>Risk</th></tr></thead>
+      <tbody>
+        <tr><td class="rank">A01</td><td>Broken Access Control</td><td><span class="threat threat-high">Kritisk</span></td></tr>
+        <tr><td class="rank">A02</td><td>Cryptographic Failures</td><td><span class="threat threat-high">Hög</span></td></tr>
+        <tr><td class="rank">A03</td><td>Injection (SQL, XSS…)</td><td><span class="threat threat-high">Hög</span></td></tr>
+        <tr><td class="rank">A04</td><td>Insecure Design</td><td><span class="threat threat-med">Medel</span></td></tr>
+        <tr><td class="rank">A05</td><td>Security Misconfiguration</td><td><span class="threat threat-med">Medel</span></td></tr>
+        <tr><td class="rank">A06</td><td>Vulnerable Components</td><td><span class="threat threat-med">Medel</span></td></tr>
+        <tr><td class="rank">A07</td><td>Auth &amp; Session Failures</td><td><span class="threat threat-high">Hög</span></td></tr>
+        <tr><td class="rank">A08</td><td>Software Integrity Failures</td><td><span class="threat threat-med">Medel</span></td></tr>
+        <tr><td class="rank">A09</td><td>Logging &amp; Monitoring Failures</td><td><span class="threat threat-low">Låg</span></td></tr>
+        <tr><td class="rank">A10</td><td>SSRF (Server-Side Request Forgery)</td><td><span class="threat threat-med">Medel</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 19  BÄSTA PRAXIS ───────────────────────────────────────── -->
+<div class="slide" data-slide="18">
+  <div class="slide-inner">
+    <div class="slide-label green">Bästa praxis</div>
+    <h2 class="title">Säkerhets-checklista ✅</h2>
+    <ul class="blist">
+      <li><span class="bi">✅</span><span>Använd alltid <strong>HTTPS</strong> med ett giltigt TLS-certifikat</span></li>
+      <li><span class="bi">✅</span><span>Hasha lösenord med <strong>bcrypt</strong> eller Argon2 — aldrig MD5/SHA1</span></li>
+      <li><span class="bi">✅</span><span>Validera och sanera <strong>all användar-input</strong> på serversidan</span></li>
+      <li><span class="bi">✅</span><span>Använd <strong>parametriserade queries</strong> för all databaskommunikation</span></li>
+      <li><span class="bi">✅</span><span>Sätt rätt <strong>säkerhetsheaders</strong> (CSP, HSTS, X-Frame-Options…)</span></li>
+      <li><span class="bi">✅</span><span>Håll alla <strong>beroenden uppdaterade</strong> — kör <code>npm audit</code> / <code>pip check</code></span></li>
+      <li><span class="bi">✅</span><span>Aktivera <strong>MFA</strong> för alla administratörskonton</span></li>
+      <li><span class="bi">✅</span><span>Logga säkerhetshändelser och sätt upp <strong>larm</strong> vid misstänkt aktivitet</span></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ─── 20  SAMMANFATTNING ─────────────────────────────────────── -->
+<div class="slide" data-slide="19">
+  <div class="slide-inner" style="text-align:center">
+    <span class="big-icon">🛡️</span>
+    <h2 class="title" style="text-align:center">Sammanfattning</h2>
+    <p class="lead" style="text-align:center">Webb-säkerhet är inte en engångsgrej — det är en kontinuerlig process.</p>
+    <div class="cards-row" style="justify-content:center">
+      <div class="info-card">
+        <span class="ic-icon">⚔️</span>
+        <div class="ic-title">Vanligaste attacker</div>
+        <div class="ic-desc">XSS, SQL Injection, CSRF, DDoS, Brute Force, Clickjacking</div>
+      </div>
+      <div class="info-card">
+        <span class="ic-icon">🛡️</span>
+        <div class="ic-title">Viktigaste försvar</div>
+        <div class="ic-desc">HTTPS, CSP, input-validering, bcrypt, säkerhetsheaders</div>
+      </div>
+      <div class="info-card">
+        <span class="ic-icon">📚</span>
+        <div class="ic-title">Lär dig mer</div>
+        <div class="ic-desc">owasp.org · portswigger.net/web-security · haveibeenpwned.com</div>
+      </div>
+    </div>
+    <div class="box box-blue" style="margin-top:.8rem;text-align:left">
+      <strong>Kom ihåg:</strong> En säker applikation skyddar inte bara företaget — den skyddar <em>användarnas</em> liv, pengar och integritet.
+    </div>
+  </div>
+</div>
+
+</div><!-- /slides-wrap -->
+
+<!-- Nav -->
 <div class="navbar">
   <button class="nav-btn" id="btn-prev" onclick="go(-1)" disabled>← Föregående</button>
   <div class="dots" id="dots"></div>
@@ -400,9 +661,8 @@ svar <span class="op">=</span> <span class="fn">dubbla</span>(<span class="nm">4
 </div>
 
 <script>
-  const TOTAL   = 7;
+  const TOTAL   = 20;
   let current   = 0;
-
   const slides  = document.querySelectorAll(".slide");
   const dotsEl  = document.getElementById("dots");
   const btnPrev = document.getElementById("btn-prev");
@@ -410,7 +670,6 @@ svar <span class="op">=</span> <span class="fn">dubbla</span>(<span class="nm">4
   const pbar    = document.getElementById("pbar");
   const curEl   = document.getElementById("cur");
 
-  // Build dots
   for (let i = 0; i < TOTAL; i++) {
     const d = document.createElement("div");
     d.className = "dot" + (i === 0 ? " active" : "");
@@ -422,40 +681,34 @@ svar <span class="op">=</span> <span class="fn">dubbla</span>(<span class="nm">4
 
   function goTo(idx) {
     if (idx < 0 || idx >= TOTAL) return;
-
     slides[current].classList.remove("active");
     slides[current].classList.add("exit");
-    setTimeout(() => slides[current]?.classList.remove("exit"), 320);
-
+    const prev = current;
+    setTimeout(() => slides[prev].classList.remove("exit"), 300);
     current = idx;
     slides[current].classList.add("active");
-
-    // Update UI
-    document.querySelectorAll(".dot").forEach((d, i) =>
-      d.classList.toggle("active", i === current));
-
+    document.querySelectorAll(".dot").forEach((d, i) => d.classList.toggle("active", i === current));
     pbar.style.width = ((current + 1) / TOTAL * 100) + "%";
     curEl.textContent = current + 1;
     btnPrev.disabled = current === 0;
-    btnNext.textContent = current === TOTAL - 1 ? "Börja om 🔄" : "Nästa →";
     if (current === TOTAL - 1) {
+      btnNext.textContent = "Börja om 🔄";
       btnNext.onclick = () => goTo(0);
     } else {
+      btnNext.textContent = "Nästa →";
       btnNext.onclick = () => go(1);
     }
   }
 
-  // Keyboard nav
   document.addEventListener("keydown", e => {
     if (e.key === "ArrowRight" || e.key === "ArrowDown") go(1);
     if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   go(-1);
   });
 
-  // Swipe support
-  let touchX = 0;
-  document.addEventListener("touchstart", e => touchX = e.touches[0].clientX);
+  let tx = 0;
+  document.addEventListener("touchstart", e => tx = e.touches[0].clientX);
   document.addEventListener("touchend",   e => {
-    const dx = e.changedTouches[0].clientX - touchX;
+    const dx = e.changedTouches[0].clientX - tx;
     if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
   });
 </script>

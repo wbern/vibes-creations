@@ -9,11 +9,11 @@
           "boilerplate": false,
           "student": "student08",
           "display_name": "student08",
-          "title": "Python Funktioner 🐍",
-          "description": "En lärande webbsida som visar hur man skriver och använder Python-funktioner med tydliga exempel och förklaringar.",
+          "title": "Webb Säkerhet 🔒",
+          "description": "Den här sidan lär dig om webbsäkerhet – hur farliga attacker fungerar och hur man skyddar sig mot dem.",
           "persona": "clay",
-          "archived_at": "2026-06-04T10:49:21Z",
-          "published_at": "2026-06-04T10:49:30Z",
+          "archived_at": "2026-06-04T10:58:24Z",
+          "published_at": "2026-06-04T10:58:39Z",
           "thumbnail": "students/pilot/modiga-lammeln/thumbnail.webp",
           "scan": {
             "counts": {
