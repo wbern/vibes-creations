@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "milda-lejonet",
+          "boilerplate": true,
+          "student": "student03",
+          "display_name": "student03",
+          "title": "min sida",
+          "description": null,
+          "persona": "clay",
+          "archived_at": "2026-06-04T10:48:18Z",
+          "published_at": "2026-06-04T10:48:23Z",
+          "thumbnail": "students/pilot/milda-lejonet/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "modiga-lammeln",
           "boilerplate": false,
           "student": "student08",

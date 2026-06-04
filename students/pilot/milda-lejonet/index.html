@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>min sida</title>
+  <!-- pilot-student03 -->
+  <style>
+    /* Theme tokens — the four presets are papper · skog · hav · neon.
+     * The chunky helpers (.card, .btn-chunky, .pill, .wobble, .pop-in)
+     * come from the boilerplate Claude uses for every new page. */
+    :root {
+      --bg: #f4ecd8;
+      --ink: #2b2b2b;
+      --card: #ffffff;
+      --accent: #ff7a5a;
+      --accent-2: #58a4ff;
+      --radius: 20px;
+      --lip: 8px;
+    }
+    html, body { margin: 0; min-height: 100vh; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      background-image:
+        radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--accent) 30%, transparent) 0, transparent 40%),
+        radial-gradient(circle at 80% 90%, color-mix(in srgb, var(--accent-2) 25%, transparent) 0, transparent 45%);
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+      box-sizing: border-box;
+      color: var(--ink);
+    }
+  </style>
+</head>
+<body>
+  <!--
+    ============================================================
+    PLACEHOLDER SECTION — Claude, this whole <section> is the
+    starter splash. When the kid asks you to build their page,
+    REMOVE this entire <section data-placeholder> block (including
+    its inline <style> and <script>) and write fresh content in
+    its place. Nothing outside this section needs to be touched.
+    Everything tutorial-related (the wiggling arrow, the dismiss
+    handler, the localStorage key) lives inside this section on
+    purpose so a single delete clears it all.
+    ============================================================
+  -->
+  <section data-placeholder data-persona="clay">
+    <style>
+      [data-placeholder] {
+        max-width: 36rem;
+        margin: 0 auto;
+        text-align: center;
+      }
+      [data-placeholder] h1 {
+        font: 900 3rem/1.05 system-ui, sans-serif;
+        letter-spacing: -0.02em;
+        margin: 0 0 .25rem;
+      }
+      [data-placeholder] h1 .wave {
+        display: inline-block;
+        transform-origin: 70% 70%;
+        animation: ph-wave 1.6s infinite;
+      }
+      @keyframes ph-wave {
+        0%, 100% { transform: rotate(0); }
+        25% { transform: rotate(20deg); }
+        75% { transform: rotate(-10deg); }
+      }
+      [data-placeholder] .ph-lead {
+        font-size: 1.25rem;
+        margin: 1rem 0 1.5rem;
+        line-height: 1.4;
+      }
+      [data-placeholder] footer {
+        margin-top: 1.5rem;
+        opacity: 0.55;
+        font-size: 0.9rem;
+      }
+
+      /* Arrow tutorial — fixed near the viewport bottom-right corner,
+       * pointing toward the chat icon (parent SPA's 3rem FAB sitting
+       * at right:1rem; bottom:1rem; z-index ~2147483640). The arrow's
+       * own z-index is intentionally well below that, so we offset the
+       * SVG away from the corner (right:5rem) to keep the arrowhead
+       * visible next to — not behind — the FAB. */
+      [data-placeholder] .ph-arrow {
+        position: fixed;
+        right: 5rem;
+        bottom: 1rem;
+        width: clamp(140px, 38vw, 220px);
+        pointer-events: none;
+        z-index: 9;
+        transform-origin: 90% 90%;
+        animation: ph-arrow-bob 1.8s ease-in-out infinite;
+      }
+      [data-placeholder] .ph-arrow.is-dismissed {
+        animation: ph-arrow-out .4s ease-in forwards;
+      }
+      [data-placeholder] .ph-arrow svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        overflow: visible;
+      }
+      [data-placeholder] .ph-arrow .ph-arrow-stroke {
+        stroke-dasharray: 320;
+        stroke-dashoffset: 320;
+        animation: ph-arrow-draw 1.6s ease-out .2s forwards;
+      }
+      [data-placeholder] .ph-arrow .ph-arrow-label {
+        display: inline-block;
+        /* rgba, not color-mix — iOS 15.8.3 (iPhone 7 test floor) drops the
+         * whole declaration on unrecognised color-mix and the label goes
+         * unreadable white-on-cream. */
+        background: rgba(43, 43, 43, 0.92);
+        color: #fff;
+        font: 600 .95rem/1.2 system-ui, sans-serif;
+        padding: .4rem .65rem;
+        border-radius: 10px;
+        transform: rotate(-4deg);
+        /* Long persona labels ("tryck här för att prata med Claudina") clip
+         * outside the viewport on iPhone 7 (375px) with nowrap. Allow wrap;
+         * cap the width so the box stays compact rather than stretching the
+         * full label width on desktop. */
+        max-width: 11rem;
+        box-shadow: 0 4px 0 rgba(43, 43, 43, 0.25);
+      }
+      [data-placeholder] .ph-arrow-label-wrap {
+        position: absolute;
+        left: 0;
+        top: 0;
+        transform: translate(-6%, -10%);
+      }
+      @keyframes ph-arrow-bob {
+        0%, 100% { transform: translate(0, 0) rotate(0); }
+        50%      { transform: translate(-6px, -8px) rotate(-2deg); }
+      }
+      @keyframes ph-arrow-draw {
+        to { stroke-dashoffset: 0; }
+      }
+      @keyframes ph-arrow-out {
+        to { opacity: 0; transform: translate(10px, 10px) scale(.9); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        [data-placeholder] h1 .wave,
+        [data-placeholder] .ph-arrow { animation: none; }
+        [data-placeholder] .ph-arrow .ph-arrow-stroke { stroke-dashoffset: 0; }
+      }
+      @media (max-width: 480px) {
+        [data-placeholder] h1 { font-size: 2.4rem; }
+        [data-placeholder] .ph-arrow { width: clamp(120px, 44vw, 180px); }
+      }
+    </style>
+
+    <h1>hey. <span class="wave" aria-hidden="true">👋</span></h1>
+    <p class="ph-lead">vill du bygga ett litet spel som funkar i mobilen?</p>
+
+    <footer>byggd av dig + Claude</footer><div class="ph-arrow" aria-hidden="true">
+      <div class="ph-arrow-label-wrap">
+        <span class="ph-arrow-label">tryck här för att prata med Clay</span>
+      </div>
+      <svg viewBox="0 0 220 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="ph-arrow-stroke"
+              d="M 20 40
+                 C 70 30, 110 60, 140 80
+                 S 190 120, 200 128"
+              stroke="#2b2b2b"
+              stroke-width="4"
+              stroke-linecap="round"
+              stroke-linejoin="round" /><path d="M 200 128 L 180 122 L 187 108 Z"
+              fill="#2b2b2b"
+              stroke="#2b2b2b"
+              stroke-width="2"
+              stroke-linejoin="round" />
+      </svg>
+    </div>
+
+    <script>
+      // One-time tutorial dismiss. Three triggers:
+      //  1) localStorage flag from a prior visit — skip the arrow entirely.
+      //  2) postMessage {type:"workshop:chat-opened"} from the parent SPA
+      //     when the kid taps the chat icon (App.jsx openChat()).
+      //  3) Defensive fallback: if the SPA never sends the message (older
+      //     deploy), the arrow is harmless — it'll disappear the moment
+      //     Claude rewrites this <section>.
+      // Lives inside the placeholder on purpose: Claude deleting the
+      // section removes this script too, so no leftover handlers haunt
+      // the kid's final page when they ship to the gallery.
+      (function () {
+        var KEY = "workshop:placeholder-arrow:dismissed";
+        var arrow = document.querySelector("[data-placeholder] .ph-arrow");
+        if (!arrow) return;
+        try {
+          if (localStorage.getItem(KEY)) { arrow.remove(); return; }
+        } catch (e) { /* private mode / disabled storage — keep arrow */ }
+        function dismiss() {
+          if (!arrow.isConnected) return;
+          arrow.classList.add("is-dismissed");
+          try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+          setTimeout(function () { arrow.remove(); }, 450);
+        }
+        window.addEventListener("message", function (e) {
+          var d = e && e.data;
+          if (d && typeof d === "object" && d.type === "workshop:chat-opened") {
+            dismiss();
+          }
+        });
+      })();
+    </script>
+  </section>
+</body>
+</html>
