@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Grattis Hilda! 🎀 Dress to Impress</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "three":         "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"
+    }
+  }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #1a0a2e; }
+
+    /* ── HUD overlay ─────────────────────────────────────── */
+    #hud {
+      position: fixed; inset: 0; pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Birthday banner */
+    #banner {
+      position: fixed; top: 0; left: 0; right: 0;
+      text-align: center; padding: 10px 0 8px;
+      background: linear-gradient(90deg, #ff69b4, #c084fc, #60a5fa, #34d399, #fbbf24, #ff69b4);
+      background-size: 300% 100%;
+      animation: rainbow 3s linear infinite;
+      font: 900 1.5rem/1 ui-sans-serif, system-ui, sans-serif;
+      color: #fff;
+      text-shadow: 0 2px 6px rgba(0,0,0,.4);
+      letter-spacing: .05em;
+      pointer-events: none;
+      z-index: 20;
+    }
+    @keyframes rainbow { to { background-position: -300% 0; } }
+
+    /* Score + instructions */
+    #score-box {
+      position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,.12);
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(255,255,255,.25);
+      border-radius: 14px; padding: 8px 24px;
+      color: #fff; font: 700 1.1rem ui-sans-serif, system-ui, sans-serif;
+      text-align: center; pointer-events: none;
+    }
+
+    /* Outfit buttons */
+    #outfit-btns {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+      pointer-events: all;
+    }
+    .outfit-btn {
+      min-width: 80px; min-height: 52px; padding: 10px 16px;
+      border: 2px solid #fff;
+      border-radius: 12px;
+      font: 700 .9rem ui-sans-serif, system-ui, sans-serif;
+      color: #fff; cursor: pointer;
+      box-shadow: 0 4px 0 rgba(0,0,0,.35);
+      transition: transform 100ms, box-shadow 100ms;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .outfit-btn:hover  { filter: brightness(1.15); }
+    .outfit-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.35); }
+
+    /* Rate button */
+    #rate-btn {
+      position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%);
+      min-height: 52px; padding: 12px 36px;
+      background: linear-gradient(135deg, #ff69b4, #c084fc);
+      border: 2px solid #fff; border-radius: 14px;
+      font: 800 1.1rem ui-sans-serif, system-ui, sans-serif;
+      color: #fff; cursor: pointer;
+      box-shadow: 0 4px 0 rgba(0,0,0,.4);
+      transition: transform 100ms, box-shadow 100ms;
+      pointer-events: all;
+    }
+    #rate-btn:active { transform: translateX(-50%) translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.4); }
+
+    /* Rating popup */
+    #popup {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: rgba(20,5,40,.92);
+      backdrop-filter: blur(12px);
+      border: 3px solid #ff69b4;
+      border-radius: 20px; padding: 28px 36px;
+      color: #fff; text-align: center;
+      font: 700 1.3rem ui-sans-serif, system-ui, sans-serif;
+      transition: transform 220ms cubic-bezier(.34,1.56,.64,1);
+      pointer-events: none; z-index: 30;
+      min-width: 260px;
+    }
+    #popup.show { transform: translate(-50%, -50%) scale(1); }
+    #popup .stars { font-size: 2rem; letter-spacing: .1em; display: block; margin-bottom: 8px; }
+    #popup .label { font-size: 1.4rem; font-weight: 900; }
+
+    /* Confetti canvas */
+    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 40; }
+  </style>
+</head>
+<body>
+
+<div id="banner">🎂 Grattis på födelsedagen, Hilda! 🎀✨</div>
+
+<div id="hud">
+  <div id="score-box">
+    ⭐ Poäng: <span id="score">0</span> &nbsp;|&nbsp; Välj kläder nedan och klicka "Betygsätt!"
+  </div>
+
+  <div id="outfit-btns">
+    <!-- Top row: tops -->
+    <button class="outfit-btn" style="background:#e91e8c" data-cat="top" data-val="0">🩷 Rosa klänning</button>
+    <button class="outfit-btn" style="background:#7c3aed" data-cat="top" data-val="1">💜 Lila klänning</button>
+    <button class="outfit-btn" style="background:#0ea5e9" data-cat="top" data-val="2">💙 Blå klänning</button>
+    <button class="outfit-btn" style="background:#f59e0b" data-cat="top" data-val="3">💛 Gul klänning</button>
+    <!-- Bottom row: accessories -->
+    <button class="outfit-btn" style="background:#10b981" data-cat="acc" data-val="0">🌸 Blomkrans</button>
+    <button class="outfit-btn" style="background:#f43f5e" data-cat="acc" data-val="1">👑 Krona</button>
+    <button class="outfit-btn" style="background:#6366f1" data-cat="acc" data-val="2">⭐ Glittrande hatt</button>
+  </div>
+
+  <button id="rate-btn">✨ Betygsätt outfit!</button>
+</div>
+
+<div id="popup">
+  <span class="stars" id="popup-stars">⭐⭐⭐</span>
+  <div class="label" id="popup-label">Super!</div>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+// ── Scene setup ──────────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a0a2e);
+
+// Soft purple fog for depth
+scene.fog = new THREE.Fog(0x1a0a2e, 12, 30);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(0, 2.2, 6.5);
+camera.lookAt(0, 1, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+// ── Lights ───────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xffeeff, 0.7));
+
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+keyLight.position.set(4, 8, 6);
+keyLight.castShadow = true;
+scene.add(keyLight);
+
+const fillLight = new THREE.DirectionalLight(0xc084fc, 0.6);
+fillLight.position.set(-4, 3, -3);
+scene.add(fillLight);
+
+const rimLight = new THREE.PointLight(0xff69b4, 2, 10);
+rimLight.position.set(0, 5, -4);
+scene.add(rimLight);
+
+// ── Floor ────────────────────────────────────────────────────────
+const floorGeo = new THREE.CircleGeometry(6, 64);
+const floorMat = new THREE.MeshStandardMaterial({ color: 0x2d1050, roughness: 0.9 });
+const floor = new THREE.Mesh(floorGeo, floorMat);
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// Sparkle ring on floor
+const ringGeo = new THREE.RingGeometry(2.3, 2.5, 64);
+const ringMat = new THREE.MeshStandardMaterial({ color: 0xff69b4, emissive: 0xff69b4, emissiveIntensity: 0.6, side: THREE.DoubleSide });
+const ring = new THREE.Mesh(ringGeo, ringMat);
+ring.rotation.x = -Math.PI / 2;
+ring.position.y = 0.01;
+scene.add(ring);
+
+// ── Character body (geometric doll) ──────────────────────────────
+const charGroup = new THREE.Group();
+scene.add(charGroup);
+
+// Skin color
+const skinMat = new THREE.MeshStandardMaterial({ color: 0xfad5b0 });
+
+// Head
+const head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 32, 32), skinMat);
+head.position.set(0, 3.42, 0);
+head.castShadow = true;
+charGroup.add(head);
+
+// Eyes
+const eyeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e });
+[-0.13, 0.13].forEach(x => {
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.065, 16, 16), eyeMat);
+  eye.position.set(x, 3.48, 0.34);
+  charGroup.add(eye);
+});
+
+// Smile
+const smileGeo = new THREE.TorusGeometry(0.13, 0.025, 8, 20, Math.PI);
+const smileMat = new THREE.MeshStandardMaterial({ color: 0xcc3366 });
+const smile = new THREE.Mesh(smileGeo, smileMat);
+smile.position.set(0, 3.24, 0.35);
+smile.rotation.z = Math.PI;
+charGroup.add(smile);
+
+// Neck
+const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.22, 16), skinMat);
+neck.position.set(0, 3.0, 0);
+charGroup.add(neck);
+
+// Dress (body) — cone
+const dressMat = new THREE.MeshStandardMaterial({ color: 0xe91e8c, roughness: 0.5, metalness: 0.1 });
+const dressGeo = new THREE.ConeGeometry(0.7, 2.0, 32);
+const dress = new THREE.Mesh(dressGeo, dressMat);
+dress.position.set(0, 1.85, 0);
+dress.castShadow = true;
+charGroup.add(dress);
+
+// Bodice (upper body)
+const bodice = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 0.7, 24), dressMat);
+bodice.position.set(0, 2.75, 0);
+charGroup.add(bodice);
+
+// Arms
+const armMat = new THREE.MeshStandardMaterial({ color: 0xfad5b0 });
+[[-0.55, 2.65, 0, 0.18], [0.55, 2.65, 0, -0.18]].forEach(([x, y, z, rz]) => {
+  const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.5, 8, 16), armMat);
+  arm.position.set(x, y, z);
+  arm.rotation.z = rz * 3;
+  charGroup.add(arm);
+});
+
+// Legs
+[-0.18, 0.18].forEach(x => {
+  const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.55, 8, 16), skinMat);
+  leg.position.set(x, 0.5, 0);
+  charGroup.add(leg);
+});
+
+// Hair
+const hairMat = new THREE.MeshStandardMaterial({ color: 0x5c2d0e, roughness: 0.8 });
+const hair = new THREE.Mesh(new THREE.SphereGeometry(0.40, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.55), hairMat);
+hair.position.set(0, 3.55, 0);
+charGroup.add(hair);
+
+// Long hair back
+const hairBack = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.08, 0.9, 16), hairMat);
+hairBack.position.set(0, 3.1, -0.25);
+charGroup.add(hairBack);
+
+// ── Accessory group ───────────────────────────────────────────────
+const accGroup = new THREE.Group();
+charGroup.add(accGroup);
+
+// Flower crown (default)
+function makeFlowerCrown() {
+  const g = new THREE.Group();
+  const colors = [0xff69b4, 0xfbbf24, 0xf43f5e, 0xa78bfa];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const petal = new THREE.Mesh(
+      new THREE.SphereGeometry(0.08, 8, 8),
+      new THREE.MeshStandardMaterial({ color: colors[i % 4], emissive: colors[i % 4], emissiveIntensity: 0.3 })
+    );
+    petal.position.set(Math.cos(a) * 0.32, 3.75, Math.sin(a) * 0.32);
+    g.add(petal);
+  }
+  return g;
+}
+
+// Crown
+function makeCrown() {
+  const g = new THREE.Group();
+  const goldMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xfbbf24, emissiveIntensity: 0.4, metalness: 0.8, roughness: 0.2 });
+  const base = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.04, 8, 32), goldMat);
+  base.position.set(0, 3.72, 0);
+  g.add(base);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.22, 8), goldMat);
+    spike.position.set(Math.cos(a) * 0.34, 3.86, Math.sin(a) * 0.34);
+    spike.rotation.x = 0.2;
+    spike.rotation.y = -a;
+    g.add(spike);
+  }
+  return g;
+}
+
+// Glitter hat
+function makeGlitterHat() {
+  const g = new THREE.Group();
+  const hatMat = new THREE.MeshStandardMaterial({ color: 0x6366f1, emissive: 0x6366f1, emissiveIntensity: 0.3, metalness: 0.3 });
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.06, 32), hatMat);
+  brim.position.set(0, 3.73, 0);
+  g.add(brim);
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.33, 0.75, 32), hatMat);
+  cone.position.set(0, 4.08, 0);
+  g.add(cone);
+  // Stars on hat
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.05), new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xfbbf24, emissiveIntensity: 1 }));
+    star.position.set(Math.cos(a) * 0.2, 3.98 + i * 0.08, Math.sin(a) * 0.2);
+    g.add(star);
+  }
+  return g;
+}
+
+// ── Floating stars in background ─────────────────────────────────
+const starParticles = [];
+for (let i = 0; i < 60; i++) {
+  const s = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.04 + Math.random() * 0.06),
+    new THREE.MeshStandardMaterial({
+      color: [0xff69b4, 0xfbbf24, 0xc084fc, 0x60a5fa][Math.floor(Math.random() * 4)],
+      emissive: 0xffffff, emissiveIntensity: 0.5
+    })
+  );
+  s.position.set((Math.random() - 0.5) * 14, Math.random() * 8, (Math.random() - 0.5) * 10 - 4);
+  s.userData.speed = 0.005 + Math.random() * 0.01;
+  s.userData.offset = Math.random() * Math.PI * 2;
+  scene.add(s);
+  starParticles.push(s);
+}
+
+// ── State ─────────────────────────────────────────────────────────
+let currentTop = 0;   // 0=pink,1=purple,2=blue,3=yellow
+let currentAcc = 0;   // 0=flower,1=crown,2=hat
+let totalScore = 0;
+
+const dressColors = [0xe91e8c, 0x7c3aed, 0x0ea5e9, 0xf59e0b];
+const accFactories = [makeFlowerCrown, makeCrown, makeGlitterHat];
+const outfitRatings = [
+  ["⭐⭐⭐⭐⭐", "Perfekt! Hilda ser ut som en prinsessa! 👑"],
+  ["⭐⭐⭐⭐", "Wow, superfin outfit! 💜"],
+  ["⭐⭐⭐⭐⭐", "Bästa looken ever! 🌟"],
+  ["⭐⭐⭐", "Snyggt val! Prova en annan kombination! 🌸"],
+  ["⭐⭐⭐⭐", "Så elegent! Hilda är en stjärna! ✨"],
+  ["⭐⭐⭐⭐⭐", "Absolut fantastisk! 🎂🎀"],
+];
+
+// Set initial accessory
+let accMesh = makeFlowerCrown();
+accGroup.add(accMesh);
+
+function setDressColor(idx) {
+  currentTop = idx;
+  dress.material.color.setHex(dressColors[idx]);
+  dress.material.emissive.setHex(dressColors[idx]);
+  dress.material.emissiveIntensity = 0.15;
+  bodice.material = dress.material;
+  // Highlight button
+  document.querySelectorAll('[data-cat="top"]').forEach((b, i) => {
+    b.style.outline = i === idx ? "3px solid #fff" : "none";
+  });
+}
+
+function setAccessory(idx) {
+  currentAcc = idx;
+  accGroup.clear();
+  accMesh = accFactories[idx]();
+  accGroup.add(accMesh);
+  document.querySelectorAll('[data-cat="acc"]').forEach((b, i) => {
+    b.style.outline = i === idx ? "3px solid #fff" : "none";
+  });
+}
+
+// Wire up buttons
+document.querySelectorAll(".outfit-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const cat = btn.dataset.cat;
+    const val = parseInt(btn.dataset.val);
+    if (cat === "top") setDressColor(val);
+    else setAccessory(val);
+  });
+});
+
+// Initial highlight
+setDressColor(0);
+setAccessory(0);
+
+// ── Rating ────────────────────────────────────────────────────────
+const popup    = document.getElementById("popup");
+const popStars = document.getElementById("popup-stars");
+const popLabel = document.getElementById("popup-label");
+const scoreEl  = document.getElementById("score");
+
+document.getElementById("rate-btn").addEventListener("click", () => {
+  const combo = (currentTop + currentAcc * 4) % outfitRatings.length;
+  const [stars, label] = outfitRatings[combo];
+  popStars.textContent = stars;
+  popLabel.textContent = label;
+  popup.classList.add("show");
+  const pts = stars.length * 20;
+  totalScore += pts;
+  scoreEl.textContent = totalScore;
+  launchConfetti();
+  setTimeout(() => popup.classList.remove("show"), 2800);
+});
+
+// ── Confetti ─────────────────────────────────────────────────────
+const confCanvas = document.getElementById("confetti");
+const confCtx = confCanvas.getContext("2d");
+confCanvas.width = innerWidth;
+confCanvas.height = innerHeight;
+let confPieces = [];
+
+function launchConfetti() {
+  const colors = ["#ff69b4","#c084fc","#60a5fa","#fbbf24","#34d399","#f43f5e"];
+  for (let i = 0; i < 90; i++) {
+    confPieces.push({
+      x: Math.random() * confCanvas.width,
+      y: -10,
+      w: 8 + Math.random() * 10,
+      h: 5 + Math.random() * 6,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vy: 3 + Math.random() * 5,
+      vx: (Math.random() - 0.5) * 4,
+      rot: Math.random() * 360,
+      rspeed: (Math.random() - 0.5) * 8,
+    });
+  }
+}
+
+function drawConfetti() {
+  confCtx.clearRect(0, 0, confCanvas.width, confCanvas.height);
+  confPieces = confPieces.filter(p => p.y < confCanvas.height + 20);
+  confPieces.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.rot += p.rspeed;
+    confCtx.save();
+    confCtx.translate(p.x, p.y);
+    confCtx.rotate(p.rot * Math.PI / 180);
+    confCtx.fillStyle = p.color;
+    confCtx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    confCtx.restore();
+  });
+}
+
+// ── OrbitControls (gentle, limited) ───────────────────────────────
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.5, 0);
+controls.minDistance = 3;
+controls.maxDistance = 10;
+controls.maxPolarAngle = Math.PI * 0.75;
+controls.enablePan = false;
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.update();
+
+// ── Resize ────────────────────────────────────────────────────────
+window.addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  confCanvas.width = innerWidth;
+  confCanvas.height = innerHeight;
+});
+
+// ── Animation loop ────────────────────────────────────────────────
+let t = 0;
+renderer.setAnimationLoop(() => {
+  t += 0.016;
+
+  // Character gentle bob
+  charGroup.position.y = Math.sin(t * 1.2) * 0.04;
+  charGroup.rotation.y = Math.sin(t * 0.4) * 0.08;
+
+  // Accessory spin
+  if (accMesh) accMesh.rotation.y += 0.02;
+
+  // Ring pulse
+  ring.material.emissiveIntensity = 0.4 + Math.sin(t * 2) * 0.3;
+
+  // Stars float
+  starParticles.forEach(s => {
+    s.position.y += Math.sin(t * s.userData.speed * 60 + s.userData.offset) * 0.005;
+    s.rotation.x += s.userData.speed;
+    s.rotation.y += s.userData.speed * 0.7;
+  });
+
+  controls.update();
+  renderer.render(scene, camera);
+  drawConfetti();
+});
+</script>
+</body>
+</html>

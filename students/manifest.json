@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "modiga-lammeln",
+          "boilerplate": false,
+          "student": "student08",
+          "display_name": "student08",
+          "title": "Grattis Hilda! 🎀 Dress to Impress",
+          "description": "Ett roligt klädspel där du väljer outfit och får poäng — gjort för att fira Hildas födelsedag!",
+          "persona": "clay",
+          "archived_at": "2026-06-04T10:19:13Z",
+          "published_at": "2026-06-04T10:19:22Z",
+          "thumbnail": "students/pilot/modiga-lammeln/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "varsamma-gladan",
           "boilerplate": false,
           "student": "varsamma-gladan",
