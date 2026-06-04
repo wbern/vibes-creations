@@ -10,10 +10,10 @@
           "student": "student08",
           "display_name": "student08",
           "title": "Webb Säkerhet 🔒",
-          "description": "Den här sidan lär dig om webbsäkerhet – hur farliga attacker fungerar och hur man skyddar sig mot dem.",
+          "description": "Den här sidan lär dig om webb-säkerhet — hur hackare kan attackera webbplatser och hur man skyddar sig mot dem.",
           "persona": "clay",
-          "archived_at": "2026-06-04T10:58:24Z",
-          "published_at": "2026-06-04T10:58:39Z",
+          "archived_at": "2026-06-04T11:35:10Z",
+          "published_at": "2026-06-04T11:35:25Z",
           "thumbnail": "students/pilot/modiga-lammeln/thumbnail.webp",
           "scan": {
             "counts": {
