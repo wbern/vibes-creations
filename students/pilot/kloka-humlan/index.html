@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Interferensmönster</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      overscroll-behavior: none;
+      background: #0a0a0f;
+      overflow: hidden;
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    canvas { display: block; touch-action: none; }
+
+    #info {
+      position: absolute;
+      top: 14px; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.4);
+      font: 13px/1.4 ui-sans-serif, system-ui, sans-serif;
+      pointer-events: none;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ── Controls panel ── */
+    #controls {
+      position: absolute;
+      bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 12px 24px;
+      padding: 14px 22px;
+      background: rgba(10,10,18,0.85);
+      border: 2px solid rgba(255,255,255,0.25);
+      border-radius: 10px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      font: 13px/1 ui-sans-serif, system-ui, sans-serif;
+      color: rgba(255,255,255,0.8);
+      white-space: nowrap;
+    }
+
+    #btn-constructive {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 18px;
+      background: #1a1a22;
+      color: #fff;
+      border: 2px solid #ffffff;
+      border-radius: 6px;
+      box-shadow: 3px 3px 0 #ffffff;
+      font: 700 14px/1 ui-sans-serif, system-ui, sans-serif;
+      cursor: pointer;
+      transition: transform 100ms, box-shadow 100ms;
+    }
+    #btn-constructive:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0 transparent;
+    }
+    #btn-constructive.on {
+      background: #ffffff;
+      color: #0a0a0f;
+    }
+    #btn-constructive .dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    #btn-anim {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 18px;
+      background: #1a1a22;
+      color: #fff;
+      border: 2px solid #ffffff;
+      border-radius: 6px;
+      box-shadow: 3px 3px 0 #ffffff;
+      font: 700 14px/1 ui-sans-serif, system-ui, sans-serif;
+      cursor: pointer;
+      transition: transform 100ms, box-shadow 100ms;
+    }
+    #btn-anim:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0 transparent;
+    }
+    #btn-anim.on {
+      background: #1ed760;
+      color: #0a0a0f;
+      border-color: #1ed760;
+      box-shadow: 3px 3px 0 rgba(30,215,96,0.4);
+    }
+
+    #btn-numbers {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 18px;
+      background: #1a1a22;
+      color: #fff;
+      border: 2px solid #ffffff;
+      border-radius: 6px;
+      box-shadow: 3px 3px 0 #ffffff;
+      font: 700 14px/1 ui-sans-serif, system-ui, sans-serif;
+      cursor: pointer;
+      transition: transform 100ms, box-shadow 100ms;
+    }
+    #btn-numbers:active { transform: translate(3px,3px); box-shadow: 0 0 0 transparent; }
+    #btn-numbers.on { background: #ffffff; color: #0a0a0f; }
+
+    #btn-screen {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 18px;
+      background: #1a1a22; color: #fff;
+      border: 2px solid #ffffff; border-radius: 6px;
+      box-shadow: 3px 3px 0 #ffffff;
+      font: 700 14px/1 ui-sans-serif, system-ui, sans-serif;
+      cursor: pointer;
+      transition: transform 100ms, box-shadow 100ms;
+    }
+    #btn-screen:active { transform: translate(3px,3px); box-shadow: 0 0 0 transparent; }
+    #btn-screen.on { background: #ffffff; color: #0a0a0f; }
+
+    /* Slider rows */
+    .slider-row {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .slider-row label {
+      min-width: 7rem;
+      color: rgba(255,255,255,0.6);
+    }
+    .slider-row .val {
+      min-width: 2.2rem;
+      text-align: right;
+      color: #fff;
+      font-weight: 700;
+    }
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 130px; height: 4px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #0a0a0f;
+      box-shadow: 0 0 4px rgba(255,255,255,0.5);
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #0a0a0f;
+    }
+    input[type=color] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 36px; height: 28px;
+      padding: 0;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-radius: 4px;
+      background: none;
+      cursor: pointer;
+    }
+    input[type=color]::-webkit-color-swatch-wrapper { padding: 2px; }
+    input[type=color]::-webkit-color-swatch { border: none; border-radius: 2px; }
+    input[type=color]::-moz-color-swatch { border: none; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="info">Dra i punkterna för att flytta dem</div>
+
+  <div id="controls">
+    <button id="btn-constructive">
+      <span class="dot"></span>
+      Konstruktiv interferens
+    </button>
+
+    <button id="btn-anim">
+      ▶ Animera
+    </button>
+
+    <button id="btn-numbers">
+      # Numrering
+    </button>
+
+    <button id="btn-screen">
+      ⊕ Skärm
+    </button>
+
+    <div class="slider-row">
+      <label>Avstånd (px)</label>
+      <input type="range" id="sl-spacing" min="6" max="60" value="22" step="1">
+      <span class="val" id="val-spacing">22</span>
+    </div>
+
+    <div class="slider-row">
+      <label>Antal cirklar</label>
+      <input type="range" id="sl-rings" min="1" max="40" value="20" step="1">
+      <span class="val" id="val-rings">20</span>
+    </div>
+
+    <div class="slider-row">
+      <label>Kurvfärg</label>
+      <input type="color" id="col-curves" value="#ffffff">
+    </div>
+
+    <div class="slider-row" id="row-screen-dist" style="display:none">
+      <label>Skärmavstånd</label>
+      <input type="range" id="sl-screen-dist" min="-500" max="500" value="180" step="1">
+      <span class="val" id="val-screen-dist">180</span>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx    = canvas.getContext('2d');
+    const btn    = document.getElementById('btn-constructive');
+
+    const slSpacing  = document.getElementById('sl-spacing');
+    const slRings    = document.getElementById('sl-rings');
+    const valSpacing = document.getElementById('val-spacing');
+    const valRings   = document.getElementById('val-rings');
+    const colCurves  = document.getElementById('col-curves');
+
+    let NUM_RINGS    = 20;
+    let RING_SPACING = 22;     // px between rings
+    const SCAN_STEP  = 3;      // px resolution for curve tracing
+
+    const SOURCE = [
+      { x: 0, y: 0, stroke: '#ffe44d', glow: 'rgba(255,220,0,0.35)' },
+      { x: 0, y: 0, stroke: '#4db8ff', glow: 'rgba(0,140,255,0.35)' },
+    ];
+
+    let showConstructive     = false;
+    let showNumbers          = false;
+    let showScreen           = false;
+    let screenDist           = 180;
+    let cachedIntersections  = [];   // [{x,y,t,rawN,n}] refreshed each draw
+    let selectedRawN         = null; // signed interference order of picked point
+    let selectedSide         = 1;    // sign of t-parameter at pick
+    let selectedIntersection = null; // resolved each draw from selectedRawN+side
+    let initialized      = false;
+    let animating        = false;
+    let animOffset       = 0;       // 0 → RING_SPACING, then wraps
+    let lastTime         = null;
+    const ANIM_SPEED     = 40;      // px per second
+
+    /* ── Layout ───────────────────────────────────────────────── */
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+      if (!initialized) {
+        SOURCE[0].x = Math.round(canvas.width * 0.35);
+        SOURCE[0].y = Math.round(canvas.height * 0.5);
+        SOURCE[1].x = Math.round(canvas.width * 0.65);
+        SOURCE[1].y = Math.round(canvas.height * 0.5);
+        initialized = true;
+      }
+    }
+    resize();
+    window.addEventListener('resize', () => { resize(); draw(); });
+
+    /* ── Constructive curve tracing ───────────────────────────── */
+    /*
+     * Constructive interference: d1 - d2 = n * λ  (n = integer)
+     * This traces hyperbolas — one per order n.
+     * For each row y we find x-roots by sign-change detection,
+     * then connect consecutive rows into paths.
+     */
+    function traceOrder(n) {
+      const target = n * RING_SPACING;
+      const p1 = SOURCE[0], p2 = SOURCE[1];
+      const W = canvas.width, H = canvas.height;
+
+      // Two branches (left / right side of each hyperbola)
+      const branches = [[], []];
+
+      for (let y = 0; y <= H; y += SCAN_STEP) {
+        const roots = [];
+        let prevVal = null, prevX = 0;
+        for (let x = 0; x <= W; x += SCAN_STEP) {
+          const val =
+            Math.hypot(x - p1.x, y - p1.y) -
+            Math.hypot(x - p2.x, y - p2.y) -
+            target;
+          if (prevVal !== null && prevVal * val < 0) {
+            const t = -prevVal / (val - prevVal);
+            roots.push(prevX + t * SCAN_STEP);
+          }
+          prevVal = val;
+          prevX   = x;
+        }
+        roots.sort((a, b) => a - b);
+        branches[0].push(roots.length >= 1 ? { x: roots[0],               y } : null);
+        branches[1].push(roots.length >= 2 ? { x: roots[roots.length - 1], y } : null);
+      }
+      return branches;
+    }
+
+    function drawConstructiveLines() {
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = colCurves.value;
+      ctx.globalAlpha = 0.9;
+      ctx.lineWidth   = 1.5;
+
+      const labelPoints = []; // { x, y, label }
+
+      for (let n = -(NUM_RINGS - 1); n <= NUM_RINGS - 1; n++) {
+        const branches = traceOrder(n);
+
+        // Find one topmost visible point across both branches for this n
+        let topPt = null;
+        for (const branch of branches) {
+          for (const pt of branch) {
+            if (pt && (!topPt || pt.y < topPt.y)) { topPt = pt; break; }
+          }
+        }
+        if (topPt) labelPoints.push({ x: topPt.x, y: topPt.y, label: `n=${Math.abs(n)}` });
+
+        // Draw the curves
+        for (const branch of branches) {
+          ctx.beginPath();
+          let drawing = false;
+          for (const pt of branch) {
+            if (!pt) { drawing = false; continue; }
+            if (!drawing) { ctx.moveTo(pt.x, pt.y); drawing = true; }
+            else          { ctx.lineTo(pt.x, pt.y); }
+          }
+          ctx.stroke();
+        }
+      }
+
+      // Draw labels at the top of each curve
+      if (showNumbers) {
+        ctx.globalAlpha  = 1;
+        ctx.font         = 'bold 12px ui-monospace, "JetBrains Mono", monospace';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+
+        for (const { x, y, label } of labelPoints) {
+          const lx = x;
+          const ly = Math.max(y + 10, 14); // clamp so it's visible near top edge
+          const w  = ctx.measureText(label).width + 8;
+          const h  = 18;
+          // dark pill background
+          ctx.fillStyle = 'rgba(10,10,18,0.85)';
+          roundRect(ctx, lx - w / 2, ly - h / 2, w, h, 3);
+          ctx.fill();
+          // text in curve colour
+          ctx.fillStyle = colCurves.value;
+          ctx.fillText(label, lx, ly);
+        }
+      }
+
+      ctx.restore();
+    }
+
+    /* tiny helper — roundRect polyfill for older Safari */
+    function roundRect(c, x, y, w, h, r) {
+      if (c.roundRect) { c.beginPath(); c.roundRect(x, y, w, h, r); return; }
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.lineTo(x + w - r, y); c.arcTo(x + w, y, x + w, y + r, r);
+      c.lineTo(x + w, y + h - r); c.arcTo(x + w, y + h, x + w - r, y + h, r);
+      c.lineTo(x + r, y + h); c.arcTo(x, y + h, x, y + h - r, r);
+      c.lineTo(x, y + r); c.arcTo(x, y, x + r, y, r);
+      c.closePath();
+    }
+
+    /* ── Screen helpers ──────────────────────────────────────── */
+
+    /* Returns geometry of the screen line so we don't recompute everywhere */
+    function screenLineParams() {
+      const p1  = SOURCE[0], p2 = SOURCE[1];
+      const mx  = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+      const len = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1;
+      const ux  = (p2.x - p1.x) / len, uy = (p2.y - p1.y) / len;
+      const nx  = -uy, ny = ux;
+      const cx  = mx - nx * screenDist, cy = my - ny * screenDist;
+      const W = canvas.width, H = canvas.height;
+      let tMin = -Infinity, tMax = Infinity;
+      if (ux !== 0) {
+        const t1=(0-cx)/ux, t2=(W-cx)/ux;
+        tMin=Math.max(tMin,Math.min(t1,t2)); tMax=Math.min(tMax,Math.max(t1,t2));
+      }
+      if (uy !== 0) {
+        const t1=(0-cy)/uy, t2=(H-cy)/uy;
+        tMin=Math.max(tMin,Math.min(t1,t2)); tMax=Math.min(tMax,Math.max(t1,t2));
+      }
+      return { mx, my, cx, cy, ux, uy, nx, ny, tMin, tMax };
+    }
+
+    /* Scan the screen line for intersections with every interference order */
+    function computeAllIntersections() {
+      if (!showScreen || !showConstructive) { cachedIntersections = []; return; }
+      const {cx, cy, ux, uy, tMin, tMax} = screenLineParams();
+      const p1 = SOURCE[0], p2 = SOURCE[1];
+      const step = 2, all = [];
+      for (let n = -(NUM_RINGS-1); n <= NUM_RINGS-1; n++) {
+        const target = n * RING_SPACING;
+        let prevVal = null, prevT = tMin;
+        for (let t = tMin; t <= tMax; t += step) {
+          const x = cx + ux*t, y = cy + uy*t;
+          const val = Math.hypot(x-p1.x,y-p1.y) - Math.hypot(x-p2.x,y-p2.y) - target;
+          if (prevVal !== null && prevVal*val < 0) {
+            const frac = -prevVal / (val - prevVal);
+            const it   = prevT + frac * step;
+            all.push({ x: cx+ux*it, y: cy+uy*it, t: it, rawN: n, n: Math.abs(n) });
+          }
+          prevVal = val; prevT = t;
+        }
+      }
+      cachedIntersections = all;
+    }
+
+    /* Re-resolve the selected intersection position based on stored rawN+side */
+    function updateSelectedIntersection() {
+      if (selectedRawN === null) { selectedIntersection = null; return; }
+      const matches = cachedIntersections.filter(p =>
+        p.rawN === selectedRawN && (Math.sign(p.t) === selectedSide || p.t === 0)
+      );
+      selectedIntersection = matches.length > 0 ? matches[0] : null;
+    }
+
+    /* Small clickable dots where interference curves cross the screen */
+    function drawIntersectionDots() {
+      ctx.save();
+      for (const pt of cachedIntersections) {
+        const isSel = selectedIntersection &&
+          Math.abs(pt.x - selectedIntersection.x) < 3 &&
+          Math.abs(pt.y - selectedIntersection.y) < 3;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, isSel ? 7 : 4, 0, Math.PI * 2);
+        ctx.fillStyle   = isSel ? '#ff6b35' : 'rgba(255,255,255,0.75)';
+        ctx.globalAlpha = 1;
+        ctx.shadowColor = isSel ? '#ff6b35' : 'transparent';
+        ctx.shadowBlur  = isSel ? 12 : 0;
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    /* Line from midpoint → selected intersection + angle arc + label */
+    function drawAngleLine() {
+      if (!selectedIntersection) return;
+      const { mx, my, cx, cy } = screenLineParams();
+      const { x: ix, y: iy } = selectedIntersection;
+
+      ctx.save();
+      ctx.setLineDash([]);
+
+      /* Line from midpoint to intersection */
+      ctx.strokeStyle = '#ff6b35';
+      ctx.lineWidth   = 2.5;
+      ctx.globalAlpha = 0.95;
+      ctx.beginPath();
+      ctx.moveTo(mx, my);
+      ctx.lineTo(ix, iy);
+      ctx.stroke();
+
+      /* Dot at intersection */
+      ctx.shadowColor = '#ff6b35';
+      ctx.shadowBlur  = 14;
+      ctx.fillStyle   = '#ff6b35';
+      ctx.beginPath();
+      ctx.arc(ix, iy, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      /* Angle arc at midpoint */
+      const axisAngle = Math.atan2(cy - my, cx - mx); // toward screen centre
+      const lineAngle = Math.atan2(iy - my, ix - mx); // toward intersection
+      let da = lineAngle - axisAngle;
+      while (da >  Math.PI) da -= 2 * Math.PI;
+      while (da < -Math.PI) da += 2 * Math.PI;
+
+      const R = 44;
+      ctx.strokeStyle = '#ff6b35';
+      ctx.lineWidth   = 2.5;
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      if (da >= 0) ctx.arc(mx, my, R, axisAngle, lineAngle);
+      else         ctx.arc(mx, my, R, lineAngle,  axisAngle);
+      ctx.stroke();
+
+      /* Tick marks at arc ends */
+      ctx.globalAlpha = 0.9;
+      ctx.lineWidth   = 2;
+      for (const ang of [axisAngle, lineAngle]) {
+        const ex = mx + Math.cos(ang) * R, ey = my + Math.sin(ang) * R;
+        const tx = Math.cos(ang + Math.PI/2) * 6, ty = Math.sin(ang + Math.PI/2) * 6;
+        ctx.beginPath();
+        ctx.moveTo(ex - tx, ey - ty);
+        ctx.lineTo(ex + tx, ey + ty);
+        ctx.stroke();
+      }
+
+      /* Angle label */
+      const angleDeg = Math.abs(da) * 180 / Math.PI;
+      const midAngle = axisAngle + da / 2;
+      const lx = mx + Math.cos(midAngle) * (R + 22);
+      const ly = my + Math.sin(midAngle) * (R + 22);
+      const txt = `α = ${angleDeg.toFixed(1)}°`;
+
+      ctx.globalAlpha  = 1;
+      ctx.font         = 'bold 14px ui-monospace, "JetBrains Mono", monospace';
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(txt).width + 12;
+      ctx.fillStyle = 'rgba(10,10,18,0.9)';
+      roundRect(ctx, lx - tw/2, ly - 11, tw, 22, 3);
+      ctx.fill();
+      ctx.fillStyle = '#ff6b35';
+      ctx.fillText(txt, lx, ly);
+
+      ctx.restore();
+    }
+
+    /* ── Screen line + midpoint ───────────────────────────────── */
+    function drawScreenLine() {
+      const p1 = SOURCE[0], p2 = SOURCE[1];
+
+      // Midpoint
+      const mx = (p1.x + p2.x) / 2;
+      const my = (p1.y + p2.y) / 2;
+
+      // Unit vector along source axis and its perpendicular (normal)
+      const len = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1;
+      const ux  = (p2.x - p1.x) / len;
+      const uy  = (p2.y - p1.y) / len;
+      const nx  = -uy;   // perpendicular
+      const ny  =  ux;
+
+      // Centre of the screen line
+      const cx = mx + nx * -screenDist;
+      const cy = my + ny * -screenDist;
+
+      // Extend line across the full canvas in the (ux,uy) direction
+      // Find t where x or y exits [0,W] or [0,H]
+      const W = canvas.width, H = canvas.height;
+      let tMin = -Infinity, tMax = Infinity;
+      if (ux !== 0) {
+        const t1 = (0 - cx) / ux, t2 = (W - cx) / ux;
+        tMin = Math.max(tMin, Math.min(t1, t2));
+        tMax = Math.min(tMax, Math.max(t1, t2));
+      }
+      if (uy !== 0) {
+        const t1 = (0 - cy) / uy, t2 = (H - cy) / uy;
+        tMin = Math.max(tMin, Math.min(t1, t2));
+        tMax = Math.min(tMax, Math.max(t1, t2));
+      }
+      const x0 = cx + ux * tMin, y0 = cy + uy * tMin;
+      const x1 = cx + ux * tMax, y1 = cy + uy * tMax;
+
+      ctx.save();
+
+      // Dashed line
+      ctx.setLineDash([8, 5]);
+      ctx.lineDashOffset = 0;
+      ctx.strokeStyle   = 'rgba(255,255,255,0.55)';
+      ctx.lineWidth     = 6;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+
+      // Perpendicular dashed line through midpoint (along nx,ny direction)
+      {
+        let tMin2 = -Infinity, tMax2 = Infinity;
+        if (nx !== 0) {
+          const t1 = (0 - mx) / nx, t2 = (W - mx) / nx;
+          tMin2 = Math.max(tMin2, Math.min(t1, t2));
+          tMax2 = Math.min(tMax2, Math.max(t1, t2));
+        }
+        if (ny !== 0) {
+          const t1 = (0 - my) / ny, t2 = (H - my) / ny;
+          tMin2 = Math.max(tMin2, Math.min(t1, t2));
+          tMax2 = Math.min(tMax2, Math.max(t1, t2));
+        }
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(mx + nx * tMin2, my + ny * tMin2);
+        ctx.lineTo(mx + nx * tMax2, my + ny * tMax2);
+        ctx.stroke();
+      }
+
+      ctx.setLineDash([]);
+
+      // Midpoint dot
+      ctx.shadowColor  = 'rgba(255,255,255,0.6)';
+      ctx.shadowBlur   = 8;
+      ctx.fillStyle    = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(mx, my, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+
+      ctx.restore();
+    }
+
+    /* ── Main draw ────────────────────────────────────────────── */
+    function draw() {
+      computeAllIntersections();
+      updateSelectedIntersection();
+
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#0a0a0f';
+      ctx.fillRect(0, 0, W, H);
+
+      /* rings */
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      for (const src of SOURCE) {
+        /* draw NUM_RINGS + 1 rings starting from i=0 so a new ring
+           is always born at animOffset and the last fades out */
+        for (let i = 0; i <= NUM_RINGS; i++) {
+          const r = i * RING_SPACING + animOffset;
+          if (r <= 0) continue;
+          /* alpha: young rings (small r) are dim, older rings brighten,
+             outermost ring fades out as it exits */
+          const progress = r / (NUM_RINGS * RING_SPACING);
+          const alpha    = Math.min(1, progress * 1.4) * 0.8;
+          ctx.beginPath();
+          ctx.arc(src.x, src.y, r, 0, Math.PI * 2);
+          ctx.strokeStyle = src.stroke;
+          ctx.globalAlpha = alpha;
+          ctx.lineWidth   = 1.8;
+          ctx.stroke();
+          /* glow */
+          ctx.beginPath();
+          ctx.arc(src.x, src.y, r, 0, Math.PI * 2);
+          ctx.strokeStyle = src.glow;
+          ctx.globalAlpha = alpha * 0.18;
+          ctx.lineWidth   = 5;
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+
+      /* constructive lines */
+      if (showConstructive) drawConstructiveLines();
+
+      /* screen line */
+      if (showScreen) drawScreenLine();
+
+      /* intersection dots + angle line (on top of everything) */
+      if (showScreen && showConstructive) drawIntersectionDots();
+      drawAngleLine();
+
+      /* source handles */
+      for (const src of SOURCE) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(src.x, src.y, 14, 0, Math.PI * 2);
+        ctx.fillStyle   = src.stroke;
+        ctx.globalAlpha = 0.18;
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.shadowColor = src.stroke;
+        ctx.shadowBlur  = 12;
+        ctx.beginPath();
+        ctx.arc(src.x, src.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle   = src.stroke;
+        ctx.globalAlpha = 1;
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    /* ── Button ───────────────────────────────────────────────── */
+    btn.addEventListener('click', () => {
+      showConstructive = !showConstructive;
+      btn.classList.toggle('on', showConstructive);
+      draw();
+    });
+
+    /* ── Sliders ──────────────────────────────────────────────── */
+    slSpacing.addEventListener('input', () => {
+      RING_SPACING = +slSpacing.value;
+      valSpacing.textContent = RING_SPACING;
+      draw();
+    });
+
+    slRings.addEventListener('input', () => {
+      NUM_RINGS = +slRings.value;
+      valRings.textContent = NUM_RINGS;
+      draw();
+    });
+
+    colCurves.addEventListener('input',  () => { if (showConstructive) draw(); });
+    colCurves.addEventListener('change', () => { if (showConstructive) draw(); });
+
+    /* ── Screen line button & slider ─────────────────────────── */
+    const btnScreen      = document.getElementById('btn-screen');
+    const slScreenDist   = document.getElementById('sl-screen-dist');
+    const valScreenDist  = document.getElementById('val-screen-dist');
+    const rowScreenDist  = document.getElementById('row-screen-dist');
+
+    btnScreen.addEventListener('click', () => {
+      showScreen = !showScreen;
+      btnScreen.classList.toggle('on', showScreen);
+      rowScreenDist.style.display = showScreen ? 'flex' : 'none';
+      draw();
+    });
+
+    slScreenDist.addEventListener('input', () => {
+      screenDist = +slScreenDist.value;
+      valScreenDist.textContent = screenDist;
+      if (showScreen) draw();
+    });
+
+    /* ── Numbers button ───────────────────────────────────────── */
+    const btnNumbers = document.getElementById('btn-numbers');
+    btnNumbers.addEventListener('click', () => {
+      showNumbers = !showNumbers;
+      btnNumbers.classList.toggle('on', showNumbers);
+      /* auto-enable constructive lines if not already on */
+      if (showNumbers && !showConstructive) {
+        showConstructive = true;
+        btn.classList.add('on');
+      }
+      draw();
+    });
+
+    /* ── Animation loop ───────────────────────────────────────── */
+    const btnAnim = document.getElementById('btn-anim');
+
+    function animLoop(ts) {
+      if (!animating) return;
+      if (lastTime !== null) {
+        const dt = (ts - lastTime) / 1000;            // seconds
+        animOffset = (animOffset + ANIM_SPEED * dt) % RING_SPACING;
+      }
+      lastTime = ts;
+      draw();
+      requestAnimationFrame(animLoop);
+    }
+
+    btnAnim.addEventListener('click', () => {
+      animating = !animating;
+      btnAnim.classList.toggle('on', animating);
+      btnAnim.textContent = animating ? '⏹ Stoppa' : '▶ Animera';
+      if (animating) {
+        lastTime = null;
+        requestAnimationFrame(animLoop);
+      }
+    });
+
+    /* ── Drag ─────────────────────────────────────────────────── */
+    let dragging = null;
+
+    function evPos(e) {
+      const r = canvas.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      return { x: t.clientX - r.left, y: t.clientY - r.top };
+    }
+
+    function nearest(pos) {
+      let best = null, bestD = 30;
+      for (let i = 0; i < SOURCE.length; i++) {
+        const dx = pos.x - SOURCE[i].x, dy = pos.y - SOURCE[i].y;
+        const d  = Math.sqrt(dx*dx + dy*dy);
+        if (d < bestD) { bestD = d; best = i; }
+      }
+      return best;
+    }
+
+    canvas.addEventListener('pointerdown', e => {
+      const pos = evPos(e);
+      const hit = nearest(pos);
+      if (hit !== null) {
+        dragging = hit;
+        canvas.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      } else if (showScreen && showConstructive) {
+        /* Check for intersection click */
+        let bestDist = 18, bestPt = null;
+        for (const pt of cachedIntersections) {
+          const d = Math.hypot(pos.x - pt.x, pos.y - pt.y);
+          if (d < bestDist) { bestDist = d; bestPt = pt; }
+        }
+        if (bestPt) {
+          const alreadySelected =
+            selectedRawN === bestPt.rawN &&
+            Math.sign(bestPt.t) === selectedSide;
+          if (alreadySelected) {
+            /* toggle off */
+            selectedRawN = null;
+            selectedIntersection = null;
+          } else {
+            selectedRawN = bestPt.rawN;
+            selectedSide = Math.sign(bestPt.t) || 1;
+            selectedIntersection = bestPt;
+          }
+          draw();
+          e.preventDefault();
+        }
+      }
+    });
+
+    canvas.addEventListener('pointermove', e => {
+      if (dragging === null) return;
+      const pos = evPos(e);
+      SOURCE[dragging].x = pos.x;
+      SOURCE[dragging].y = pos.y;
+      draw();
+    });
+
+    canvas.addEventListener('pointerup',     () => { dragging = null; });
+    canvas.addEventListener('pointercancel', () => { dragging = null; });
+
+    draw();
+  </script>
+</body>
+</html>

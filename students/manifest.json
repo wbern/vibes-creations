@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "kloka-humlan",
+          "boilerplate": false,
+          "student": "student11",
+          "display_name": "student11",
+          "title": "Interferensmönster",
+          "description": "Här kan du dra i punkter och se hur vågor skapar vackra interferensmönster på skärmen.",
+          "persona": "clay",
+          "archived_at": "2026-06-04T12:04:15Z",
+          "published_at": "2026-06-04T12:04:29Z",
+          "thumbnail": "students/pilot/kloka-humlan/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "modiga-lammeln",
           "boilerplate": false,
           "student": "student08",

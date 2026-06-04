@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-06-04T11:35:25Z",
+  "generated_at": "2026-06-04T12:04:29Z",
   "entries": [
+    {
+      "slug": "kloka-humlan",
+      "title": "Interferensmönster",
+      "display_name": "student11",
+      "thumbnail": "students/pilot/kloka-humlan/thumbnail.webp",
+      "live_url": "https://public.vibes.bernting.se/students/pilot/kloka-humlan/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/kloka-humlan",
+      "date": "2026-06-04T12:04:29Z",
+      "persona": "clay",
+      "description": "Här kan du dra i punkter och se hur vågor skapar vackra interferensmönster på skärmen."
+    },
     {
       "slug": "modiga-lammeln",
       "title": "Webb Säkerhet 🔒",
