@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>NeonWave</title>
+  <style>
+    /* Säkerställ att hidden-attributet alltid döljer elementet */
+    [hidden] { display: none !important; }
+
+    /* ── Touch-säkerhet ─────────────────────────────────────────────────── */
+    html,body{margin:0;padding:0;min-height:100%;overscroll-behavior:none}
+    body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+         -webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    button{min-width:44px;min-height:44px;font-size:1rem}
+    .sel{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+
+    /* ── HavNeon-tema ───────────────────────────────────────────────────── */
+    :root{
+      --bg:#07111f; --ink:#d8f0ff; --card:#0d2035;
+      --cyan:#00d4ff; --purple:#b044ff; --pink:#ff3ea5; --green:#00ffaa;
+      --r:16px; --lip:5px;
+    }
+    body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+    /* ── Hjälpklasser ───────────────────────────────────────────────────── */
+    .stack{display:flex;flex-direction:column;gap:.9rem}
+    .row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+    .center{text-align:center}
+    h1{font:900 2.2rem/1 system-ui;letter-spacing:-.02em;margin:0 0 .4rem}
+    h2{font:800 1.2rem/1.2 system-ui;margin:0 0 .3rem}
+
+    /* ── Glöd-text ──────────────────────────────────────────────────────── */
+    .grad{background:linear-gradient(90deg,var(--cyan),var(--purple));
+          -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    @keyframes glow{0%,100%{text-shadow:0 0 8px var(--cyan),0 0 20px var(--cyan)}50%{text-shadow:0 0 4px var(--cyan)}}
+    .glow{animation:glow 2.5s ease-in-out infinite}
+
+    /* ── Knapp ──────────────────────────────────────────────────────────── */
+    .btn{display:inline-flex;align-items:center;justify-content:center;
+         min-height:50px;padding:13px 22px;border:0;border-radius:var(--r);
+         font:800 15px/1 system-ui;color:#fff;letter-spacing:.4px;text-transform:uppercase;
+         background:var(--c,var(--cyan));
+         box-shadow:0 var(--lip) 0 color-mix(in srgb,var(--c,var(--cyan)) 55%,black),
+                    0 0 20px color-mix(in srgb,var(--c,var(--cyan)) 35%,transparent);
+         cursor:pointer;transition:transform 80ms,box-shadow 80ms,filter 120ms}
+    .btn:hover{filter:brightness(1.12)}
+    .btn:active{transform:translateY(var(--lip));box-shadow:0 0 10px color-mix(in srgb,var(--c,var(--cyan)) 25%,transparent)}
+    .btn-sm{min-height:36px;padding:8px 16px;font-size:13px}
+    .btn-outline{background:none;box-shadow:none;border:1.5px solid var(--c,var(--cyan));
+                 color:var(--c,var(--cyan));text-transform:none;font-weight:700}
+    .btn-outline:active{transform:scale(.96);box-shadow:none}
+
+    /* ── Input ──────────────────────────────────────────────────────────── */
+    .inp{width:100%;box-sizing:border-box;background:#071625;
+         border:1.5px solid color-mix(in srgb,var(--cyan) 30%,transparent);
+         border-radius:12px;color:var(--ink);font:1rem/1.5 system-ui;
+         padding:.75rem 1rem;outline:none;transition:border-color 150ms,box-shadow 150ms}
+    .inp:focus{border-color:var(--cyan);box-shadow:0 0 12px color-mix(in srgb,var(--cyan) 25%,transparent)}
+    .inp::placeholder{color:color-mix(in srgb,var(--ink) 38%,transparent)}
+    textarea.inp{resize:none;-webkit-user-select:text;user-select:text}
+
+    /* ── Animationer ────────────────────────────────────────────────────── */
+    @keyframes pop-in{from{transform:scale(.8) translateY(12px);opacity:0}to{transform:none;opacity:1}}
+    @keyframes fade-in{from{opacity:0}to{opacity:1}}
+    .pop-in{animation:pop-in 240ms cubic-bezier(.5,1.6,.4,1) both}
+    @media(prefers-reduced-motion:reduce){.pop-in,.glow{animation:none}}
+
+    /* ════════════════════════════════════════════════════════════════════
+       LOGIN-SKÄRM
+    ════════════════════════════════════════════════════════════════════ */
+    #screen-login{
+      min-height:100vh;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;padding:2rem;box-sizing:border-box;
+      background:radial-gradient(ellipse at 30% 20%,color-mix(in srgb,var(--cyan) 12%,transparent),transparent 60%),
+                 radial-gradient(ellipse at 70% 80%,color-mix(in srgb,var(--purple) 10%,transparent),transparent 55%);
+    }
+    #screen-login .login-box{width:100%;max-width:22rem;display:flex;flex-direction:column;gap:1.1rem}
+    #screen-login .logo-wrap{text-align:center;margin-bottom:.5rem}
+
+    /* Avatar-färgväljare */
+    .color-picker{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap}
+    .color-dot{width:44px;height:44px;border-radius:50%;cursor:pointer;border:3px solid transparent;
+               transition:transform 120ms,border-color 120ms}
+    .color-dot.chosen{border-color:#fff;transform:scale(1.15)}
+
+    /* ════════════════════════════════════════════════════════════════════
+       HUVUD-APP
+    ════════════════════════════════════════════════════════════════════ */
+    #screen-app{display:flex;flex-direction:column;min-height:100vh;max-width:500px;margin:0 auto}
+
+    /* Topbar */
+    .topbar{display:flex;align-items:center;justify-content:space-between;
+            padding:.75rem 1rem;background:#091929;
+            border-bottom:2px solid var(--cyan);position:sticky;top:0;z-index:20;
+            box-shadow:0 0 20px color-mix(in srgb,var(--cyan) 25%,transparent)}
+    .topbar-logo{font:900 1.4rem/1 system-ui;letter-spacing:-.02em}
+    .topbar-icons{display:flex;gap:.5rem}
+    .icon-btn{background:none;border:0;cursor:pointer;color:var(--ink);
+              padding:.4rem;border-radius:8px;font-size:1.3rem;display:flex;align-items:center}
+
+    /* Sidor */
+    .page{flex:1;overflow-y:auto;padding-bottom:80px}
+
+    /* Bottomnav */
+    .bottomnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+               width:100%;max-width:500px;background:#091929;
+               border-top:1.5px solid color-mix(in srgb,var(--cyan) 25%,transparent);
+               display:flex;z-index:20}
+    .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;
+             gap:3px;padding:.6rem .4rem .5rem;background:none;border:0;
+             cursor:pointer;color:color-mix(in srgb,var(--ink) 50%,transparent);
+             font:600 .65rem/1 system-ui;letter-spacing:.3px;text-transform:uppercase;
+             transition:color 120ms}
+    .nav-btn.active{color:var(--cyan)}
+    .nav-btn .nav-icon{font-size:1.4rem;line-height:1}
+    .nav-btn.post-btn .nav-icon{
+      background:linear-gradient(135deg,var(--cyan),var(--purple));
+      border-radius:12px;padding:.3rem .5rem;color:#fff;font-size:1.5rem}
+
+    /* ── Stories ────────────────────────────────────────────────────────── */
+    .stories-row{display:flex;gap:.75rem;padding:.9rem 1rem .7rem;overflow-x:auto;
+                 scrollbar-width:none;-ms-overflow-style:none}
+    .stories-row::-webkit-scrollbar{display:none}
+    .story{display:flex;flex-direction:column;align-items:center;gap:.35rem;cursor:pointer;flex-shrink:0}
+    .story-ring{width:60px;height:60px;border-radius:50%;
+                background:linear-gradient(135deg,var(--cyan),var(--purple),var(--pink));
+                padding:3px;transition:transform 120ms}
+    .story-ring:active{transform:scale(.9)}
+    .story-ring.seen{background:color-mix(in srgb,var(--ink) 20%,transparent)}
+    .story-inner{width:100%;height:100%;border-radius:50%;background:var(--card);
+                 display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+    .story-name{font:.65rem/1 system-ui;font-weight:600;color:color-mix(in srgb,var(--ink) 70%,transparent);max-width:64px;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+
+    /* ── Post-kort ──────────────────────────────────────────────────────── */
+    .post-card{background:var(--card);border-bottom:1px solid color-mix(in srgb,var(--cyan) 10%,transparent);padding:1rem;animation:pop-in 200ms both}
+    .post-head{display:flex;align-items:center;gap:.65rem;margin-bottom:.7rem}
+    .avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
+            justify-content:center;font:800 1.1rem/1 system-ui;color:#fff;flex-shrink:0}
+    .post-username{font:700 .95rem/1 system-ui;color:var(--cyan)}
+    .post-time{font:400 .72rem/1 system-ui;color:color-mix(in srgb,var(--ink) 45%,transparent)}
+    .post-body{font:400 .97rem/1.5 system-ui;margin:.1rem 0 .75rem;word-break:break-word}
+    .post-footer{display:flex;gap:.6rem;align-items:center}
+    .action-btn{display:inline-flex;align-items:center;gap:.35rem;background:none;
+                border:1.5px solid color-mix(in srgb,var(--ink) 20%,transparent);
+                border-radius:999px;padding:.3rem .8rem;
+                font:600 .82rem/1 system-ui;color:var(--ink);cursor:pointer;transition:all 120ms}
+    .action-btn.liked{border-color:var(--pink);color:var(--pink);background:color-mix(in srgb,var(--pink) 14%,transparent)}
+    .action-btn:hover{border-color:var(--pink)}
+
+    /* ── Profil-sida ────────────────────────────────────────────────────── */
+    .profile-header{padding:1.5rem 1rem 1rem;display:flex;flex-direction:column;align-items:center;gap:.6rem;border-bottom:1px solid color-mix(in srgb,var(--cyan) 15%,transparent)}
+    .profile-avatar{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 2rem/1 system-ui;color:#fff}
+    .profile-name{font:900 1.3rem/1 system-ui;color:var(--cyan)}
+    .profile-stats{display:flex;gap:2rem;margin:.4rem 0}
+    .stat{display:flex;flex-direction:column;align-items:center;gap:.15rem}
+    .stat-num{font:800 1.1rem/1 system-ui}
+    .stat-label{font:400 .75rem/1 system-ui;color:color-mix(in srgb,var(--ink) 55%,transparent)}
+    .posts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px}
+    .grid-cell{aspect-ratio:1;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:1.3rem;overflow:hidden;cursor:pointer;transition:opacity 120ms}
+    .grid-cell:active{opacity:.7}
+    .grid-cell p{font:.8rem/1.35 system-ui;padding:.4rem;text-align:center;word-break:break-word;color:var(--ink)}
+
+    /* ── Typ-flikar (Inlägg / Reel) ─────────────────────────────────────── */
+    .type-tab{flex:1;padding:.55rem;background:none;border:1.5px solid color-mix(in srgb,var(--ink) 20%,transparent);border-radius:10px;font:700 .9rem/1 system-ui;color:color-mix(in srgb,var(--ink) 55%,transparent);cursor:pointer;transition:all 120ms}
+    .type-tab.active{border-color:var(--cyan);color:var(--cyan);background:color-mix(in srgb,var(--cyan) 10%,transparent)}
+
+    /* ── Emoji-väljare ───────────────────────────────────────────────────── */
+    .emoji-opt{font-size:1.7rem;padding:.3rem;border-radius:10px;border:2px solid transparent;cursor:pointer;background:none;transition:all 120ms;line-height:1}
+    .emoji-opt.chosen{border-color:var(--purple);background:color-mix(in srgb,var(--purple) 18%,transparent);transform:scale(1.15)}
+
+    /* ── Reel-kort i flödet ──────────────────────────────────────────────── */
+    .reel-card{background:var(--card);border-radius:var(--r);overflow:hidden;animation:pop-in 200ms both;border:1px solid color-mix(in srgb,var(--purple) 20%,transparent)}
+    .reel-thumb{position:relative;aspect-ratio:9/14;background:linear-gradient(160deg,#0d1b3a,#1a0633);display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .reel-thumb .big-emoji{font-size:5rem;user-select:none;pointer-events:none}
+    .reel-play{position:absolute;bottom:.75rem;right:.75rem;width:44px;height:44px;border-radius:50%;background:color-mix(in srgb,#fff 18%,transparent);border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:1.2rem;backdrop-filter:blur(4px)}
+    .reel-badge{position:absolute;top:.6rem;left:.6rem;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:6px;padding:.2rem .5rem;font:700 .7rem/1 system-ui;color:#fff;letter-spacing:.3px}
+    .reel-info{padding:.75rem 1rem}
+
+    /* ── Ny-inlägg-modal ────────────────────────────────────────────────── */
+    #modal-post{position:fixed;inset:0;background:color-mix(in srgb,#000 70%,transparent);
+                z-index:30;display:flex;align-items:flex-end;justify-content:center}
+    .modal-box{background:#0a1e30;border-radius:24px 24px 0 0;padding:1.25rem 1.1rem 2rem;
+               width:100%;max-width:500px;animation:pop-in 220ms both}
+    .modal-handle{width:44px;height:5px;border-radius:999px;background:color-mix(in srgb,var(--ink) 25%,transparent);margin:0 auto .9rem}
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     LOGIN-SKÄRM
+══════════════════════════════════════════════════════ -->
+<div id="screen-login">
+  <div class="login-box pop-in">
+    <div class="logo-wrap">
+      <!-- Våg-logga -->
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" style="display:block;margin:0 auto .6rem">
+        <circle cx="28" cy="28" r="28" fill="#0d2035"/>
+        <path d="M8 32 Q14 22 20 32 Q26 42 32 32 Q38 22 44 32 Q47 27 50 32" stroke="#00d4ff" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+        <path d="M10 38 Q16 28 22 38 Q28 48 34 38 Q40 28 46 38" stroke="#b044ff" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>
+      </svg>
+      <h1 class="grad glow">NeonWave</h1>
+      <p style="color:color-mix(in srgb,var(--ink) 55%,transparent);margin:.3rem 0 0;font-size:.9rem">din plats på nätet 🌊</p>
+    </div>
+
+    <div>
+      <label style="font:.75rem/1 system-ui;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:color-mix(in srgb,var(--cyan) 80%,transparent);display:block;margin-bottom:.4rem">Ditt användarnamn</label>
+      <input class="inp" id="login-name" type="text" maxlength="24" placeholder="t.ex. WaveSurfer99" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div>
+      <p style="font:.75rem/1 system-ui;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:color-mix(in srgb,var(--cyan) 80%,transparent);margin:0 0 .6rem">Välj din färg</p>
+      <div class="color-picker" id="color-picker">
+        <!-- Färgcirklar skapas av JS -->
+      </div>
+    </div>
+
+    <button class="btn" style="width:100%;--c:#00d4ff" onclick="doLogin()">Gå in 🚀</button>
+    <p id="login-err" style="color:var(--pink);font:.82rem/1 system-ui;text-align:center;min-height:1rem"></p>
+
+    <!-- Gäst-alternativ — bläddra utan att logga in -->
+    <div style="display:flex;align-items:center;gap:.6rem;margin:.2rem 0">
+      <div style="flex:1;height:1px;background:color-mix(in srgb,var(--ink) 15%,transparent)"></div>
+      <span style="font:.75rem/1 system-ui;color:color-mix(in srgb,var(--ink) 35%,transparent)">eller</span>
+      <div style="flex:1;height:1px;background:color-mix(in srgb,var(--ink) 15%,transparent)"></div>
+    </div>
+    <button class="btn btn-outline" style="width:100%;--c:color-mix(in srgb,var(--ink) 45%,transparent);text-transform:none;font-weight:700" onclick="browseAsGuest()">
+      👀 Titta utan konto
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     HUVUD-APP
+══════════════════════════════════════════════════════ -->
+<div id="screen-app" hidden>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <span class="topbar-logo grad">NeonWave</span>
+    <div class="topbar-icons">
+      <button class="icon-btn" title="Notiser">🔔</button>
+    </div>
+  </div>
+
+  <!-- Hem-sida -->
+  <div id="page-home" class="page">
+    <!-- Stories -->
+    <div class="stories-row" id="stories-row"></div>
+    <div style="height:1px;background:color-mix(in srgb,var(--cyan) 12%,transparent)"></div>
+    <!-- Flöde -->
+    <div id="feed"></div>
+  </div>
+
+  <!-- Profil-sida (dold tills man klickar) -->
+  <div id="page-profile" class="page" hidden>
+    <div class="profile-header">
+      <div class="profile-avatar" id="profile-avatar"></div>
+      <div class="profile-name" id="profile-username"></div>
+      <div class="profile-stats">
+        <div class="stat"><span class="stat-num" id="stat-posts">0</span><span class="stat-label">inlägg</span></div>
+        <div class="stat"><span class="stat-num" id="stat-likes">0</span><span class="stat-label">likes fått</span></div>
+      </div>
+      <button class="btn btn-sm btn-outline" style="--c:var(--pink)" onclick="logout()">Logga ut</button>
+    </div>
+    <div class="posts-grid" id="posts-grid"></div>
+  </div>
+
+  <!-- Bottomnav -->
+  <nav class="bottomnav">
+    <button class="nav-btn active" id="nav-home" onclick="gotoPage('home')">
+      <span class="nav-icon">🏠</span><span>Hem</span>
+    </button>
+    <button class="nav-btn" id="nav-explore" onclick="gotoPage('home')">
+      <span class="nav-icon">🔍</span><span>Utforska</span>
+    </button>
+    <button class="nav-btn post-btn" onclick="openPostModal()">
+      <span class="nav-icon">➕</span><span>Posta</span>
+    </button>
+    <button class="nav-btn" id="nav-profile" onclick="gotoPage('profile')">
+      <span class="nav-icon">👤</span><span>Profil</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     NY-INLÄGG-MODAL
+══════════════════════════════════════════════════════ -->
+<div id="modal-post" hidden onclick="maybeCloseModal(event)">
+  <div class="modal-box" id="modal-box">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem">
+      <h2 style="margin:0;color:var(--cyan)" id="modal-title">✏️ Nytt inlägg</h2>
+      <button onclick="closePostModal()" style="background:none;border:0;color:var(--ink);font-size:1.5rem;cursor:pointer;padding:.2rem .5rem;line-height:1">✕</button>
+    </div>
+
+    <!-- Välj typ: Inlägg eller Reel -->
+    <div style="display:flex;gap:.5rem;margin-bottom:.9rem">
+      <button class="type-tab active" id="tab-post" onclick="switchType('post')">📝 Inlägg</button>
+      <button class="type-tab" id="tab-reel" onclick="switchType('reel')">🎬 Reel</button>
+    </div>
+
+    <!-- Reel: ladda upp video eller välj emoji -->
+    <div id="reel-emoji-row" hidden style="margin-bottom:.75rem">
+      <!-- Video-uppladdning -->
+      <p style="font:.75rem/1 system-ui;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:color-mix(in srgb,var(--cyan) 75%,transparent);margin:0 0 .5rem">Ladda upp video</p>
+      <label id="video-upload-label" style="display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.75rem;border:2px dashed color-mix(in srgb,var(--purple) 50%,transparent);border-radius:12px;cursor:pointer;margin-bottom:.75rem;transition:border-color 150ms;color:color-mix(in srgb,var(--ink) 65%,transparent);font:.9rem/1 system-ui;font-weight:600">
+        <span id="video-label-text">🎬 Välj en video</span>
+        <input type="file" accept="video/*" id="video-input" style="display:none" onchange="onVideoChosen(this)">
+      </label>
+      <!-- Förhandsgranskning av vald video -->
+      <video id="video-preview" hidden controls style="width:100%;border-radius:12px;max-height:200px;background:#000;margin-bottom:.75rem"></video>
+
+      <!-- Eller välj emoji om man inte har video -->
+      <p style="font:.75rem/1 system-ui;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:color-mix(in srgb,var(--ink) 40%,transparent);margin:0 0 .4rem">Eller välj en emoji istället</p>
+      <div style="display:flex;flex-wrap:wrap;gap:.4rem" id="emoji-picker">
+        <!-- byggs av JS -->
+      </div>
+    </div>
+
+    <textarea class="inp sel" id="new-post-text" rows="3" placeholder="Vad händer? Dela med dig…" maxlength="280"></textarea>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.75rem">
+      <span id="new-post-count" style="font:.72rem/1 system-ui;color:color-mix(in srgb,var(--ink) 40%,transparent)">0 / 280</span>
+      <button class="btn btn-sm" style="--c:#00d4ff" id="post-submit-btn" onclick="submitPost()">Posta 🌊</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Avatar-färger ────────────────────────────────────────────────────────
+const COLORS = ['#00d4ff','#b044ff','#ff3ea5','#00ffaa','#ff8c00','#ff4d4d'];
+const EMOJIS = ['🌊','⚡','🌙','🔥','🎵','💫'];  // emoji per färg
+
+let chosenColor = COLORS[0];
+
+// Bygg färgväljaren
+document.getElementById('color-picker').innerHTML = COLORS.map((c,i) => `
+  <div class="color-dot ${i===0?'chosen':''}" style="background:${c}" onclick="pickColor('${c}',this)"></div>
+`).join('');
+
+function pickColor(c, el) {
+  chosenColor = c;
+  document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('chosen'));
+  el.classList.add('chosen');
+}
+
+// ── State ────────────────────────────────────────────────────────────────
+let me = JSON.parse(localStorage.getItem('nw_me') || 'null');
+let posts = JSON.parse(localStorage.getItem('nw_posts') || '[]');
+
+// Tomt flöde från start — inga fejk-användare
+
+// ── Login ────────────────────────────────────────────────────────────────
+function doLogin() {
+  const name = document.getElementById('login-name').value.trim();
+  if (!name) { document.getElementById('login-err').textContent = 'Skriv ett användarnamn!'; return; }
+  if (name.length < 2) { document.getElementById('login-err').textContent = 'Minst 2 bokstäver!'; return; }
+  me = { user: name, color: chosenColor };
+  localStorage.setItem('nw_me', JSON.stringify(me));
+  showApp();
+}
+
+function logout() {
+  localStorage.removeItem('nw_me');
+  me = null;
+  document.getElementById('screen-app').hidden = true;
+  document.getElementById('screen-login').hidden = false;
+  document.getElementById('login-name').value = '';
+}
+
+// Tryck Enter på login
+document.getElementById('login-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ── Visa appen ────────────────────────────────────────────────────────────
+function showApp() {
+  document.getElementById('screen-login').hidden = true;
+  document.getElementById('screen-app').hidden = false;
+  renderStories();
+  renderFeed();
+  gotoPage('home');
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────
+function gotoPage(name) {
+  document.getElementById('page-home').hidden    = (name !== 'home');
+  document.getElementById('page-profile').hidden = (name !== 'profile');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (name === 'home')    { document.getElementById('nav-home').classList.add('active'); }
+  if (name === 'profile') { document.getElementById('nav-profile').classList.add('active'); renderProfile(); }
+}
+
+// ── Stories — bara riktiga användare (din story) ────────────────────────
+function renderStories() {
+  const row = document.getElementById('stories-row');
+  // Visa bara din egen story
+  row.innerHTML = `<div class="story" onclick="showToast('Din story 👀')">
+    <div class="story-ring">
+      <div class="story-inner" style="background:${me.color}">${initials(me.user)}</div>
+    </div>
+    <div class="story-name">Du</div>
+  </div>`;
+}
+
+// ── Feed ─────────────────────────────────────────────────────────────────
+function renderFeed() {
+  const feed = document.getElementById('feed');
+  feed.innerHTML = '';
+  if (posts.length === 0) {
+    feed.innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:color-mix(in srgb,var(--ink) 40%,transparent)">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">🌊</div>
+      <p style="margin:0;font-weight:700">Inga inlägg än</p>
+      <p style="margin:.3rem 0 0;font-size:.85rem">Var den första att posta!</p>
+    </div>`;
+    return;
+  }
+  posts.forEach(p => {
+    const div = document.createElement('div');
+    if (p.type === 'reel') {
+      // ── Reel-kort (TikTok-stil) ──────────────────────────────────────
+      div.className = 'reel-card pop-in';
+      div.style.margin = '.75rem';
+      div.innerHTML = `
+        <div class="reel-thumb">
+          <span class="reel-badge">🎬 REEL</span>
+          <div class="big-emoji">${p.emoji || '🎬'}</div>
+          <div class="reel-play">▶</div>
+        </div>
+        <div class="reel-info">
+          <div class="post-head" style="margin-bottom:.5rem">
+            <div class="avatar" style="background:${p.color}">${initials(p.user)}</div>
+            <div>
+              <div class="post-username">${esc(p.user)}</div>
+              <div class="post-time">${esc(p.time)}</div>
+            </div>
+          </div>
+          <div class="post-body sel">${esc(p.text)}</div>
+          <div class="post-footer">
+            <button class="action-btn ${p.likedByMe?'liked':''}" onclick="toggleLike(${p.id})">
+              ${p.likedByMe?'💜':'🤍'} ${p.likes}
+            </button>
+          </div>
+        </div>`;
+    } else {
+      // ── Vanligt inlägg ────────────────────────────────────────────────
+      div.className = 'post-card pop-in';
+      div.innerHTML = `
+        <div class="post-head">
+          <div class="avatar" style="background:${p.color}">${initials(p.user)}</div>
+          <div>
+            <div class="post-username">${esc(p.user)}</div>
+            <div class="post-time">${esc(p.time)}</div>
+          </div>
+        </div>
+        <div class="post-body sel">${esc(p.text)}</div>
+        <div class="post-footer">
+          <button class="action-btn ${p.likedByMe?'liked':''}" onclick="toggleLike(${p.id})">
+            ${p.likedByMe?'💜':'🤍'} ${p.likes}
+          </button>
+        </div>`;
+    }
+    feed.appendChild(div);
+  });
+}
+
+// ── Gilla ────────────────────────────────────────────────────────────────
+function toggleLike(id) {
+  if (!me || me.guest) { requireLogin(); return; }  // gäster kan inte gilla
+  const p = posts.find(p => p.id === id);
+  if (!p) return;
+  p.likedByMe = !p.likedByMe;
+  p.likes += p.likedByMe ? 1 : -1;
+  save();
+  renderFeed();
+}
+
+// ── Ny-inlägg-modal ───────────────────────────────────────────────────────
+const newPostText  = document.getElementById('new-post-text');
+const newPostCount = document.getElementById('new-post-count');
+
+// Emojis att välja bland för reels
+const REEL_EMOJIS = ['🌊','🔥','⚡','🎵','🌙','🏄','💜','🐉','🌺','🎮','🤩','🦋','🌈','🏔️','🎤'];
+let currentType   = 'post';   // 'post' eller 'reel'
+let chosenEmoji   = REEL_EMOJIS[0];
+let chosenVideoURL = null;    // blob-URL för vald video (bara i denna session)
+
+// Spara blob-URLs per post-ID (de kan inte ligga i localStorage)
+const videoBlobs = {};
+
+// Bygg emoji-väljaren
+document.getElementById('emoji-picker').innerHTML = REEL_EMOJIS.map((e,i) =>
+  `<button class="emoji-opt ${i===0?'chosen':''}" onclick="pickEmoji('${e}',this)">${e}</button>`
+).join('');
+
+function pickEmoji(e, el) {
+  chosenEmoji = e;
+  document.querySelectorAll('.emoji-opt').forEach(b => b.classList.remove('chosen'));
+  el.classList.add('chosen');
+}
+
+// Användaren valde en video-fil
+function onVideoChosen(input) {
+  const file = input.files[0];
+  if (!file) return;
+  // Rensa gammal blob-URL
+  if (chosenVideoURL) URL.revokeObjectURL(chosenVideoURL);
+  chosenVideoURL = URL.createObjectURL(file);
+  // Visa förhandsgranskning
+  const preview = document.getElementById('video-preview');
+  preview.src = chosenVideoURL;
+  preview.hidden = false;
+  document.getElementById('video-label-text').textContent = '✅ ' + file.name;
+  // Grå ut emoji-väljaren — videon har prioritet
+  document.getElementById('emoji-picker').style.opacity = '0.4';
+}
+
+function switchType(type) {
+  currentType = type;
+  document.getElementById('tab-post').classList.toggle('active', type === 'post');
+  document.getElementById('tab-reel').classList.toggle('active', type === 'reel');
+  document.getElementById('reel-emoji-row').hidden = (type !== 'reel');
+  document.getElementById('modal-title').textContent = type === 'reel' ? '🎬 Ny Reel' : '✏️ Nytt inlägg';
+  document.getElementById('post-submit-btn').textContent = type === 'reel' ? 'Posta Reel 🎬' : 'Posta 🌊';
+  newPostText.placeholder = type === 'reel' ? 'Beskriv din reel…' : 'Vad händer? Dela med dig…';
+}
+
+newPostText.addEventListener('input', () => {
+  const n = newPostText.value.length;
+  newPostCount.textContent = n + ' / 280';
+  newPostCount.style.color = n > 260 ? 'var(--pink)' : '';
+});
+
+function openPostModal() {
+  if (!me || me.guest) { requireLogin(); return; }
+  document.getElementById('modal-post').hidden = false;
+  switchType('post');   // börja alltid på "Inlägg"
+  newPostText.focus();
+}
+function maybeCloseModal(e) {
+  if (e.target.id === 'modal-post') closePostModal();
+}
+function closePostModal() {
+  document.getElementById('modal-post').hidden = true;
+  newPostText.value = '';
+  newPostCount.textContent = '0 / 280';
+  // Återställ video-uppladdning
+  chosenVideoURL = null;
+  document.getElementById('video-input').value = '';
+  document.getElementById('video-preview').hidden = true;
+  document.getElementById('video-preview').src = '';
+  document.getElementById('video-label-text').textContent = '🎬 Välj en video';
+  document.getElementById('emoji-picker').style.opacity = '1';
+}
+
+function submitPost() {
+  if (!me || me.guest) { requireLogin(); return; }
+  const text = newPostText.value.trim();
+  if (!text || text.length > 280) return;
+  posts.unshift({
+    id: Date.now(), user: me.user, color: me.color,
+    text, time: 'just nu', likes: 0, likedByMe: false,
+    type: currentType,                          // 'post' eller 'reel'
+    emoji: currentType === 'reel' ? chosenEmoji : null,
+  });
+  save();
+  closePostModal();
+  gotoPage('home');
+  renderFeed();
+}
+
+// ── Profil ────────────────────────────────────────────────────────────────
+function renderProfile() {
+  document.getElementById('profile-avatar').textContent  = initials(me.user);
+  document.getElementById('profile-avatar').style.background = me.color;
+  document.getElementById('profile-username').textContent = '@' + me.user;
+  const myPosts = posts.filter(p => p.user === me.user);
+  const totalLikes = myPosts.reduce((s,p) => s + p.likes, 0);
+  document.getElementById('stat-posts').textContent = myPosts.length;
+  document.getElementById('stat-likes').textContent = totalLikes;
+  // Gridrutorna
+  const grid = document.getElementById('posts-grid');
+  grid.innerHTML = '';
+  if (myPosts.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;padding:2rem;text-align:center;color:color-mix(in srgb,var(--ink) 45%,transparent)">Inga inlägg än 👀</div>`;
+    return;
+  }
+  myPosts.forEach(p => {
+    const cell = document.createElement('div');
+    cell.className = 'grid-cell';
+    cell.style.background = `color-mix(in srgb, ${p.color} 12%, var(--card))`;
+    cell.innerHTML = `<p>${esc(p.text)}</p>`;
+    grid.appendChild(cell);
+  });
+}
+
+// ── Toast-notis ───────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position:'fixed', bottom:'90px', left:'50%', transform:'translateX(-50%)',
+    background:'#0d2035', color:'var(--ink)', padding:'.5rem 1.1rem',
+    borderRadius:'999px', fontSize:'.85rem', fontWeight:'700',
+    border:'1px solid color-mix(in srgb,#00d4ff 30%,transparent)',
+    zIndex:'50', animation:'pop-in 200ms both', pointerEvents:'none',
+  });
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+// ── Hjälpfunktioner ────────────────────────────────────────────────────────
+function initials(name) { return name.slice(0,1).toUpperCase(); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function save() { localStorage.setItem('nw_posts', JSON.stringify(posts)); }
+
+// ── Gäst-läge — bläddra utan konto ────────────────────────────────────────
+function browseAsGuest() {
+  me = { user: null, color: null, guest: true };
+  showApp();
+}
+
+// ── Skydda aktioner som kräver inloggning ──────────────────────────────────
+function requireLogin() {
+  // Visar en snabb toast som säger att man behöver logga in
+  showToast('Logga in för att göra det! 👆');
+  return true; // = blockera aktionen
+}
+
+// ── Starta ────────────────────────────────────────────────────────────────
+// Rensa trasiga sessioner (t.ex. gäst-objekt som råkade sparas)
+if (me && (me.guest || !me.user)) {
+  localStorage.removeItem('nw_me');
+  me = null;
+}
+if (me) {
+  showApp();  // redan inloggad
+}
+</script>
+</body>
+</html>

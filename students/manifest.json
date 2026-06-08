@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "runda-ekorren",
+          "boilerplate": false,
+          "student": "nikanplstaintebort",
+          "display_name": "nikanplstaintebort",
+          "title": "NeonWave",
+          "description": "Ett socialt nätverk för barn där du kan posta inlägg, utforska andras innehåll och uttrycka dig med emojis och färger.",
+          "persona": "kladd",
+          "archived_at": "2026-06-08T20:03:41Z",
+          "published_at": "2026-06-08T20:03:51Z",
+          "thumbnail": "students/pilot/runda-ekorren/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "kloka-humlan",
           "boilerplate": false,
           "student": "student11",

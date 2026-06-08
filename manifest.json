@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-06-04T12:04:29Z",
+  "generated_at": "2026-06-08T20:03:51Z",
   "entries": [
+    {
+      "slug": "runda-ekorren",
+      "title": "NeonWave",
+      "display_name": "nikanplstaintebort",
+      "thumbnail": "students/pilot/runda-ekorren/thumbnail.webp",
+      "live_url": "https://public.vibes.bernting.se/students/pilot/runda-ekorren/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/runda-ekorren",
+      "date": "2026-06-08T20:03:51Z",
+      "persona": "kladd",
+      "description": "Ett socialt nätverk för barn där du kan posta inlägg, utforska andras innehåll och uttrycka dig med emojis och färger."
+    },
     {
       "slug": "kloka-humlan",
       "title": "Interferensmönster",
