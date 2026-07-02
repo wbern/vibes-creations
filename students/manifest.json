@@ -9,11 +9,11 @@
           "boilerplate": false,
           "student": "isa",
           "display_name": "isa",
-          "title": "Tre i rad",
-          "description": "Ett roligt spel där du spelar tre i rad mot en kompis!",
+          "title": "Racing",
+          "description": "Racing är ett roligt bilspel där du kör och samlar poäng, men du kan trycka på pilarna för att styra eller börja om.",
           "persona": "kladd",
-          "archived_at": "2026-07-02T15:03:48Z",
-          "published_at": "2026-07-02T15:03:59Z",
+          "archived_at": "2026-07-02T15:05:28Z",
+          "published_at": "2026-07-02T15:05:37Z",
           "thumbnail": "students/pilot/vita-pantern/thumbnail.webp",
           "scan": {
             "counts": {

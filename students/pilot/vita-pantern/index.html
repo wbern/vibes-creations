@@ -3,118 +3,168 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Tre i rad</title>
+  <title>Racing</title>
   <style>
     html, body { margin: 0; padding: 0; min-height: 100%; overscroll-behavior: none; }
     body {
       -webkit-user-select: none; user-select: none;
       -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
+      font-family: system-ui, sans-serif;
+      background: #0f2a3a; color: #fff;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 1rem; box-sizing: border-box;
     }
-    :root {
-      --bg: #e3eef4; --ink: #0f2a3a; --card: #ffffff;
-      --accent: #1e7fb0; --accent-2: #ffd166;
-      --radius: 16px; --lip: 6px;
-    }
-    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--ink); }
-    h1 { font: 900 2.2rem/1.05 system-ui, sans-serif; letter-spacing: -0.02em; margin: 0 0 .5rem; }
-    .page { max-width: 28rem; margin: 0 auto; padding: 1.25rem; box-sizing: border-box; text-align: center; }
-    .stack { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
-    .card {
-      background: var(--card); border-radius: var(--radius); padding: 1rem 1.25rem;
-      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--ink) 14%, transparent);
-    }
-    .btn-chunky {
-      display: inline-flex; align-items: center; justify-content: center;
-      min-height: 56px; padding: 14px 22px; border: 0; border-radius: var(--radius);
-      font: 800 18px/1 system-ui, sans-serif; color: #fff; letter-spacing: .5px;
-      text-transform: uppercase; background: var(--c, var(--accent));
-      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--accent)) 70%, black);
-      cursor: pointer; transition: transform 80ms, box-shadow 80ms;
-    }
-    .btn-chunky:active { transform: translateY(var(--lip)); box-shadow: 0 0 0 transparent; }
-    #board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: min(80vw, 320px); }
-    .cell {
-      aspect-ratio: 1; background: var(--card); border-radius: 12px; border: 0;
-      box-shadow: 0 6px 0 color-mix(in srgb, var(--ink) 14%, transparent);
-      font: 900 3rem/1 system-ui, sans-serif; display: grid; place-items: center;
-      cursor: pointer;
-    }
-    #status { font: 800 1.2rem/1.2 system-ui, sans-serif; }
+    h1 { font: 900 1.8rem/1 system-ui, sans-serif; margin: .25rem 0; }
+    #score { font: 800 1.2rem/1 system-ui, sans-serif; margin-bottom: .5rem; }
+    canvas { background: #444; border-radius: 12px; touch-action: none; max-width: 100%; }
   </style>
 </head>
 <body>
-  <div class="page stack">
-    <h1>Tre i rad</h1>
-    <p id="status">X:s tur</p>
-    <div id="board"></div>
-    <button class="btn-chunky pop" id="reset" style="--c:#ffd166">Börja om</button>
+  <h1>Racing</h1>
+  <p id="score">Poäng: 0</p>
+  <canvas id="game" width="360" height="600"></canvas>
+  <div style="display:flex; gap:1rem; margin-top:.75rem;">
+    <button class="btn-chunky pop" id="left" style="--c:#58a4ff; min-width:80px;">⬅️</button>
+    <button class="btn-chunky pop" id="right" style="--c:#58a4ff; min-width:80px;">➡️</button>
+    <button class="btn-chunky pop" id="reset" style="--c:#ffd166; display:none;">Börja om</button>
   </div>
 
+  <style>
+    .btn-chunky {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 56px; padding: 14px 22px; border: 0; border-radius: 16px;
+      font: 800 18px/1 system-ui, sans-serif; color: #fff; letter-spacing: .5px;
+      background: var(--c, #ff7a5a);
+      box-shadow: 0 6px 0 color-mix(in srgb, var(--c, #ff7a5a) 70%, black);
+      cursor: pointer; transition: transform 80ms, box-shadow 80ms;
+    }
+    .btn-chunky:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
+  </style>
+
   <script>
-    // Spelbrädet: 9 rutor, tom sträng = ledig ruta.
-    let board = Array(9).fill("");
-    let turn = "X"; // vem sin tur det är
-    let gameOver = false;
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width, H = canvas.height;
+    const ROAD_LEFT = 40, ROAD_RIGHT = W - 40;
 
-    const boardEl = document.getElementById("board");
-    const statusEl = document.getElementById("status");
+    // Spelarens bil
+    const car = { w: 40, h: 64, x: W / 2 - 20, y: H - 100, speed: 6 };
 
-    // Alla sätt att vinna: rader, kolumner, diagonaler
-    const WINS = [
-      [0,1,2],[3,4,5],[6,7,8],
-      [0,3,6],[1,4,7],[2,5,8],
-      [0,4,8],[2,4,6]
-    ];
+    let keys = {}; // vilka tangenter som hålls nere
+    let score = 0;
+    let over = false;
+    const scoreEl = document.getElementById("score");
 
-    function checkWinner() {
-      for (const [a,b,c] of WINS) {
-        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-          return board[a];
+    // Mötande bilar (hinder) som kommer uppifrån
+    let obstacles = [];
+    let spawnTimer = 0;
+    let fallSpeed = 4;
+
+    function spawnObstacle() {
+      const w = 40, h = 64;
+      const laneX = ROAD_LEFT + Math.random() * (ROAD_RIGHT - ROAD_LEFT - w);
+      obstacles.push({ x: laneX, y: -h, w, h });
+    }
+
+    function rectsOverlap(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x &&
+             a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    // Rita bilen som en enkel form
+    function drawCar(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(x, y, car.w, car.h, 8);
+      ctx.fill();
+      // fönster
+      ctx.fillStyle = "#dff";
+      ctx.fillRect(x + 8, y + 10, car.w - 16, 16);
+    }
+
+    function drawRoad() {
+      ctx.fillStyle = "#333";
+      ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = "#fff";
+      ctx.setLineDash([20, 20]);
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(W / 2, 0);
+      ctx.lineTo(W / 2, H);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function loop() {
+      if (over) return;
+      drawRoad();
+
+      // styr bilen med tangenter
+      if (keys.left) car.x -= car.speed;
+      if (keys.right) car.x += car.speed;
+      car.x = Math.max(ROAD_LEFT, Math.min(ROAD_RIGHT - car.w, car.x));
+
+      // skapa nya hinder då och då
+      spawnTimer++;
+      if (spawnTimer > 60) { spawnObstacle(); spawnTimer = 0; }
+
+      // flytta hindren nedåt och rita dem
+      obstacles.forEach(o => o.y += fallSpeed);
+      obstacles = obstacles.filter(o => o.y < H);
+      obstacles.forEach(o => drawCar(o.x, o.y, "#ef476f"));
+
+      // krock-check
+      for (const o of obstacles) {
+        if (rectsOverlap(car, o)) {
+          over = true;
+          scoreEl.textContent = "Krasch! Poäng: " + score + " — tryck Börja om";
+          document.getElementById("reset").style.display = "inline-flex";
+          return;
         }
       }
-      if (board.every(cell => cell)) return "draw"; // alla rutor fulla = oavgjort
-      return null;
+
+      drawCar(car.x, car.y, "#ffd166");
+
+      // poäng ökar med tiden, spelet blir snabbare
+      score++;
+      scoreEl.textContent = "Poäng: " + score;
+      if (score % 300 === 0) fallSpeed += 0.5;
+
+      requestAnimationFrame(loop);
     }
 
-    function render() {
-      boardEl.innerHTML = "";
-      board.forEach((val, i) => {
-        const cell = document.createElement("button");
-        cell.className = "cell pop";
-        cell.textContent = val;
-        cell.style.color = val === "X" ? "var(--accent)" : "var(--accent-2)";
-        cell.addEventListener("click", () => makeMove(i));
-        boardEl.appendChild(cell);
-      });
-    }
-
-    function makeMove(i) {
-      if (gameOver || board[i]) return; // ruta upptagen eller spelet slut
-      board[i] = turn;
-      const winner = checkWinner();
-      if (winner === "draw") {
-        statusEl.textContent = "Oavgjort!";
-        gameOver = true;
-      } else if (winner) {
-        statusEl.textContent = winner + " vinner! 🎉";
-        gameOver = true;
-      } else {
-        turn = turn === "X" ? "O" : "X";
-        statusEl.textContent = turn + ":s tur";
-      }
-      render();
-    }
-
-    document.getElementById("reset").addEventListener("click", () => {
-      board = Array(9).fill("");
-      turn = "X";
-      gameOver = false;
-      statusEl.textContent = "X:s tur";
-      render();
+    // Tangentbord
+    window.addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft" || e.key === "a") keys.left = true;
+      if (e.key === "ArrowRight" || e.key === "d") keys.right = true;
+    });
+    window.addEventListener("keyup", e => {
+      if (e.key === "ArrowLeft" || e.key === "a") keys.left = false;
+      if (e.key === "ArrowRight" || e.key === "d") keys.right = false;
     });
 
-    render();
+    // Pekknappar för mobilen — samma "keys" som tangentbordet använder
+    function bindHoldButton(el, key) {
+      el.addEventListener("pointerdown", e => { e.preventDefault(); keys[key] = true; });
+      el.addEventListener("pointerup", () => { keys[key] = false; });
+      el.addEventListener("pointerleave", () => { keys[key] = false; });
+    }
+    bindHoldButton(document.getElementById("left"), "left");
+    bindHoldButton(document.getElementById("right"), "right");
+
+    // Börja om-knappen startar spelet på nytt
+    document.getElementById("reset").addEventListener("click", () => {
+      obstacles = [];
+      score = 0;
+      fallSpeed = 4;
+      car.x = W / 2 - car.w / 2;
+      over = false;
+      document.getElementById("reset").style.display = "none";
+      loop();
+    });
+
+    loop();
   </script>
 </body>
 </html>

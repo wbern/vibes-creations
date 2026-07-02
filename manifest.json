@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-07-02T15:03:59Z",
+  "generated_at": "2026-07-02T15:05:37Z",
   "entries": [
     {
       "slug": "vita-pantern",
-      "title": "Tre i rad",
+      "title": "Racing",
       "display_name": "isa",
       "thumbnail": "students/pilot/vita-pantern/thumbnail.webp",
       "live_url": "https://public.vibe.enmansbyra.se/students/pilot/vita-pantern/",
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/vita-pantern",
-      "date": "2026-07-02T15:03:59Z",
+      "date": "2026-07-02T15:05:37Z",
       "persona": "kladd",
-      "description": "Ett roligt spel där du spelar tre i rad mot en kompis!"
+      "description": "Racing är ett roligt bilspel där du kör och samlar poäng, men du kan trycka på pilarna för att styra eller börja om."
     },
     {
       "slug": "varma-mesan",
