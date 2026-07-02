@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "vita-pantern",
+          "boilerplate": false,
+          "student": "isa",
+          "display_name": "isa",
+          "title": "Tre i rad",
+          "description": "Ett roligt spel där du spelar tre i rad mot en kompis!",
+          "persona": "kladd",
+          "archived_at": "2026-07-02T15:03:48Z",
+          "published_at": "2026-07-02T15:03:59Z",
+          "thumbnail": "students/pilot/vita-pantern/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "varma-mesan",
           "boilerplate": false,
           "student": "sneha",

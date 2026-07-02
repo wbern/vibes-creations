@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-02T14:59:39Z",
+  "generated_at": "2026-07-02T15:03:59Z",
   "entries": [
+    {
+      "slug": "vita-pantern",
+      "title": "Tre i rad",
+      "display_name": "isa",
+      "thumbnail": "students/pilot/vita-pantern/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/vita-pantern/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/vita-pantern",
+      "date": "2026-07-02T15:03:59Z",
+      "persona": "kladd",
+      "description": "Ett roligt spel där du spelar tre i rad mot en kompis!"
+    },
     {
       "slug": "varma-mesan",
       "title": "Cookingdom 2",
