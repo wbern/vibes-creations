@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Cookingdom 2</title>
+  <style>
+    html, body { margin: 0; padding: 0; min-height: 100%; overscroll-behavior: none; }
+    body {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    button { min-width: 44px; min-height: 44px; font-size: 1rem; }
+
+    :root {
+      --bg: #fff4de;
+      --ink: #2b2b2b;
+      --card: #ffffff;
+      --accent: #ff7a5a;
+      --accent-2: #58a4ff;
+      --radius: 16px;
+      --lip: 6px;
+    }
+    body {
+      font-family: system-ui, sans-serif;
+      color: var(--ink);
+      min-height: 100vh;
+      /* Varm köksbakgrund: en mjuk gradient + ett svagt rutmönster som
+         påminner om ett kakelgolv, plus två färgade "ljuspölar". */
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(circle at 15% 15%, color-mix(in srgb, var(--accent) 35%, transparent) 0, transparent 42%),
+        radial-gradient(circle at 85% 85%, color-mix(in srgb, var(--accent-2) 30%, transparent) 0, transparent 45%),
+        linear-gradient(135deg, #fff8ec 0%, #ffe9c9 100%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,.5) 0 12px, rgba(255,220,180,.35) 12px 24px);
+      background-blend-mode: normal, normal, normal, overlay;
+      background-attachment: fixed;
+    }
+    h1, .h1 { font: 900 2rem/1.05 system-ui, sans-serif; letter-spacing: -0.02em; margin: 0 0 .5rem; }
+    h2, .h2 { font: 800 1.3rem/1.15 system-ui, sans-serif; margin: 0 0 .5rem; }
+    .page  { max-width: 40rem; margin: 0 auto; padding: 1.25rem; box-sizing: border-box; }
+    .stack { display: flex; flex-direction: column; gap: 1rem; }
+    .row   { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; justify-content: center; }
+    .center{ text-align: center; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--ink)) 14%, transparent);
+    }
+    .btn-chunky {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 56px; padding: 10px 16px;
+      border: 0; border-radius: var(--radius);
+      font: 800 1.6rem/1 system-ui, sans-serif; color: #fff;
+      background: var(--c, var(--accent));
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--accent)) 70%, black);
+      cursor: pointer;
+      transition: transform 80ms, box-shadow 80ms;
+    }
+    .btn-chunky:active { transform: translateY(var(--lip)); box-shadow: 0 0 0 transparent; }
+    .pill {
+      display: inline-block; padding: .3rem .7rem;
+      background: var(--c, var(--accent-2)); color: #fff;
+      border-radius: 999px; font: 700 .9rem/1 system-ui, sans-serif;
+    }
+    .pop        { transition: transform 80ms; }
+    .pop:active { transform: scale(.9); }
+    @keyframes pop-in { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .pop-in     { animation: pop-in 240ms cubic-bezier(.5,1.6,.4,1) both; }
+    @keyframes wobble {
+      0%,100% { transform: rotate(0); }
+      25%     { transform: rotate(8deg); }
+      75%     { transform: rotate(-8deg); }
+    }
+    .wobble { animation: wobble 1.4s ease-in-out infinite; transform-origin: 50% 85%; }
+  </style>
+</head>
+<body>
+  <!-- Dekorativa mat-emojis som flyter i bakgrunden — bara för känslan,
+       de går inte att trycka på (pointer-events: none). -->
+  <div aria-hidden="true" style="position:fixed; inset:0; z-index:-1; overflow:hidden; font-size:4.5rem; opacity:.25;">
+    <span style="position:absolute; top:6%; left:4%;">🍅</span>
+    <span style="position:absolute; top:12%; right:6%;">🧀</span>
+    <span style="position:absolute; bottom:10%; left:8%;">🥬</span>
+    <span style="position:absolute; bottom:16%; right:10%;">🍞</span>
+    <span style="position:absolute; top:45%; left:2%;">🍒</span>
+    <span style="position:absolute; top:55%; right:3%;">🌮</span>
+    <span style="position:absolute; top:28%; left:22%;">🍕</span>
+    <span style="position:absolute; top:35%; right:20%;">🍔</span>
+    <span style="position:absolute; bottom:32%; left:30%;">🍟</span>
+    <span style="position:absolute; bottom:6%; right:32%;">🍩</span>
+    <span style="position:absolute; top:4%; left:45%;">🥕</span>
+    <span style="position:absolute; bottom:40%; right:4%;">🍳</span>
+  </div>
+
+  <!-- Hejarklacks-maskot — heppar hela tiden i hörnet, bara för peppen -->
+  <div class="wobble" aria-hidden="true" style="position:fixed; bottom:1rem; left:1rem; font-size:3rem; z-index:5; pointer-events:none;">
+    📣
+  </div>
+
+  <div class="page stack">
+    <div class="row center" style="justify-content: space-between;">
+      <h1>👨‍🍳 Cookingdom 2</h1>
+      <div class="row" style="gap:.5rem;">
+        <span class="pill" id="sessionTimer" style="--c:#a55aff">🕒 15:00</span>
+        <span class="pill" id="lives" style="--c:#ff5a5a">❤️❤️❤️</span>
+        <span class="pill" id="score" style="--c:#3ddc97">Poäng: 0</span>
+      </div>
+    </div>
+    <p class="center" id="hint">Bygg rätten i rätt ordning, innan tiden tar slut!</p>
+
+    <!-- Beställningen — visar vilken rätt som ska byggas och hur långt man kommit -->
+    <div class="card center" id="orderCard" style="--c:#ff7a5a">
+      <div class="row" style="justify-content: space-between;">
+        <h2 id="dishName">…</h2>
+        <span class="pill" id="timer" style="--c:#58a4ff">⏱ 10s</span>
+      </div>
+      <div class="row" id="orderSteps"></div>
+      <div class="row" style="justify-content:center; margin-top:.5rem;">
+        <div class="btn-chunky pop" id="hintBtn" style="--c:#a55aff; font-size:1rem; padding: 8px 14px; min-height:44px;">
+          💡 Ledtråd (<span id="hintCount">3</span>)
+        </div>
+      </div>
+    </div>
+
+    <!-- Ingrediens-tray — hit trycker man i rätt ordning -->
+    <div class="card center" style="--c:#58a4ff">
+      <h2>Ingredienser</h2>
+      <div class="row" id="ingredientTray"></div>
+    </div>
+
+    <p class="center pop-in" id="feedback" style="min-height:2rem; font-weight:800; font-size:1.2rem;"></p>
+  </div>
+
+  <script>
+    // Rätter — varje rätt är en lista av ingredienser i den ordning de
+    // måste läggas till. Samma ingrediens kan användas i flera rätter.
+    const dishes = [
+      { name: "Hamburgare", steps: ["🍞", "🥩", "🧀", "🥬", "🍞"] },
+      { name: "Tacos",      steps: ["🌮", "🥩", "🥬", "🍅", "🧀"] },
+      { name: "Glass",      steps: ["🍦", "🍫", "🍒"] },
+      { name: "Pizza",      steps: ["🫓", "🍅", "🧀", "🍄"] },
+      // Indiska rätter — fler steg, alltså svårare att komma ihåg ordningen!
+      { name: "Smörkyckling", steps: ["🍗", "🧅", "🧄", "🍅", "🥘", "🍚"] },
+      { name: "Biryani",      steps: ["🍚", "🍗", "🧅", "🌶️", "🫘"] },
+      { name: "Samosa",       steps: ["🫓", "🥔", "🫘", "🌶️"] },
+      { name: "Tikka-wrap",   steps: ["🫓", "🍢", "🧅", "🥭"] },
+    ];
+
+    // Web Audio API: gör ljud direkt i webbläsaren, ingen ljudfil behövs.
+    // Startas först vid en knapptryckning, för webbläsare tillåter inte
+    // ljud förrän man har interagerat med sidan.
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    // Ett litet jubel-jingel: tre toner som stiger snabbt uppåt, som ett "hurra!"
+    function playCheerSound() {
+      const ctx = getAudioCtx();
+      const notes = [523.25, 659.25, 783.99]; // C5, E5, G5 — ett glatt ackord uppåt
+      notes.forEach((freq, i) => {
+        const start = ctx.currentTime + i * 0.09;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.3, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.35);
+      });
+    }
+
+    // Peppande hejarop som visas slumpmässigt när man serverar en rätt.
+    const cheers = ["Heja! 🎉", "Grymt jobbat! 👏", "Wow, så snyggt! ⭐", "Du är en stjärnkock! 🌟", "Fantastiskt! 🙌", "Servering värdig en kung! 👑"];
+
+    // Alla ingredienser som kan förekomma — det här är knapparna i tråget.
+    const allIngredients = [
+      "🍞", "🥩", "🧀", "🥬", "🍅", "🌮", "🍦", "🍫", "🍒", "🫓", "🍄",
+      "🍗", "🧅", "🧄", "🥘", "🍚", "🌶️", "🫘", "🥔", "🍢", "🥭",
+    ];
+
+    let currentDish = null;
+    let stepIndex = 0; // hur långt vi kommit i den aktuella rätten
+    let score = 0;
+    let lives = 10;
+    let timeLeft = 0;
+    let timerId = null;
+    let sessionSeconds = 900; // 15 minuter (en kvart) totalt för hela spelomgången
+    let sessionTimerId = null;
+
+    const sessionTimerEl = document.getElementById("sessionTimer");
+
+    function formatTime(totalSeconds) {
+      const m = Math.floor(totalSeconds / 60);
+      const s = totalSeconds % 60;
+      return m + ":" + String(s).padStart(2, "0");
+    }
+
+    function startSessionTimer() {
+      clearInterval(sessionTimerId);
+      sessionSeconds = 900;
+      sessionTimerEl.textContent = "🕒 " + formatTime(sessionSeconds);
+      sessionTimerId = setInterval(() => {
+        sessionSeconds--;
+        sessionTimerEl.textContent = "🕒 " + formatTime(sessionSeconds);
+        if (sessionSeconds <= 0) {
+          clearInterval(sessionTimerId);
+          gameOver("Tiden är slut!");
+        }
+      }, 1000);
+    }
+
+    const dishNameEl = document.getElementById("dishName");
+    const orderStepsEl = document.getElementById("orderSteps");
+    const trayEl = document.getElementById("ingredientTray");
+    const feedbackEl = document.getElementById("feedback");
+    const scoreEl = document.getElementById("score");
+    const livesEl = document.getElementById("lives");
+    const timerEl = document.getElementById("timer");
+    const hintBtn = document.getElementById("hintBtn");
+    const hintCountEl = document.getElementById("hintCount");
+    let hintsLeft = 3; // begränsat antal ledtrådar per spelomgång
+
+    function renderLives() {
+      livesEl.textContent = "❤️".repeat(lives) || "💔";
+    }
+
+    // Räknar ner tiden för den aktuella beställningen. Varje maträtt får
+    // tre hela minuter på sig, oavsett hur många steg den har.
+    function startTimer() {
+      clearInterval(timerId);
+      timeLeft = 180;
+      timerEl.textContent = "⏱ " + formatTime(timeLeft);
+      timerId = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = "⏱ " + formatTime(timeLeft);
+        if (timeLeft <= 0) {
+          clearInterval(timerId);
+          loseLife("Tiden tog slut!");
+        }
+      }, 1000);
+    }
+
+    // Ritar upp beställningskortet: klara steg är gröna, nästa steg
+    // är markerat, resten är gråa "?"-brickor.
+    // Visar bara HUR MÅNGA ingredienser rätten behöver, inte vilka —
+    // klara steg blir en bock, resten är gömda "?". Man måste alltså
+    // själv komma ihåg eller lista ut vilken ingrediens som är nästa!
+    function renderOrder() {
+      dishNameEl.textContent = currentDish.name;
+      orderStepsEl.innerHTML = "";
+      currentDish.steps.forEach((ing, i) => {
+        const chip = document.createElement("div");
+        chip.className = "pill";
+        chip.style.fontSize = "1.4rem";
+        chip.style.padding = ".4rem .6rem";
+        if (i < stepIndex) {
+          chip.style.setProperty("--c", "#3ddc97"); // klart = grönt
+          chip.textContent = "✅";
+        } else {
+          chip.style.setProperty("--c", "#cfc7b8"); // gömt = grått
+          chip.textContent = "?";
+        }
+        orderStepsEl.appendChild(chip);
+      });
+    }
+
+    // Ritar upp ingrediens-knapparna man trycker på.
+    function renderTray() {
+      trayEl.innerHTML = "";
+      allIngredients.forEach((ing) => {
+        const btn = document.createElement("div");
+        btn.className = "btn-chunky pop";
+        btn.style.setProperty("--c", "#fff");
+        btn.style.color = "initial";
+        btn.style.background = "#fff";
+        btn.style.boxShadow = "0 6px 0 #e4d9c4";
+        btn.style.fontSize = "2.4rem"; // extra stora ikoner = lättare att se skillnad på
+        btn.style.minHeight = "72px";
+        btn.style.minWidth = "72px";
+        btn.textContent = ing;
+        btn.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          handleTap(ing);
+        });
+        trayEl.appendChild(btn);
+      });
+    }
+
+    function handleTap(ing) {
+      if (lives <= 0) return; // spelet är slut, invänta omstart
+      const needed = currentDish.steps[stepIndex];
+      if (ing === needed) {
+        stepIndex++;
+        feedbackEl.textContent = "";
+        if (stepIndex === currentDish.steps.length) {
+          clearInterval(timerId);
+          score += 10;
+          scoreEl.textContent = "Poäng: " + score;
+          feedbackEl.textContent = cheers[Math.floor(Math.random() * cheers.length)];
+          playCheerSound();
+          feedbackEl.classList.remove("pop-in");
+          void feedbackEl.offsetWidth; // trigga om animationen
+          feedbackEl.classList.add("pop-in");
+          setTimeout(nextOrder, 900);
+        }
+        renderOrder();
+      } else {
+        // Fel ingrediens — hela rätten måste börjas om, det gör spelet svårare.
+        stepIndex = 0;
+        feedbackEl.textContent = "Fel ingrediens! Börja om rätten.";
+        renderOrder();
+      }
+    }
+
+    function loseLife(reason) {
+      lives--;
+      renderLives();
+      if (lives <= 0) {
+        gameOver();
+      } else {
+        feedbackEl.textContent = reason + " Ett liv förlorat!";
+        nextOrder();
+      }
+    }
+
+    function gameOver(reason) {
+      clearInterval(timerId);
+      clearInterval(sessionTimerId);
+      dishNameEl.textContent = "Spelet slut!";
+      orderStepsEl.innerHTML = "";
+      timerEl.textContent = "⏱ –";
+      feedbackEl.textContent = (reason ? reason + " " : "") + "Du fick " + score + " poäng.";
+      const restart = document.createElement("div");
+      restart.className = "btn-chunky pop";
+      restart.style.setProperty("--c", "#3ddc97");
+      restart.style.fontSize = "1rem";
+      restart.textContent = "🔁 Spela igen";
+      restart.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        restart.remove();
+        lives = 10;
+        score = 0;
+        hintsLeft = 3;
+        hintCountEl.textContent = hintsLeft;
+        scoreEl.textContent = "Poäng: 0";
+        renderLives();
+        startSessionTimer();
+        nextOrder();
+      });
+      orderStepsEl.appendChild(restart);
+    }
+
+    function nextOrder() {
+      currentDish = dishes[Math.floor(Math.random() * dishes.length)];
+      stepIndex = 0;
+      feedbackEl.textContent = "";
+      renderOrder();
+      startTimer();
+    }
+
+    hintBtn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      if (lives <= 0 || !currentDish) return;
+      if (hintsLeft <= 0) {
+        feedbackEl.textContent = "Inga fler ledtrådar kvar!";
+        return;
+      }
+      hintsLeft--;
+      hintCountEl.textContent = hintsLeft;
+      feedbackEl.textContent = "Ledtråd: nästa är " + currentDish.steps[stepIndex] + " !";
+    });
+
+    renderTray();
+    renderLives();
+    startSessionTimer();
+    nextOrder();
+  </script>
+</body>
+</html>

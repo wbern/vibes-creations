@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "varma-mesan",
+          "boilerplate": false,
+          "student": "sneha",
+          "display_name": "sneha",
+          "title": "Cookingdom 2",
+          "description": "Cookingdom 2 är ett roligt matlagningsspel där du bygger rätter i rätt ordning innan tiden tar slut.",
+          "persona": "kladd",
+          "archived_at": "2026-07-02T14:59:30Z",
+          "published_at": "2026-07-02T14:59:39Z",
+          "thumbnail": "students/pilot/varma-mesan/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "mjuka-gasen",
           "boilerplate": false,
           "student": "william1",
