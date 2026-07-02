@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "mjuka-gasen",
+          "boilerplate": false,
+          "student": "william1",
+          "display_name": "william1",
+          "title": "Snurrande banan",
+          "description": "Snurrande bananen är ett roligt spel där bananen snurrar runt!",
+          "persona": "kladd",
+          "archived_at": "2026-07-02T12:34:39Z",
+          "published_at": "2026-07-02T12:34:48Z",
+          "thumbnail": "students/pilot/mjuka-gasen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "runda-ekorren",
           "boilerplate": false,
           "student": "nikanplstaintebort",

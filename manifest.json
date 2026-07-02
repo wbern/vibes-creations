@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-06-08T20:03:51Z",
+  "generated_at": "2026-07-02T12:34:48Z",
   "entries": [
+    {
+      "slug": "mjuka-gasen",
+      "title": "Snurrande banan",
+      "display_name": "william1",
+      "thumbnail": "students/pilot/mjuka-gasen/thumbnail.webp",
+      "live_url": "https://public.vibes.bernting.se/students/pilot/mjuka-gasen/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/mjuka-gasen",
+      "date": "2026-07-02T12:34:48Z",
+      "persona": "kladd",
+      "description": "Snurrande bananen är ett roligt spel där bananen snurrar runt!"
+    },
     {
       "slug": "runda-ekorren",
       "title": "NeonWave",
