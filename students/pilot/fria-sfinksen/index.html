@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mat-Quiz</title>
+  <style>
+    html, body { margin: 0; padding: 0; min-height: 100%; overscroll-behavior: none; }
+    body {
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      font-family: system-ui, sans-serif;
+      background: #f4ecd8; color: #2b2b2b;
+    }
+    .page { max-width: 30rem; margin: 0 auto; padding: 1.25rem; box-sizing: border-box; }
+    h1 { font: 900 1.8rem/1.05 system-ui, sans-serif; margin: 0 0 1rem; text-align:center; }
+    .card { background: #fff; border-radius: 16px; padding: 1rem 1.25rem;
+      box-shadow: 0 6px 0 rgba(0,0,0,.12); margin-bottom: 1rem; }
+    .btn-chunky {
+      display: block; width: 100%; box-sizing: border-box;
+      min-height: 56px; padding: 14px 18px; margin-bottom: .75rem;
+      border: 0; border-radius: 14px; text-align: left;
+      font: 700 17px/1.2 system-ui, sans-serif; color: #fff;
+      background: var(--c, #58a4ff);
+      box-shadow: 0 6px 0 color-mix(in srgb, var(--c, #58a4ff) 70%, black);
+      transition: transform 80ms, box-shadow 80ms;
+    }
+    .btn-chunky:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
+    .pill { display:inline-block; padding:.3rem .8rem; background:#ff7a5a;
+      color:#fff; border-radius:999px; font:700 1rem/1 system-ui, sans-serif; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>🍕 Mat-Quiz</h1>
+    <div class="pill" id="score">Poäng: 0</div>
+    <div class="card">
+      <p id="question">Fråga kommer strax...</p>
+    </div>
+    <div id="answers"></div>
+  </div>
+
+  <script>
+    // Frågor om mat från olika länder. "a" är index (0-3) för rätt svar.
+    const QUESTIONS = [
+      { q: "Vilket land kommer pizza ursprungligen ifrån?", opts: ["Frankrike", "Italien", "Spanien", "Grekland"], a: 1 },
+      { q: "Vilket land kommer sushi ifrån?", opts: ["Kina", "Thailand", "Japan", "Sydkorea"], a: 2 },
+      { q: "Vad heter den franska smördegskakan man ofta äter till frukost?", opts: ["Croissant", "Baguette", "Macaron", "Crêpe"], a: 0 },
+      { q: "Vilket land är känt för tacos och nachos?", opts: ["Spanien", "Mexiko", "Brasilien", "Portugal"], a: 1 },
+      { q: "Vad heter den indiska rätten med kryddig sås och ofta kyckling?", opts: ["Curry", "Sushi", "Paella", "Goulash"], a: 0 },
+      { q: "Vilket land kommer den söta desserten baklava ifrån (omtvistat, men vanlig i)?", opts: ["Turkiet", "Norge", "Kanada", "Peru"], a: 0 },
+      { q: "Vad heter den svenska rätten med köttbullar, potatismos och lingonsylt?", opts: ["Köttbullar", "Sushi", "Paella", "Ramen"], a: 0 },
+      { q: "Vilket land kommer paella ifrån?", opts: ["Italien", "Spanien", "Portugal", "Frankrike"], a: 1 },
+      { q: "Vad heter den japanska nudelsoppan?", opts: ["Pho", "Ramen", "Pad thai", "Dim sum"], a: 1 },
+      { q: "Vilket land kommer den vietnamesiska nudelsoppan pho ifrån?", opts: ["Vietnam", "Kina", "Laos", "Kambodja"], a: 0 },
+      { q: "Vad heter den tyska korven som ofta äts med senap?", opts: ["Bratwurst", "Chorizo", "Salami", "Prosciutto"], a: 0 },
+      { q: "Vilket land är känt för fondue och choklad?", opts: ["Belgien", "Schweiz", "Österrike", "Nederländerna"], a: 1 },
+      { q: "Vad heter den grekiska sallad med fetaost och oliver?", opts: ["Grekisk sallad", "Caesarsallad", "Waldorfsallad", "Coleslaw"], a: 0 },
+      { q: "Vilket land kommer curry-rätten pad thai ifrån?", opts: ["Thailand", "Vietnam", "Indonesien", "Malaysia"], a: 0 },
+      { q: "Vad heter den koreanska syrade kålrätten?", opts: ["Kimchi", "Miso", "Tofu", "Wasabi"], a: 0 },
+      { q: "Vilket land är känt för hamburgare och cheeseburgare som nationalrätt?", opts: ["Kanada", "USA", "Storbritannien", "Australien"], a: 1 },
+      { q: "Vad heter den italienska pastarätten med ägg, bacon och parmesan?", opts: ["Carbonara", "Bolognese", "Lasagne", "Risotto"], a: 0 },
+      { q: "Vilket land kommer falafel ursprungligen ifrån (Mellanöstern)?", opts: ["Egypten", "Kina", "Ryssland", "Argentina"], a: 0 },
+      { q: "Vad heter den etiopiska plana surdegsbrödet man äter mat med?", opts: ["Injera", "Naan", "Tortilla", "Pita"], a: 0 },
+      { q: "Vilket land kommer churros ifrån?", opts: ["Spanien", "Frankrike", "Italien", "Portugal"], a: 0 },
+    ];
+
+    let i = 0;
+    let score = 0;
+    const qEl = document.getElementById("question");
+    const aEl = document.getElementById("answers");
+    const scoreEl = document.getElementById("score");
+    const colors = ["#58a4ff", "#ff7a5a", "#3f8a4a", "#a855f7"];
+
+    function render() {
+      if (i >= QUESTIONS.length) {
+        qEl.textContent = "Klart! Du fick " + score + " av " + QUESTIONS.length + " rätt. 🎉";
+        aEl.innerHTML = "";
+        return;
+      }
+      const cur = QUESTIONS[i];
+      qEl.textContent = cur.q;
+      aEl.innerHTML = "";
+      cur.opts.forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "btn-chunky pop";
+        btn.style.setProperty("--c", colors[idx % colors.length]);
+        btn.textContent = opt;
+        btn.addEventListener("click", () => answer(idx));
+        aEl.appendChild(btn);
+      });
+    }
+
+    function answer(idx) {
+      if (idx === QUESTIONS[i].a) {
+        score++;
+        scoreEl.textContent = "Poäng: " + score;
+      }
+      i++;
+      render();
+    }
+
+    render();
+  </script>
+</body>
+</html>

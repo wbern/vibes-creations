@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-03T06:18:41Z",
+  "generated_at": "2026-07-03T06:18:55Z",
   "entries": [
+    {
+      "slug": "fria-sfinksen",
+      "title": "Mat-Quiz",
+      "display_name": "student07",
+      "thumbnail": "students/pilot/fria-sfinksen/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/fria-sfinksen/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/fria-sfinksen",
+      "date": "2026-07-03T06:18:55Z",
+      "persona": "kladd",
+      "description": "Det här är ett roligt matquiz där du svarar på frågor om mat och samlar poäng!"
+    },
     {
       "slug": "vaksamma-uttern",
       "title": "Odla Trädgården 3D",
