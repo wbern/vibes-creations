@@ -5,6 +5,31 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "pigga-sfinksen",
+          "boilerplate": false,
+          "student": "student06",
+          "display_name": "student06",
+          "title": "Bilracing",
+          "description": "Ett roligt spel om bilracing där du kan tävla med bilar!",
+          "persona": "kladd",
+          "archived_at": "2026-07-02T16:05:17Z",
+          "published_at": "2026-07-03T06:19:05Z",
+          "thumbnail": "students/pilot/pigga-sfinksen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "fria-sfinksen",
           "boilerplate": false,
           "student": "student07",

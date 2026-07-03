@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bilracing</title>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; background: #2b2b2b; }
+    body {
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      font-family: system-ui, sans-serif;
+    }
+    #game { position: fixed; inset: 0; }
+    canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+    /* Styrknappar längst ner till vänster — undviker chattbubblan
+       som brukar sitta nere till höger. */
+    #controls {
+      position: fixed; left: 0.75rem; bottom: 0.75rem;
+      display: flex; gap: 0.75rem; z-index: 5;
+    }
+    #controls button {
+      min-width: 64px; min-height: 64px;
+      font-size: 1.8rem; font-weight: 800;
+      border: 0; border-radius: 16px;
+      background: #ffd166; color: #2b2b2b;
+      box-shadow: 0 6px 0 #b98f2f;
+      touch-action: manipulation;
+    }
+    #controls button:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <canvas id="c"></canvas>
+  </div>
+  <div id="controls">
+    <button id="leftBtn" aria-label="Vänster">◀</button>
+    <button id="rightBtn" aria-label="Höger">▶</button>
+  </div>
+  <script>
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d");
+
+    function resize() {
+      canvas.width = innerWidth;
+      canvas.height = innerHeight;
+    }
+    resize();
+    addEventListener("resize", resize);
+
+    // Vägen har gräs på sidorna och streckade körfältslinjer i mitten.
+    // laneStripeY flyttas nedåt varje bildruta för att ge känslan av att köra.
+    let laneStripeY = 0;
+
+    function drawRoad() {
+      ctx.fillStyle = "#4a7c2f"; // gräs
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const roadW = Math.min(canvas.width * 0.7, 320);
+      const roadX = (canvas.width - roadW) / 2;
+      ctx.fillStyle = "#3a3a3a"; // asfalt
+      ctx.fillRect(roadX, 0, roadW, canvas.height);
+
+      // streckad mittlinje
+      ctx.fillStyle = "#f4d35e";
+      const stripeH = 40, gap = 30;
+      for (let y = laneStripeY - stripeH; y < canvas.height; y += stripeH + gap) {
+        ctx.fillRect(canvas.width / 2 - 4, y, 8, stripeH);
+      }
+      return roadX + roadW / 2; // vägens mittpunkt, används av bilarna
+    }
+
+    // Ritar en enkel bil: kaross, ruta och fyra hjul.
+    function drawCar(cx, cy, w, h, body, roof) {
+      ctx.fillStyle = body;
+      roundRect(cx - w / 2, cy - h / 2, w, h, 8);
+      ctx.fillStyle = roof || "#dfefff";
+      roundRect(cx - w / 2 + w * 0.18, cy - h / 2 + h * 0.15, w * 0.64, h * 0.35, 4);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(cx - w / 2 - 3, cy - h / 2 + 6, 6, 14);
+      ctx.fillRect(cx + w / 2 - 3, cy - h / 2 + 6, 6, 14);
+      ctx.fillRect(cx - w / 2 - 3, cy + h / 2 - 20, 6, 14);
+      ctx.fillRect(cx + w / 2 - 3, cy + h / 2 - 20, 6, 14);
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Spelarens bil rör sig i sidled. playerX är bilens mittpunkt.
+    let playerX = null; // sätts när vi vet vägens position, se loop()
+    let movingLeft = false, movingRight = false;
+    const carSpeed = 6;
+
+    function heldMove(dir, on) {
+      if (dir === "left") movingLeft = on;
+      if (dir === "right") movingRight = on;
+    }
+
+    // Knappar: håll intryckt för att röra bilen, släpp för att stanna.
+    ["pointerdown", "pointerup", "pointerleave", "pointercancel"].forEach(evt => {
+      document.getElementById("leftBtn").addEventListener(evt, () =>
+        heldMove("left", evt === "pointerdown"));
+      document.getElementById("rightBtn").addEventListener(evt, () =>
+        heldMove("right", evt === "pointerdown"));
+    });
+
+    // Piltangenter / A-D fungerar också, så spelet går att spela på dator.
+    addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft" || e.key === "a") { e.preventDefault(); movingLeft = true; }
+      if (e.key === "ArrowRight" || e.key === "d") { e.preventDefault(); movingRight = true; }
+    });
+    addEventListener("keyup", e => {
+      if (e.key === "ArrowLeft" || e.key === "a") movingLeft = false;
+      if (e.key === "ArrowRight" || e.key === "d") movingRight = false;
+    });
+
+    // Mötande bilar: varje objekt är {x, y, color}. De dyker upp uppifrån
+    // och kör nedåt. Krockar med spelaren = game over.
+    let enemies = [];
+    let spawnTimer = 0;
+    let enemySpeed = 4;
+    let score = 0;
+    let gameOver = false;
+    const enemyColors = ["#4dabf7", "#ffd43b", "#69db7c", "#b197fc"];
+
+    function spawnEnemy(roadMidX, roadW) {
+      const laneX = roadMidX - roadW / 2 + 30 + Math.random() * (roadW - 60);
+      enemies.push({
+        x: laneX,
+        y: -60,
+        color: enemyColors[Math.floor(Math.random() * enemyColors.length)]
+      });
+    }
+
+    function rectsHit(ax, ay, aw, ah, bx, by, bw, bh) {
+      return Math.abs(ax - bx) < (aw + bw) / 2 - 8 &&
+             Math.abs(ay - by) < (ah + bh) / 2 - 8;
+    }
+
+    function resetGame() {
+      enemies = [];
+      spawnTimer = 0;
+      enemySpeed = 4;
+      score = 0;
+      gameOver = false;
+      playerX = null;
+    }
+
+    function loop() {
+      laneStripeY = (laneStripeY + 6) % 70;
+      const roadMidX = drawRoad();
+      const roadW = Math.min(canvas.width * 0.7, 320);
+      if (playerX === null) playerX = roadMidX;
+
+      if (!gameOver) {
+        if (movingLeft) playerX -= carSpeed;
+        if (movingRight) playerX += carSpeed;
+        const minX = roadMidX - roadW / 2 + 30;
+        const maxX = roadMidX + roadW / 2 - 30;
+        playerX = Math.max(minX, Math.min(maxX, playerX));
+
+        spawnTimer++;
+        const spawnEvery = Math.max(35, 70 - Math.floor(score / 5));
+        if (spawnTimer >= spawnEvery) {
+          spawnTimer = 0;
+          spawnEnemy(roadMidX, roadW);
+        }
+
+        enemies.forEach(en => { en.y += enemySpeed; });
+        enemies = enemies.filter(en => en.y < canvas.height + 60);
+        enemySpeed = 4 + score / 40;
+        score++;
+
+        const playerY = canvas.height - 100;
+        for (const en of enemies) {
+          if (rectsHit(playerX, playerY, 44, 74, en.x, en.y, 44, 74)) {
+            gameOver = true;
+          }
+        }
+      }
+
+      enemies.forEach(en => drawCar(en.x, en.y, 44, 74, en.color));
+      drawCar(playerX, canvas.height - 100, 44, 74, "#ff3b3b");
+
+      // Poängtavla
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 22px system-ui, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("Poäng: " + Math.floor(score / 5), 16, 34);
+
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff";
+        ctx.textAlign = "center";
+        ctx.font = "bold 32px system-ui, sans-serif";
+        ctx.fillText("Kraasch! 💥", canvas.width / 2, canvas.height / 2 - 30);
+        ctx.font = "bold 20px system-ui, sans-serif";
+        ctx.fillText("Poäng: " + Math.floor(score / 5), canvas.width / 2, canvas.height / 2 + 4);
+        ctx.fillText("Tryck var som helst för att köra igen", canvas.width / 2, canvas.height / 2 + 40);
+      }
+
+      requestAnimationFrame(loop);
+    }
+    loop();
+
+    canvas.addEventListener("pointerdown", () => { if (gameOver) resetGame(); });
+  </script>
+</body>
+</html>
