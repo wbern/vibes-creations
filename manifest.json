@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-03T06:19:14Z",
+  "generated_at": "2026-07-03T06:42:15Z",
   "entries": [
     {
       "slug": "milda-lejonet",
@@ -77,17 +77,6 @@
       "date": "2026-07-02T12:34:48Z",
       "persona": "kladd",
       "description": "Snurrande bananen är ett roligt spel där bananen snurrar runt!"
-    },
-    {
-      "slug": "runda-ekorren",
-      "title": "NeonWave",
-      "display_name": "nikanplstaintebort",
-      "thumbnail": "students/pilot/runda-ekorren/thumbnail.webp",
-      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/runda-ekorren/",
-      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/runda-ekorren",
-      "date": "2026-06-08T20:03:51Z",
-      "persona": "kladd",
-      "description": "Ett socialt nätverk för barn där du kan posta inlägg, utforska andras innehåll och uttrycka dig med emojis och färger."
     },
     {
       "slug": "kloka-humlan",
