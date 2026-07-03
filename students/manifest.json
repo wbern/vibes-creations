@@ -5,6 +5,39 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "vaksamma-uttern",
+          "boilerplate": false,
+          "student": "nasib3",
+          "display_name": "nasib3",
+          "title": "Odla Trädgården 3D",
+          "description": "Odla en pixelträdgård i 3D och samla på egna växter",
+          "tags": [
+            "trädgård",
+            "3d",
+            "odla",
+            "samla"
+          ],
+          "level": "medel",
+          "model": "claude-opus-4-8",
+          "persona": "kladd",
+          "archived_at": "2026-07-03T08:49:15Z",
+          "published_at": "2026-07-03T08:49:20Z",
+          "thumbnail": "students/pilot/vaksamma-uttern/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "milda-lejonet",
           "boilerplate": false,
           "student": "student03",
@@ -73,31 +106,6 @@
               "total": 75
             },
             "finding_count": 75,
-            "moderation": {
-              "action": "error",
-              "soft_flag_categories": []
-            }
-          }
-        },
-        {
-          "slug": "vaksamma-uttern",
-          "boilerplate": false,
-          "student": "nasib3",
-          "display_name": "nasib3",
-          "title": "Odla Trädgården 3D",
-          "description": "Odla trädgården 3D är ett roligt spel där du odlar din egen trädgård och kan samla mynt!",
-          "persona": "kladd",
-          "archived_at": "2026-07-03T06:18:32Z",
-          "published_at": "2026-07-03T06:18:41Z",
-          "thumbnail": "students/pilot/vaksamma-uttern/thumbnail.webp",
-          "scan": {
-            "counts": {
-              "personnummer": 0,
-              "secrets": 0,
-              "ner": 0,
-              "total": 0
-            },
-            "finding_count": 0,
             "moderation": {
               "action": "error",
               "soft_flag_categories": []

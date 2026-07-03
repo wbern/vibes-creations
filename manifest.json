@@ -1,6 +1,25 @@
 {
-  "generated_at": "2026-07-03T06:42:15Z",
+  "generated_at": "2026-07-03T08:49:20Z",
   "entries": [
+    {
+      "slug": "vaksamma-uttern",
+      "title": "Odla Trädgården 3D",
+      "display_name": "nasib3",
+      "thumbnail": "students/pilot/vaksamma-uttern/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/vaksamma-uttern/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/vaksamma-uttern",
+      "date": "2026-07-03T08:49:20Z",
+      "persona": "kladd",
+      "tags": [
+        "trädgård",
+        "3d",
+        "odla",
+        "samla"
+      ],
+      "description": "Odla en pixelträdgård i 3D och samla på egna växter",
+      "level": "medel",
+      "model": "claude-opus-4-8"
+    },
     {
       "slug": "milda-lejonet",
       "title": "3D-potatis",
@@ -10,6 +29,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/milda-lejonet",
       "date": "2026-07-03T06:19:14Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Ett roligt spel där du snurrar en 3D-potatis!"
     },
     {
@@ -21,6 +41,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/pigga-sfinksen",
       "date": "2026-07-03T06:19:05Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Ett roligt spel om bilracing där du kan tävla med bilar!"
     },
     {
@@ -32,18 +53,8 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/fria-sfinksen",
       "date": "2026-07-03T06:18:55Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Det här är ett roligt matquiz där du svarar på frågor om mat och samlar poäng!"
-    },
-    {
-      "slug": "vaksamma-uttern",
-      "title": "Odla Trädgården 3D",
-      "display_name": "nasib3",
-      "thumbnail": "students/pilot/vaksamma-uttern/thumbnail.webp",
-      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/vaksamma-uttern/",
-      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/vaksamma-uttern",
-      "date": "2026-07-03T06:18:41Z",
-      "persona": "kladd",
-      "description": "Odla trädgården 3D är ett roligt spel där du odlar din egen trädgård och kan samla mynt!"
     },
     {
       "slug": "vita-pantern",
@@ -54,6 +65,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/vita-pantern",
       "date": "2026-07-02T15:05:37Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Racing är ett roligt bilspel där du kör och samlar poäng, men du kan trycka på pilarna för att styra eller börja om."
     },
     {
@@ -65,6 +77,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/varma-mesan",
       "date": "2026-07-02T14:59:39Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Cookingdom 2 är ett roligt matlagningsspel där du bygger rätter i rätt ordning innan tiden tar slut."
     },
     {
@@ -76,6 +89,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/mjuka-gasen",
       "date": "2026-07-02T12:34:48Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Snurrande bananen är ett roligt spel där bananen snurrar runt!"
     },
     {
@@ -87,6 +101,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/kloka-humlan",
       "date": "2026-06-04T12:04:29Z",
       "persona": "clay",
+      "tags": [],
       "description": "Här kan du dra i punkter och se hur vågor skapar vackra interferensmönster på skärmen."
     },
     {
@@ -98,6 +113,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/modiga-lammeln",
       "date": "2026-06-04T11:35:25Z",
       "persona": "clay",
+      "tags": [],
       "description": "Den här sidan lär dig om webb-säkerhet — hur hackare kan attackera webbplatser och hur man skyddar sig mot dem."
     },
     {
@@ -109,6 +125,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/varsamma-gladan",
       "date": "2026-05-29T20:28:04Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Här kan du leka med 3D-pokerkort — dra dem, vänd dem genom att trycka och snurra bakgrunden hur du vill!"
     },
     {
@@ -120,6 +137,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/hela-sparven",
       "date": "2026-05-29T20:27:46Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Ett roligt skjutspel där du siktar på och försöker skjuta ner UFO:n som flyger förbi."
     },
     {
@@ -131,6 +149,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/snalla-raven",
       "date": "2026-05-29T20:27:30Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Ett roligt spel där ekorren Nilsson hoppar på grenar och skjuter ekollon mot monster."
     },
     {
@@ -142,6 +161,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/milda-albatrossen",
       "date": "2026-05-29T20:27:20Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Ett roligt skjutspel där du väljer olika banor och skjuter på mål för att samla poäng och mynt."
     },
     {
@@ -153,6 +173,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/bruna-lammeln",
       "date": "2026-05-29T20:27:09Z",
       "persona": "kladd",
+      "tags": [],
       "description": "En rolig sida där du kan leka med katten Elsa genom att klappa henne, ge henne fisk eller kasta ett nystan."
     },
     {
@@ -164,6 +185,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/smala-albatrossen",
       "date": "2026-05-29T20:26:58Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Ett digitalt husdjur som du tar hand om genom att mata, leka med och kela med katten Sushi."
     },
     {
@@ -175,6 +197,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/blanka-rockan",
       "date": "2026-05-29T20:26:47Z",
       "persona": "kladd",
+      "tags": [],
       "description": "En rolig maskin där du kan bygga och brygga din egen drinkbeställning med kaffe, mjölk, smaksirap och toppings."
     },
     {
@@ -186,6 +209,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/snalla-gamen",
       "date": "2026-05-29T20:26:36Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Ett roligt spel där du trycker på ett lamm för att skapa kaos eller gräver i marken!"
     },
     {
@@ -197,6 +221,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/sakra-skoldpaddan",
       "date": "2026-05-29T20:26:20Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Det här är ett roligt spel där du ska fånga alla 12 hundar."
     },
     {
@@ -208,6 +233,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/sakra-ormen",
       "date": "2026-05-29T20:26:09Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Ett roligt skjutspel där du försöker träffa fåglar och samla poäng."
     },
     {
@@ -219,6 +245,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/rara-eldflugan",
       "date": "2026-05-29T20:25:54Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Här kan du spela ett roligt godisfotbollsspel mot en AI och försöka göra fler mål än datorn."
     },
     {
@@ -230,6 +257,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/stadiga-fenixen",
       "date": "2026-05-29T20:25:36Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Ett roligt tower defense-spel där du försvarar en gård genom att skjuta mot fiender i 50 vågor och välja föremål var tredje våg."
     },
     {
@@ -241,6 +269,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/stolta-storen",
       "date": "2026-05-29T20:25:26Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Ett roligt 3D-spel där du kan utforska, gräva block och hoppa runt i en blockig värld."
     },
     {
@@ -252,6 +281,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/ljusa-jaguaren",
       "date": "2026-05-28T20:50:28Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Det här är ett datorspel där du samlar poäng och försöker skydda städer."
     },
     {
@@ -263,6 +293,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/fria-lejonet",
       "date": "2026-05-28T20:50:21Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Ett roligt 3D-minigolfspel där du drar för att sikta och håller för att slå bollen mot hålet."
     },
     {
@@ -274,6 +305,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/lilla-radjuret",
       "date": "2026-05-28T20:50:14Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Här kan du lära dig roliga fakta om Gerard geparden, världens snabbaste djur som bor på Afrikas savann!"
     },
     {
@@ -285,6 +317,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/sunda-fjarilen",
       "date": "2026-05-28T20:50:07Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Tåget åker förbi på räls och du kan se det röra sig genom landskapet!"
     },
     {
@@ -296,6 +329,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/talmodiga-myran",
       "date": "2026-05-28T20:50:00Z",
       "persona": "kladd",
+      "tags": [],
       "description": "Här kan du spela Super Mario och styra honom med pilar medan han hoppar över hinder och eldar!"
     },
     {
@@ -307,6 +341,7 @@
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/ivriga-koltrasten",
       "date": "2026-05-20T19:09:44Z",
       "persona": "claudina",
+      "tags": [],
       "description": "Ett skjutspel där du väljer mellan olika banor som skog, rymden och vatten, och skjuter på mål för att samla poäng och mynt."
     }
   ]
