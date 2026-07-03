@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-02T15:05:37Z",
+  "generated_at": "2026-07-03T06:18:41Z",
   "entries": [
+    {
+      "slug": "vaksamma-uttern",
+      "title": "Odla Trädgården 3D",
+      "display_name": "nasib3",
+      "thumbnail": "students/pilot/vaksamma-uttern/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/vaksamma-uttern/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/vaksamma-uttern",
+      "date": "2026-07-03T06:18:41Z",
+      "persona": "kladd",
+      "description": "Odla trädgården 3D är ett roligt spel där du odlar din egen trädgård och kan samla mynt!"
+    },
     {
       "slug": "vita-pantern",
       "title": "Racing",
