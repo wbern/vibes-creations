@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-03T06:19:05Z",
+  "generated_at": "2026-07-03T06:19:14Z",
   "entries": [
+    {
+      "slug": "milda-lejonet",
+      "title": "3D-potatis",
+      "display_name": "student03",
+      "thumbnail": "students/pilot/milda-lejonet/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/milda-lejonet/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/milda-lejonet",
+      "date": "2026-07-03T06:19:14Z",
+      "persona": "kladd",
+      "description": "Ett roligt spel där du snurrar en 3D-potatis!"
+    },
     {
       "slug": "pigga-sfinksen",
       "title": "Bilracing",

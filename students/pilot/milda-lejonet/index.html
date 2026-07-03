@@ -3,212 +3,161 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>min sida</title>
-  <!-- pilot-student03 -->
+  <title>3D-potatis</title>
   <style>
-    /* Theme tokens — the four presets are papper · skog · hav · neon.
-     * The chunky helpers (.card, .btn-chunky, .pill, .wobble, .pop-in)
-     * come from the boilerplate Claude uses for every new page. */
-    :root {
-      --bg: #f4ecd8;
-      --ink: #2b2b2b;
-      --card: #ffffff;
-      --accent: #ff7a5a;
-      --accent-2: #58a4ff;
-      --radius: 20px;
-      --lip: 8px;
-    }
-    html, body { margin: 0; min-height: 100vh; -webkit-text-size-adjust: 100%; }
-    body {
-      font-family: system-ui, sans-serif;
-      background: var(--bg);
-      background-image:
-        radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--accent) 30%, transparent) 0, transparent 40%),
-        radial-gradient(circle at 80% 90%, color-mix(in srgb, var(--accent-2) 25%, transparent) 0, transparent 45%);
-      display: grid;
-      place-items: center;
-      padding: 2rem;
-      box-sizing: border-box;
-      color: var(--ink);
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #1a140f; touch-action: none; }
+    body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    h1 {
+      position: fixed; top: .75rem; left: 50%; transform: translateX(-50%);
+      margin: 0; color: #fff; font: 900 1.4rem system-ui, sans-serif;
+      letter-spacing: -0.02em; text-shadow: 0 2px 0 rgba(0,0,0,.4);
+      pointer-events: none;
     }
   </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three":          "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
+      "three/addons/":  "https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"
+    }
+  }
+  </script>
 </head>
 <body>
-  <!--
-    ============================================================
-    PLACEHOLDER SECTION — Claude, this whole <section> is the
-    starter splash. When the kid asks you to build their page,
-    REMOVE this entire <section data-placeholder> block (including
-    its inline <style> and <script>) and write fresh content in
-    its place. Nothing outside this section needs to be touched.
-    Everything tutorial-related (the wiggling arrow, the dismiss
-    handler, the localStorage key) lives inside this section on
-    purpose so a single delete clears it all.
-    ============================================================
-  -->
-  <section data-placeholder data-persona="clay">
-    <style>
-      [data-placeholder] {
-        max-width: 36rem;
-        margin: 0 auto;
-        text-align: center;
-      }
-      [data-placeholder] h1 {
-        font: 900 3rem/1.05 system-ui, sans-serif;
-        letter-spacing: -0.02em;
-        margin: 0 0 .25rem;
-      }
-      [data-placeholder] h1 .wave {
-        display: inline-block;
-        transform-origin: 70% 70%;
-        animation: ph-wave 1.6s infinite;
-      }
-      @keyframes ph-wave {
-        0%, 100% { transform: rotate(0); }
-        25% { transform: rotate(20deg); }
-        75% { transform: rotate(-10deg); }
-      }
-      [data-placeholder] .ph-lead {
-        font-size: 1.25rem;
-        margin: 1rem 0 1.5rem;
-        line-height: 1.4;
-      }
-      [data-placeholder] footer {
-        margin-top: 1.5rem;
-        opacity: 0.55;
-        font-size: 0.9rem;
-      }
+  <h1>🥔 Snurrpotatisen</h1>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-      /* Arrow tutorial — fixed near the viewport bottom-right corner,
-       * pointing toward the chat icon (parent SPA's 3rem FAB sitting
-       * at right:1rem; bottom:1rem; z-index ~2147483640). The arrow's
-       * own z-index is intentionally well below that, so we offset the
-       * SVG away from the corner (right:5rem) to keep the arrowhead
-       * visible next to — not behind — the FAB. */
-      [data-placeholder] .ph-arrow {
-        position: fixed;
-        right: 5rem;
-        bottom: 1rem;
-        width: clamp(140px, 38vw, 220px);
-        pointer-events: none;
-        z-index: 9;
-        transform-origin: 90% 90%;
-        animation: ph-arrow-bob 1.8s ease-in-out infinite;
-      }
-      [data-placeholder] .ph-arrow.is-dismissed {
-        animation: ph-arrow-out .4s ease-in forwards;
-      }
-      [data-placeholder] .ph-arrow svg {
-        display: block;
-        width: 100%;
-        height: auto;
-        overflow: visible;
-      }
-      [data-placeholder] .ph-arrow .ph-arrow-stroke {
-        stroke-dasharray: 320;
-        stroke-dashoffset: 320;
-        animation: ph-arrow-draw 1.6s ease-out .2s forwards;
-      }
-      [data-placeholder] .ph-arrow .ph-arrow-label {
-        display: inline-block;
-        /* rgba, not color-mix — iOS 15.8.3 (iPhone 7 test floor) drops the
-         * whole declaration on unrecognised color-mix and the label goes
-         * unreadable white-on-cream. */
-        background: rgba(43, 43, 43, 0.92);
-        color: #fff;
-        font: 600 .95rem/1.2 system-ui, sans-serif;
-        padding: .4rem .65rem;
-        border-radius: 10px;
-        transform: rotate(-4deg);
-        /* Long persona labels ("tryck här för att prata med Claudina") clip
-         * outside the viewport on iPhone 7 (375px) with nowrap. Allow wrap;
-         * cap the width so the box stays compact rather than stretching the
-         * full label width on desktop. */
-        max-width: 11rem;
-        box-shadow: 0 4px 0 rgba(43, 43, 43, 0.25);
-      }
-      [data-placeholder] .ph-arrow-label-wrap {
-        position: absolute;
-        left: 0;
-        top: 0;
-        transform: translate(-6%, -10%);
-      }
-      @keyframes ph-arrow-bob {
-        0%, 100% { transform: translate(0, 0) rotate(0); }
-        50%      { transform: translate(-6px, -8px) rotate(-2deg); }
-      }
-      @keyframes ph-arrow-draw {
-        to { stroke-dashoffset: 0; }
-      }
-      @keyframes ph-arrow-out {
-        to { opacity: 0; transform: translate(10px, 10px) scale(.9); }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        [data-placeholder] h1 .wave,
-        [data-placeholder] .ph-arrow { animation: none; }
-        [data-placeholder] .ph-arrow .ph-arrow-stroke { stroke-dashoffset: 0; }
-      }
-      @media (max-width: 480px) {
-        [data-placeholder] h1 { font-size: 2.4rem; }
-        [data-placeholder] .ph-arrow { width: clamp(120px, 44vw, 180px); }
-      }
-    </style>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a140f);
 
-    <h1>hey. <span class="wave" aria-hidden="true">👋</span></h1>
-    <p class="ph-lead">vill du bygga ett litet spel som funkar i mobilen?</p>
+    const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(0, 1, 4.5);
 
-    <footer>byggd av dig + Claude</footer><div class="ph-arrow" aria-hidden="true">
-      <div class="ph-arrow-label-wrap">
-        <span class="ph-arrow-label">tryck här för att prata med Clay</span>
-      </div>
-      <svg viewBox="0 0 220 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path class="ph-arrow-stroke"
-              d="M 20 40
-                 C 70 30, 110 60, 140 80
-                 S 190 120, 200 128"
-              stroke="#2b2b2b"
-              stroke-width="4"
-              stroke-linecap="round"
-              stroke-linejoin="round" /><path d="M 200 128 L 180 122 L 187 108 Z"
-              fill="#2b2b2b"
-              stroke="#2b2b2b"
-              stroke-width="2"
-              stroke-linejoin="round" />
-      </svg>
-    </div>
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
 
-    <script>
-      // One-time tutorial dismiss. Three triggers:
-      //  1) localStorage flag from a prior visit — skip the arrow entirely.
-      //  2) postMessage {type:"workshop:chat-opened"} from the parent SPA
-      //     when the kid taps the chat icon (App.jsx openChat()).
-      //  3) Defensive fallback: if the SPA never sends the message (older
-      //     deploy), the arrow is harmless — it'll disappear the moment
-      //     Claude rewrites this <section>.
-      // Lives inside the placeholder on purpose: Claude deleting the
-      // section removes this script too, so no leftover handlers haunt
-      // the kid's final page when they ship to the gallery.
-      (function () {
-        var KEY = "workshop:placeholder-arrow:dismissed";
-        var arrow = document.querySelector("[data-placeholder] .ph-arrow");
-        if (!arrow) return;
-        try {
-          if (localStorage.getItem(KEY)) { arrow.remove(); return; }
-        } catch (e) { /* private mode / disabled storage — keep arrow */ }
-        function dismiss() {
-          if (!arrow.isConnected) return;
-          arrow.classList.add("is-dismissed");
-          try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
-          setTimeout(function () { arrow.remove(); }, 450);
-        }
-        window.addEventListener("message", function (e) {
-          var d = e && e.data;
-          if (d && typeof d === "object" && d.type === "workshop:chat-opened") {
-            dismiss();
-          }
-        });
-      })();
-    </script>
-  </section>
+    scene.add(new THREE.AmbientLight(0xfff2e0, 0.7));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.1);
+    dir.position.set(4, 5, 3);
+    scene.add(dir);
+
+    // Bygg potatisformen: börja med en klot-geometri (icosahedron, mjuk),
+    // knuffa sedan varje hörn lite slumpmässigt så den blir knölig och
+    // avlång istället för perfekt rund — det är det som gör den till potatis.
+    const geo = new THREE.IcosahedronGeometry(1.3, 5);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const v = new THREE.Vector3().fromBufferAttribute(pos, i);
+      const bump = 0.95 + Math.sin(v.x * 3) * 0.025 + Math.sin(v.y * 4 + v.z * 2) * 0.02 + (Math.random() - 0.5) * 0.015;
+      v.multiplyScalar(bump);
+      v.x *= 1.35; // sträck ut den lite på längden, som en riktig potatis
+      v.y *= 0.9;
+      pos.setXYZ(i, v.x, v.y, v.z);
+    }
+    geo.computeVertexNormals();
+
+    const potato = new THREE.Mesh(
+      geo,
+      new THREE.MeshStandardMaterial({ color: 0xc79a5c, roughness: 0.85, flatShading: false })
+    );
+    scene.add(potato);
+
+    // Potatisögon: små mörka prickar utspridda på ytan, precis som på
+    // en riktig potatis. Vi placerar dem slumpmässigt på klotytan och
+    // flyttar dem ut lite från centrum så de sitter ovanpå knölarna.
+    const eyeGeo = new THREE.SphereGeometry(0.045, 8, 8);
+    const eyeMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 1 });
+    for (let i = 0; i < 10; i++) {
+      const dir3 = new THREE.Vector3(
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1
+      ).normalize();
+      const eye = new THREE.Mesh(eyeGeo, eyeMat);
+      eye.position.copy(dir3).multiplyScalar(1.15);
+      eye.position.x *= 1.35;
+      eye.position.y *= 0.9;
+      potato.add(eye);
+    }
+
+    // Glad jordgubbe: en röd kotte-liknande kropp, gröna blad ovanpå,
+    // och ett ansikte (två ögon + ett leende) gjort av små mörka klot
+    // och en böjd linje. Allt sitter i en "pivot"-grupp som vi snurrar
+    // för att få jordgubben att flyga i en cirkel runt potatisen.
+    const strawberryPivot = new THREE.Group();
+    scene.add(strawberryPivot);
+
+    const strawberry = new THREE.Group();
+    strawberry.position.set(2.6, 0.6, 0);
+    strawberryPivot.add(strawberry);
+
+    const berryBody = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 16, 16),
+      new THREE.MeshStandardMaterial({ color: 0xe8384f, roughness: 0.6 })
+    );
+    berryBody.scale.set(1, 1.2, 1);
+    strawberry.add(berryBody);
+
+    // Små frön runt om på jordgubben
+    const seedGeo = new THREE.SphereGeometry(0.03, 6, 6);
+    const seedMat = new THREE.MeshStandardMaterial({ color: 0xffe27a });
+    for (let i = 0; i < 16; i++) {
+      const dir3 = new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 1.4 - 0.4, Math.random() * 2 - 1).normalize();
+      const seed = new THREE.Mesh(seedGeo, seedMat);
+      seed.position.copy(dir3).multiplyScalar(0.42);
+      seed.position.y = Math.abs(seed.position.y) - 0.1;
+      strawberry.add(seed);
+    }
+
+    // Gröna blad ovanpå
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x3f8a4a, roughness: 0.7 });
+    for (let i = 0; i < 5; i++) {
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.32, 4), leafMat);
+      const angle = (i / 5) * Math.PI * 2;
+      leaf.position.set(Math.cos(angle) * 0.15, 0.55, Math.sin(angle) * 0.15);
+      leaf.rotation.x = 0.5;
+      leaf.rotation.y = angle;
+      strawberry.add(leaf);
+    }
+
+    // Glatt ansikte: två ögon och ett leende av små klot i en båge
+    const faceMat = new THREE.MeshStandardMaterial({ color: 0x2b1a12 });
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), faceMat);
+    eyeL.position.set(-0.13, 0.15, 0.36);
+    strawberry.add(eyeL);
+    const eyeR = eyeL.clone();
+    eyeR.position.x = 0.13;
+    strawberry.add(eyeR);
+    for (let i = 0; i < 7; i++) {
+      const t = (i / 6 - 0.5) * 0.9;
+      const smileDot = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), faceMat);
+      smileDot.position.set(t * 0.22, -0.05 - Math.cos(t * 1.6) * 0.08, 0.38);
+      strawberry.add(smileDot);
+    }
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    addEventListener("resize", () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    let t = 0;
+    renderer.setAnimationLoop(() => {
+      t += 0.016;
+      potato.rotation.y += 0.006;
+      strawberryPivot.rotation.y += 0.012; // flyger runt potatisen
+      strawberry.position.y = 0.6 + Math.sin(t * 3) * 0.15; // guppar upp och ner
+      strawberry.rotation.z = Math.sin(t * 3) * 0.15;
+      controls.update();
+      renderer.render(scene, camera);
+    });
+  </script>
 </body>
 </html>
