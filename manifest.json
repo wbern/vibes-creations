@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-09T14:10:37Z",
+  "generated_at": "2026-07-09T14:16:47Z",
   "entries": [
+    {
+      "slug": "pigga-gorillan",
+      "title": "Guldjakten",
+      "display_name": "student05",
+      "thumbnail": "students/pilot/pigga-gorillan/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/pigga-gorillan/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/pigga-gorillan",
+      "date": "2026-07-09T14:16:47Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "smala-ponnynen",
       "title": "Asien-quiz",

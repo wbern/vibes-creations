@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "pigga-gorillan",
+          "boilerplate": false,
+          "student": "student05",
+          "created_at": 1783600061.7342455,
+          "display_name": "student05",
+          "title": "Guldjakten",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T14:16:12Z",
+          "published_at": "2026-07-09T14:16:47Z",
+          "thumbnail": "students/pilot/pigga-gorillan/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "smala-ponnynen",
           "boilerplate": false,
           "student": "student15",

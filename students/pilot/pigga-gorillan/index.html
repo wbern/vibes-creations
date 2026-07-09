@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Guldjakten</title>
+  <style>
+    :root {
+      --bg: #f4ecd8;
+      --ink: #2b2b2b;
+      --card: #ffffff;
+      --accent: #ff7a5a;
+      --accent-2: #58a4ff;
+      --radius: 16px;
+      --lip: 6px;
+    }
+    html, body { margin: 0; padding: 0; min-height: 100%; overscroll-behavior: none; }
+    body {
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    .page { max-width: 30rem; margin: 0 auto; padding: 1rem; box-sizing: border-box; text-align: center; }
+    h1 { font: 900 1.8rem/1.05 system-ui, sans-serif; letter-spacing: -0.02em; margin: .5rem 0; }
+    .pill { display: inline-block; padding: .3rem .7rem; background: var(--accent-2); color: #fff;
+      border-radius: 999px; font: 700 .95rem/1 system-ui, sans-serif; }
+    .row { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+
+    #stage {
+      position: relative;
+      width: min(90vw, 360px);
+      aspect-ratio: 1;
+      margin: 1rem auto;
+      background: #cdeccb;
+      border-radius: var(--radius);
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--ink) 14%, transparent);
+      overflow: hidden;
+      touch-action: none;
+    }
+    #player {
+      position: absolute; width: 40px; height: 40px;
+      left: 50%; top: 50%; transform: translate(-50%, -50%);
+      transition: left .1s, top .1s;
+    }
+    .potato { position: absolute; width: 22px; height: 22px; transform: translate(-50%, -50%); }
+    .wall { position: absolute; background: #8a6a4a; border-radius: 6px;
+      box-shadow: inset 0 -3px 0 rgba(0,0,0,.2); }
+
+    .dpad { display: grid; gap: 6px; justify-content: center;
+      grid-template: repeat(3, 56px) / repeat(3, 56px); margin: 1rem auto; }
+    .dpad button { font-size: 1.5rem; color: #fff; border: 0; border-radius: var(--radius);
+      min-height: 44px; min-width: 44px; cursor: pointer;
+      background: var(--c, var(--accent-2));
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--accent-2)) 70%, black); }
+    .dpad button:active { transform: translateY(var(--lip)); box-shadow: 0 0 0 transparent; }
+    .dpad [data-dir="up"]    { grid-area: 1 / 2; }
+    .dpad [data-dir="left"]  { grid-area: 2 / 1; }
+    .dpad [data-dir="right"] { grid-area: 2 / 3; }
+    .dpad [data-dir="down"]  { grid-area: 3 / 2; }
+    .key-hint { opacity: .6; font-size: .9rem; }
+    .card { background: var(--card); border-radius: var(--radius); padding: 1rem 1.25rem;
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--ink)) 14%, transparent); }
+    .btn-chunky { display: inline-flex; align-items: center; justify-content: center;
+      min-height: 48px; padding: 12px 20px; border: 0; border-radius: var(--radius);
+      font: 800 16px/1 system-ui, sans-serif; color: #fff; letter-spacing: .5px;
+      text-transform: uppercase; background: var(--c, var(--accent));
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--accent)) 70%, black);
+      cursor: pointer; }
+    .btn-chunky:active { transform: translateY(var(--lip)); box-shadow: 0 0 0 transparent; }
+    .monster { position: absolute; width: 34px; height: 34px; transform: translate(-50%, -50%); }
+    @keyframes pop-in { from { transform: translate(-50%, -50%) scale(.4); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+    .pop-in { animation: pop-in 240ms cubic-bezier(.5,1.6,.4,1) both; }
+    html[data-input="keyboard"] .dpad { display: none; }
+    html[data-input="keyboard"] .key-hint { display: block; }
+    html:not([data-input="keyboard"]) .key-hint { display: none; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>💰 Guldjakten</h1>
+
+    <div id="startbox" class="card pop-in" style="--c:#58a4ff;">
+      <h2>Välkommen!</h2>
+      <p>Samla guldpengar, undvik monstret och klara alla 20 nivåer!</p>
+      <button class="btn-chunky pop" id="startBtn" style="--c:#58a4ff">▶ Starta spel</button>
+    </div>
+
+    <div id="gameArea" style="display:none">
+    <span class="pill">Poäng: <span id="score">0</span></span>
+    <span class="pill" style="--c:#3f8a4a;background:var(--c)">Nivå: <span id="level">1</span>/20</span>
+    <span class="row" style="justify-content:center;margin-top:.5rem">
+      <button class="btn-chunky pop" id="levelDown" style="--c:#58a4ff;min-height:40px;padding:8px 16px">− nivå</button>
+      <button class="btn-chunky pop" id="levelUp" style="--c:#58a4ff;min-height:40px;padding:8px 16px">+ nivå</button>
+    </span>
+    <div id="stage">
+      <div id="player">
+        <!-- en liten katt, ritad med enkla former -->
+        <svg viewBox="0 0 40 40" width="40" height="40">
+          <circle cx="20" cy="22" r="14" fill="#ffb86b"/>
+          <polygon points="8,12 14,4 16,14" fill="#ffb86b"/>
+          <polygon points="32,12 26,4 24,14" fill="#ffb86b"/>
+          <circle cx="14" cy="20" r="2.2" fill="#2b2b2b"/>
+          <circle cx="26" cy="20" r="2.2" fill="#2b2b2b"/>
+          <path d="M17 27 Q20 30 23 27" stroke="#2b2b2b" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <div id="gameover" class="card" style="--c:#e0455a; display:none; margin-top:1rem;">
+      <h2>Game over! 👹</h2>
+      <p id="finalScore"></p>
+      <button class="btn-chunky pop" id="restartBtn" style="--c:#e0455a">Spela igen</button>
+    </div>
+    <div id="winbox" class="card pop-in" style="--c:#ffd54a; display:none; margin-top:1rem;">
+      <h2>Du klarade nivå 20! 🏆</h2>
+      <p id="winScore"></p>
+      <button class="btn-chunky pop" id="restartBtn2" style="--c:#3f8a4a">Spela igen</button>
+    </div>
+
+    <div class="dpad" aria-label="Styrkors">
+      <button class="pop" data-dir="up"    aria-label="Upp"    style="--c:var(--accent-2)">↑</button>
+      <button class="pop" data-dir="left"  aria-label="Vänster" style="--c:var(--accent-2)">←</button>
+      <button class="pop" data-dir="right" aria-label="Höger"  style="--c:var(--accent-2)">→</button>
+      <button class="pop" data-dir="down"  aria-label="Ner"    style="--c:var(--accent-2)">↓</button>
+    </div>
+    <p class="key-hint">Eller använd piltangenterna ← ↑ → ↓</p>
+    </div>
+  </div>
+
+  <script>
+    // Håller koll på om spelaren just nu använder touch, mus eller tangentbord,
+    // så vi kan visa rätt kontroller (styrkors eller piltangent-tips).
+    var root = document.documentElement;
+    function setInput(k) { if (root.dataset.input !== k) root.dataset.input = k; }
+    addEventListener("pointerdown", function (e) {
+      setInput(e.pointerType === "touch" ? "touch" : "mouse");
+    }, { passive: true, capture: true });
+    addEventListener("keydown", function (e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      setInput("keyboard");
+    }, { capture: true });
+    setInput(matchMedia("(pointer: coarse)").matches ? "touch" : "mouse");
+
+    // Själva spelet: flytta katten runt på spelplanen.
+    var player = document.getElementById("player");
+    var stage = document.getElementById("stage");
+    var step = 24;
+
+    // Väggar — hinder man inte kan gå igenom. Positionerna är i procent
+    // av spelplanen, så de funkar oavsett hur stor skärmen är.
+    // Varje nivå har sin egen bana — vi väljer bland dessa fyra banor.
+    var wallLayouts = [
+      [
+        { x: 0.12, y: 0.30, w: 0.30, h: 0.09 },
+        { x: 0.58, y: 0.12, w: 0.09, h: 0.32 },
+        { x: 0.28, y: 0.62, w: 0.40, h: 0.09 },
+        { x: 0.68, y: 0.55, w: 0.09, h: 0.30 }
+      ],
+      [
+        { x: 0.10, y: 0.10, w: 0.09, h: 0.35 },
+        { x: 0.45, y: 0.35, w: 0.45, h: 0.09 },
+        { x: 0.10, y: 0.60, w: 0.35, h: 0.09 },
+        { x: 0.70, y: 0.55, w: 0.09, h: 0.35 }
+      ],
+      [
+        { x: 0.35, y: 0.10, w: 0.09, h: 0.30 },
+        { x: 0.55, y: 0.45, w: 0.09, h: 0.30 },
+        { x: 0.10, y: 0.75, w: 0.30, h: 0.09 },
+        { x: 0.60, y: 0.10, w: 0.30, h: 0.09 }
+      ],
+      [
+        { x: 0.20, y: 0.20, w: 0.20, h: 0.09 },
+        { x: 0.60, y: 0.20, w: 0.20, h: 0.09 },
+        { x: 0.20, y: 0.70, w: 0.20, h: 0.09 },
+        { x: 0.60, y: 0.70, w: 0.20, h: 0.09 },
+        { x: 0.45, y: 0.40, w: 0.09, h: 0.20 }
+      ]
+    ];
+    var walls = [];
+    function layoutWalls() {
+      var r = stage.getBoundingClientRect();
+      walls.forEach(function (w) {
+        w.rect = {
+          left: w.def.x * r.width, top: w.def.y * r.height,
+          width: w.def.w * r.width, height: w.def.h * r.height
+        };
+        w.el.style.left = w.rect.left + "px";
+        w.el.style.top = w.rect.top + "px";
+        w.el.style.width = w.rect.width + "px";
+        w.el.style.height = w.rect.height + "px";
+      });
+    }
+    function setWallLayout(idx) {
+      walls.forEach(function (w) { w.el.remove(); });
+      var defs = wallLayouts[idx % wallLayouts.length];
+      walls = defs.map(function (d) {
+        var el = document.createElement("div");
+        el.className = "wall";
+        stage.appendChild(el);
+        return { el: el, def: d };
+      });
+      layoutWalls();
+    }
+    setWallLayout(0);
+
+    // Kollar om katten (som en cirkel med radie 18) skulle krocka med
+    // en vägg om den stod på punkten x,y.
+    function hitsWall(x, y) {
+      var pad = 8;
+      return walls.some(function (w) {
+        return x + pad > w.rect.left && x - pad < w.rect.left + w.rect.width &&
+               y + pad > w.rect.top && y - pad < w.rect.top + w.rect.height;
+      });
+    }
+
+    function move(dir) {
+      var r = stage.getBoundingClientRect();
+      var cs = getComputedStyle(player);
+      var x = parseFloat(cs.left), y = parseFloat(cs.top);
+      var nx = x, ny = y;
+      if (dir === "up") ny -= step;
+      if (dir === "down") ny += step;
+      if (dir === "left") nx -= step;
+      if (dir === "right") nx += step;
+      nx = Math.max(20, Math.min(r.width - 20, nx));
+      ny = Math.max(20, Math.min(r.height - 20, ny));
+      if (hitsWall(nx, ny)) return; // väggen stoppar katten
+      player.style.left = nx + "px";
+      player.style.top = ny + "px";
+    }
+
+    var gameOver = true; // spelet är pausat tills man trycker Starta
+
+    // Klick/tryck direkt på spelplanen — praktiskt med mus på dator.
+    stage.addEventListener("pointerdown", function (e) {
+      if (gameOver) return;
+      var r = stage.getBoundingClientRect();
+      var x = Math.max(20, Math.min(r.width - 20, e.clientX - r.left));
+      var y = Math.max(20, Math.min(r.height - 20, e.clientY - r.top));
+      if (hitsWall(x, y)) return; // väggen stoppar katten
+      player.style.left = x + "px";
+      player.style.top = y + "px";
+      checkCoins();
+      checkMonster();
+    });
+
+    document.querySelectorAll(".dpad button").forEach(function (b) {
+      b.addEventListener("click", function () { if (!gameOver) { move(b.dataset.dir); checkCoins(); checkMonster(); } });
+    });
+    addEventListener("keydown", function (e) {
+      var map = {
+        ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+        w: "up", W: "up", s: "down", S: "down", a: "left", A: "left", d: "right", D: "right"
+      };
+      if (map[e.key] && !gameOver) { e.preventDefault(); move(map[e.key]); checkCoins(); checkMonster(); }
+    });
+
+    var score = 0;
+    var scoreEl = document.getElementById("score");
+
+    // Guldpengar — tre stycken, ger extra poäng när katten rör dem.
+    var coins = [];
+    for (var i = 0; i < 3; i++) {
+      var coin = document.createElement("div");
+      coin.className = "potato pop-in";
+      coin.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20">' +
+        '<circle cx="12" cy="12" r="10" fill="#ffd54a" stroke="#c99a1f" stroke-width="2"/>' +
+        '<text x="12" y="17" font-size="12" font-weight="900" text-anchor="middle" fill="#c99a1f">$</text></svg>';
+      stage.appendChild(coin);
+      coins.push(coin);
+    }
+
+    function placeCoin(coin) {
+      var r = stage.getBoundingClientRect();
+      var x, y, tries = 0;
+      do {
+        x = 20 + Math.random() * (r.width - 40);
+        y = 20 + Math.random() * (r.height - 40);
+        tries++;
+      } while (hitsWall(x, y) && tries < 20);
+      coin.style.left = x + "px";
+      coin.style.top = y + "px";
+    }
+    coins.forEach(placeCoin);
+
+    // Räknar hur många guldpengar som är hämtade på den här nivån.
+    // När alla är hämtade är nivån klar och man går vidare automatiskt.
+    function checkCoins() {
+      var cs1 = getComputedStyle(player);
+      var px = parseFloat(cs1.left), py = parseFloat(cs1.top);
+      coins.forEach(function (coin) {
+        if (coin.dataset.taken === "1") return;
+        var cs2 = getComputedStyle(coin);
+        var dx = px - parseFloat(cs2.left), dy = py - parseFloat(cs2.top);
+        if (Math.sqrt(dx * dx + dy * dy) < 24) {
+          score += 3;
+          scoreEl.textContent = score;
+          coin.dataset.taken = "1";
+          coin.style.display = "none";
+          if (coins.every(function (c) { return c.dataset.taken === "1"; })) {
+            levelClearedAdvance();
+          }
+        }
+      });
+    }
+
+    function levelClearedAdvance() {
+      if (level >= 20) return; // sista nivån — inget mer att klara
+      setLevel(level + 1);
+    }
+
+    // Monstret — om katten rör det tar spelet slut.
+    var monster = document.createElement("div");
+    monster.className = "monster pop-in";
+    monster.innerHTML = '<svg viewBox="0 0 34 34" width="34" height="34">' +
+      '<circle cx="17" cy="18" r="13" fill="#7a4fb5"/>' +
+      '<polygon points="7,10 3,2 12,7" fill="#7a4fb5"/>' +
+      '<polygon points="27,10 31,2 22,7" fill="#7a4fb5"/>' +
+      '<circle cx="12" cy="17" r="2.4" fill="#fff"/>' +
+      '<circle cx="22" cy="17" r="2.4" fill="#fff"/>' +
+      '<circle cx="12" cy="17" r="1.1" fill="#2b2b2b"/>' +
+      '<circle cx="22" cy="17" r="1.1" fill="#2b2b2b"/>' +
+      '<path d="M10 24 Q17 30 24 24" stroke="#2b2b2b" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>';
+    stage.appendChild(monster);
+
+    function placeMonster() {
+      var r = stage.getBoundingClientRect();
+      var x, y, dx, dy;
+      do {
+        x = 20 + Math.random() * (r.width - 40);
+        y = 20 + Math.random() * (r.height - 40);
+        dx = x - r.width / 2; dy = y - r.height / 2;
+      } while (Math.sqrt(dx * dx + dy * dy) < 80 || hitsWall(x, y)); // inte för nära katten, inte i en vägg
+      monster.style.left = x + "px";
+      monster.style.top = y + "px";
+    }
+    placeMonster();
+
+    // Monstret vandrar runt av sig själv i en slumpad riktning,
+    // och byter riktning ibland eller om det når kanten.
+    var monsterAngle = Math.random() * Math.PI * 2;
+    var monsterSpeed = 1.6;
+    setInterval(function () {
+      if (gameOver) return;
+      if (Math.random() < 0.03) monsterAngle = Math.random() * Math.PI * 2;
+      var r = stage.getBoundingClientRect();
+      var cs = getComputedStyle(monster);
+      var x = parseFloat(cs.left), y = parseFloat(cs.top);
+      var nx = x + Math.cos(monsterAngle) * monsterSpeed;
+      var ny = y + Math.sin(monsterAngle) * monsterSpeed;
+      if (nx < 18 || nx > r.width - 18) { monsterAngle = Math.PI - monsterAngle; nx = x; }
+      if (ny < 18 || ny > r.height - 18) { monsterAngle = -monsterAngle; ny = y; }
+      if (hitsWall(nx, ny)) { monsterAngle = Math.random() * Math.PI * 2; nx = x; ny = y; }
+      monster.style.left = nx + "px";
+      monster.style.top = ny + "px";
+      checkMonster();
+    }, 40);
+
+    // Nivåer 1–20 — varje 10 poäng ger en ny nivå, och monstret blir
+    // lite snabbare för varje nivå.
+    var level = 1;
+    var levelEl = document.getElementById("level");
+    var winbox = document.getElementById("winbox");
+    var winScoreEl = document.getElementById("winScore");
+
+    function setLevel(n) {
+      level = Math.max(1, Math.min(20, n));
+      levelEl.textContent = level;
+      monsterSpeed = 1.6 + (level - 1) * 0.25;
+      setWallLayout(level - 1);
+      coins.forEach(function (coin) {
+        coin.dataset.taken = "0";
+        coin.style.display = "";
+        placeCoin(coin);
+      });
+      placeMonster();
+      if (level >= 20 && !gameOver) {
+        gameOver = true;
+        winScoreEl.textContent = "Du fick " + score + " poäng!";
+        winbox.style.display = "block";
+      }
+    }
+
+    // Knappar för att byta nivå direkt, oavsett poäng.
+    document.getElementById("levelUp").addEventListener("click", function () {
+      if (gameOver) return;
+      setLevel(level + 1);
+      score = (level - 1) * 10;
+      scoreEl.textContent = score;
+    });
+    document.getElementById("levelDown").addEventListener("click", function () {
+      if (gameOver) return;
+      setLevel(level - 1);
+      score = (level - 1) * 10;
+      scoreEl.textContent = score;
+    });
+
+    var gameoverBox = document.getElementById("gameover");
+    var finalScoreEl = document.getElementById("finalScore");
+    var restartBtn = document.getElementById("restartBtn");
+    var restartBtn2 = document.getElementById("restartBtn2");
+
+    function checkMonster() {
+      var cs1 = getComputedStyle(player), cs2 = getComputedStyle(monster);
+      var dx = parseFloat(cs1.left) - parseFloat(cs2.left);
+      var dy = parseFloat(cs1.top) - parseFloat(cs2.top);
+      if (Math.sqrt(dx * dx + dy * dy) < 26) {
+        gameOver = true;
+        finalScoreEl.textContent = "Du fick " + score + " poäng.";
+        gameoverBox.style.display = "block";
+      }
+    }
+
+    function restartGame() {
+      score = 0;
+      scoreEl.textContent = score;
+      gameOver = false;
+      gameoverBox.style.display = "none";
+      winbox.style.display = "none";
+      player.style.left = "50%";
+      player.style.top = "50%";
+      setLevel(1);
+    }
+    restartBtn.addEventListener("click", restartGame);
+    restartBtn2.addEventListener("click", restartGame);
+
+    // Startmenyn — spelet är dolt och pausat tills man trycker Starta.
+    document.getElementById("startBtn").addEventListener("click", function () {
+      document.getElementById("startbox").style.display = "none";
+      document.getElementById("gameArea").style.display = "block";
+      restartGame(); // gör om layouten nu när spelplanen faktiskt syns
+    });
+  </script>
+</body>
+</html>
