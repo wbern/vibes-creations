@@ -130,6 +130,11 @@
       width: 130px; height: 16px; background: rgba(0,0,0,.35); border-radius: 8px; overflow: hidden;
     }
     #healthBar { height: 100%; width: 100%; background: #e94b4b; transition: width 150ms; }
+    #clockDisplay {
+      position: fixed; top: 3.4rem; right: .6rem; z-index: 5;
+      font: 800 .95rem system-ui, sans-serif; color: #fff;
+      background: rgba(0,0,0,.35); padding: .3rem .6rem; border-radius: 10px;
+    }
     #inventoryBar {
       position: fixed; left: 0; right: 0; top: .6rem; z-index: 5;
       display: flex; justify-content: center; gap: .4rem; flex-wrap: wrap;
@@ -187,6 +192,7 @@
   <button id="jumpBtn">JUMP</button>
   <div id="crosshair"></div>
   <div id="healthWrap"><div id="healthBar"></div></div>
+  <div id="clockDisplay">☀️ 06:00</div>
 
   <script type="module">
     import * as THREE from "three";
@@ -202,7 +208,8 @@
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     document.body.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambient);
     const sun = new THREE.DirectionalLight(0xffffff, 0.9);
     sun.position.set(8, 12, 6);
     scene.add(sun);
@@ -707,6 +714,29 @@
 
     // ---- Main loop: move the player, apply gravity, draw the frame ----
     const clock = new THREE.Clock();
+
+    // ---- Day/night cycle: one full day takes 3 real minutes -----------
+    const DAY_LENGTH = 180;
+    let gameTime = 0.25; // start mid-morning
+    const skyDay = new THREE.Color(0x87ceeb);
+    const skyNight = new THREE.Color(0x0a1030);
+    const clockEl = document.getElementById("clockDisplay");
+    function updateDayNight(dt) {
+      gameTime = (gameTime + dt / DAY_LENGTH) % 1;
+      const angle = gameTime * Math.PI * 2;
+      // Sun swings across the sky; brightness follows how high it is.
+      sun.position.set(Math.cos(angle) * 20, Math.sin(angle) * 20, 8);
+      const daylight = Math.max(0, Math.sin(angle));
+      sun.intensity = 0.15 + daylight * 0.9;
+      ambient.intensity = 0.2 + daylight * 0.55;
+      scene.background = skyNight.clone().lerp(skyDay, daylight);
+
+      const totalMinutes = Math.floor(gameTime * 24 * 60);
+      const hh = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+      const mm = String(totalMinutes % 60).padStart(2, "0");
+      const icon = daylight > 0.05 ? "☀️" : "🌙";
+      clockEl.textContent = `${icon} ${hh}:${mm}`;
+    }
     const WALK_SPEED = 4, GRAVITY = 14, JUMP_SPEED = 6, EYE_HEIGHT = 1.6;
     function groundSurfaceY(px, pz) { return heightAt(Math.floor(px), Math.floor(pz)) + 1; }
 
@@ -761,6 +791,7 @@
 
       updateAnimals(dt);
       updateVillagers(dt);
+      updateDayNight(dt);
 
       renderer.render(scene, camera);
     });

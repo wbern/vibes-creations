@@ -5,19 +5,25 @@
       "display_name": "pilot",
       "published": [
         {
-          "slug": "fria-sfinksen",
+          "slug": "rena-myrsloket",
           "boilerplate": false,
-          "student": "student07",
-          "display_name": "student07",
-          "title": "min sida",
-          "description": null,
-          "tags": [],
-          "level": null,
-          "model": null,
+          "student": "student10",
+          "display_name": "student10",
+          "title": "Vaibhav's Block World",
+          "description": "En egen liten Minecraft-värld med kullar, gruvgångar full av malm, en by med bybor, dygn med sol och måne, och djur att jaga för kött och päls.",
+          "tags": [
+            "3d-spel",
+            "byggspel",
+            "minecraft",
+            "överlevnad",
+            "dygnscykel"
+          ],
+          "level": "medel",
+          "model": "claude-opus-4-6",
           "persona": "kladd",
-          "archived_at": "2026-07-09T13:12:29Z",
-          "published_at": "2026-07-09T13:12:34Z",
-          "thumbnail": "students/pilot/fria-sfinksen/thumbnail.webp",
+          "archived_at": "2026-07-09T13:13:00Z",
+          "published_at": "2026-07-09T13:13:12Z",
+          "thumbnail": "students/pilot/rena-myrsloket/thumbnail.webp",
           "scan": {
             "counts": {
               "personnummer": 0,
@@ -33,25 +39,19 @@
           }
         },
         {
-          "slug": "rena-myrsloket",
+          "slug": "fria-sfinksen",
           "boilerplate": false,
-          "student": "student10",
-          "display_name": "student10",
-          "title": "Vaibhav's Block World",
-          "description": "En egen liten Minecraft-värld med kullar, gruvgångar full av malm, en by med bybor att hälsa på och djur att jaga för kött och päls.",
-          "tags": [
-            "3d-spel",
-            "byggspel",
-            "minecraft",
-            "överlevnad",
-            "utforska"
-          ],
-          "level": "medel",
-          "model": "claude-opus-4-6",
+          "student": "student07",
+          "display_name": "student07",
+          "title": "min sida",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
           "persona": "kladd",
-          "archived_at": "2026-07-09T13:09:45Z",
-          "published_at": "2026-07-09T13:09:52Z",
-          "thumbnail": "students/pilot/rena-myrsloket/thumbnail.webp",
+          "archived_at": "2026-07-09T13:12:29Z",
+          "published_at": "2026-07-09T13:12:34Z",
+          "thumbnail": "students/pilot/fria-sfinksen/thumbnail.webp",
           "scan": {
             "counts": {
               "personnummer": 0,
