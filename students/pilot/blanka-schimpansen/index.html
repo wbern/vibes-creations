@@ -260,6 +260,7 @@
     const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd23f });
     const diamondMat = new THREE.MeshStandardMaterial({ color: 0x53e0e0 });
     const waterMat = new THREE.MeshStandardMaterial({ color: 0x2f6fd6, transparent: true, opacity: 0.75 });
+    const sandMat = new THREE.MeshStandardMaterial({ color: 0xe6d28a });
     const lavaMat = new THREE.MeshStandardMaterial({ color: 0xff5a1f, emissive: 0xff3300, emissiveIntensity: 0.6 });
     // Deeper stone has a small chance of turning into an ore block instead —
     // coal is common near the top of the stone, diamond only shows up deep.
@@ -279,6 +280,15 @@
         Math.sin(x * 0.4) * 1.2 + Math.cos(z * 0.35) * 1.2 + Math.sin((x + z) * 0.2)
       ));
     }
+    // Once mining starts, the walkable surface no longer matches the
+    // original hill formula — this map tracks the CURRENT top block per
+    // column so entities actually fall into holes you've dug.
+    const columnTop = new Map();
+    function topAt(x, z) {
+      const key = x + "," + z;
+      return columnTop.has(key) ? columnTop.get(key) : heightAt(x, z);
+    }
+    function setTopAt(x, z, y) { columnTop.set(x + "," + z, y); }
     // Dig down through the layers: grass on top, a few dirt layers, then
     // stone, with a solid bedrock floor at the very bottom.
     const DEPTH = 8;
@@ -289,7 +299,7 @@
           const depthFromTop = h - y;
           let mat;
           if (y === h - DEPTH) mat = bedrockMat;
-          else if (depthFromTop === 0) mat = h === 0 ? waterMat : grassMat;
+          else if (depthFromTop === 0) mat = h === 0 ? waterMat : (h === 1 ? sandMat : grassMat);
           else if (depthFromTop <= 2) mat = dirtMat;
           else mat = maybeOre(depthFromTop, y === h - DEPTH + 1);
           const block = new THREE.Mesh(geo, mat);
@@ -609,7 +619,7 @@
     const namedMats = {
       Grass: grassMat, Dirt: dirtMat, Stone: stoneMat,
       Coal: coalMat, Iron: ironMat, Gold: goldMat, Diamond: diamondMat,
-      Wood: trunkMat, Leaves: leavesMat, Meat: meatMat, Fur: furMat, Planks: planksMat,
+      Wood: trunkMat, Leaves: leavesMat, Meat: meatMat, Fur: furMat, Planks: planksMat, Sand: sandMat,
     };
     const oreNames = new Map(Object.entries(namedMats).map(([name, mat]) => [mat, name]));
     let currentName = null; // nothing selected until you've mined something
@@ -651,6 +661,29 @@
       });
     }
 
+    // ---- Falling sand: once its support is gone, it drops to the floor -
+    const fallingBlocks = [];
+    function startFalling(mesh) {
+      const i = blocks.indexOf(mesh);
+      if (i !== -1) blocks.splice(i, 1);
+      fallingBlocks.push({ mesh, vy: 0 });
+    }
+    function updateFalling(dt) {
+      for (let i = fallingBlocks.length - 1; i >= 0; i--) {
+        const f = fallingBlocks[i];
+        const bx = Math.floor(f.mesh.position.x), bz = Math.floor(f.mesh.position.z);
+        const targetY = topAt(bx, bz) + 1;
+        f.vy -= 14 * dt;
+        f.mesh.position.y += f.vy * dt;
+        if (f.mesh.position.y <= targetY) {
+          f.mesh.position.y = targetY;
+          blocks.push(f.mesh);
+          setTopAt(bx, bz, targetY);
+          fallingBlocks.splice(i, 1);
+        }
+      }
+    }
+
     // Build/break: raycast straight out from the crosshair (screen center)
     // along the camera's look direction, and add/remove a block there.
     const raycaster = new THREE.Raycaster();
@@ -666,6 +699,8 @@
       newBlock.position.copy(hit.object.position).add(hit.face.normal);
       scene.add(newBlock);
       blocks.push(newBlock);
+      const nbx = Math.floor(newBlock.position.x), nbz = Math.floor(newBlock.position.z), nby = Math.round(newBlock.position.y);
+      if (nby > topAt(nbx, nbz)) setTopAt(nbx, nbz, nby);
       if (!creative) {
         inventory[currentName] -= 1;
         if (inventory[currentName] <= 0) currentName = null;
@@ -696,9 +731,21 @@
 
       const hits = raycaster.intersectObjects(blocks);
       if (!hits.length || blocks.length <= 1) return;
-      addToInventory(hits[0].object.material);
-      scene.remove(hits[0].object);
-      blocks.splice(blocks.indexOf(hits[0].object), 1);
+      const gone = hits[0].object;
+      const bx = Math.floor(gone.position.x), bz = Math.floor(gone.position.z), by = Math.round(gone.position.y);
+      addToInventory(gone.material);
+      scene.remove(gone);
+      blocks.splice(blocks.indexOf(gone), 1);
+
+      // If we just dug out the top of this column, the surface drops by
+      // one — and if a sand block was resting right above it, it falls.
+      if (by === topAt(bx, bz)) {
+        setTopAt(bx, bz, by - 1);
+        const above = blocks.find((b) =>
+          Math.floor(b.position.x) === bx && Math.floor(b.position.z) === bz && Math.round(b.position.y) === by + 1
+        );
+        if (above && above.material === sandMat) startFalling(above);
+      }
     }
     document.getElementById("removeBtn").addEventListener("pointerdown", breakAtCrosshair);
     document.getElementById("buildBtn").addEventListener("pointerdown", buildAtCrosshair);
@@ -862,12 +909,25 @@
       const mesh = makeVillager(villagerColors[i % villagerColors.length]);
       const vx = VILLAGE_CENTER.x + (Math.random() - 0.5) * 6;
       const vz = VILLAGE_CENTER.z + (Math.random() - 0.5) * 6;
-      mesh.position.set(vx, heightAt(Math.floor(vx), Math.floor(vz)) + 1, vz);
+      mesh.position.set(vx, topAt(Math.floor(vx), Math.floor(vz)) + 1, vz);
       scene.add(mesh);
       villagers.push({
         mesh, homeX: vx, homeZ: vz, dir: Math.random() * Math.PI * 2,
-        timer: Math.random() * 2, speed: 0.3 + Math.random() * 0.3, paused: false,
+        timer: Math.random() * 2, speed: 0.3 + Math.random() * 0.3, paused: false, vy: 0,
       });
+    }
+    // Shared "fall toward the current ground" helper — used by both
+    // villagers and animals so they drop into holes you've dug instead of
+    // teleporting straight down.
+    function fallToGround(entity, dt) {
+      const gy = topAt(Math.floor(entity.mesh.position.x), Math.floor(entity.mesh.position.z)) + 1;
+      if (entity.mesh.position.y > gy) {
+        entity.vy -= 14 * dt;
+        entity.mesh.position.y = Math.max(gy, entity.mesh.position.y + entity.vy * dt);
+      } else {
+        entity.vy = 0;
+        entity.mesh.position.y = gy;
+      }
     }
     function updateVillagers(dt) {
       villagers.forEach((v) => {
@@ -885,8 +945,7 @@
           v.mesh.position.z += Math.cos(v.dir) * v.speed * dt;
           v.mesh.rotation.y = v.dir;
         }
-        const gy = heightAt(Math.floor(v.mesh.position.x), Math.floor(v.mesh.position.z)) + 1;
-        v.mesh.position.y = gy;
+        fallToGround(v, dt);
       });
     }
 
@@ -901,11 +960,11 @@
       const mesh = makeAnimal(kind.body, kind.spot);
       const ax = (Math.random() - 0.5) * HALF * 1.6;
       const az = (Math.random() - 0.5) * HALF * 1.6;
-      mesh.position.set(ax, heightAt(Math.floor(ax), Math.floor(az)) + 1, az);
+      mesh.position.set(ax, topAt(Math.floor(ax), Math.floor(az)) + 1, az);
       scene.add(mesh);
       animals.push({
         mesh, dir: Math.random() * Math.PI * 2, timer: Math.random() * 2,
-        speed: 0.35 + Math.random() * 0.7, paused: false, hp: 3,
+        speed: 0.35 + Math.random() * 0.7, paused: false, hp: 3, vy: 0,
       });
     }
     function updateAnimals(dt) {
@@ -924,8 +983,7 @@
           a.mesh.position.z += Math.cos(a.dir) * a.speed * dt;
           a.mesh.rotation.y = a.dir;
         }
-        const gy = heightAt(Math.floor(a.mesh.position.x), Math.floor(a.mesh.position.z)) + 1;
-        a.mesh.position.y = gy;
+        fallToGround(a, dt);
       });
     }
 
@@ -969,7 +1027,7 @@
       clockEl.textContent = `${icon} ${hh}:${mm}`;
     }
     const WALK_SPEED = 4, GRAVITY = 14, JUMP_SPEED = 6, EYE_HEIGHT = 1.6;
-    function groundSurfaceY(px, pz) { return heightAt(Math.floor(px), Math.floor(pz)) + 1; }
+    function groundSurfaceY(px, pz) { return topAt(Math.floor(px), Math.floor(pz)) + 1; }
 
     renderer.setAnimationLoop(() => {
       const dt = Math.min(clock.getDelta(), 0.05);
@@ -1042,6 +1100,7 @@
       updateVillagers(dt);
       updateDayNight(dt);
       checkPortals(dt);
+      updateFalling(dt);
       craftBtn.classList.toggle("show", nearCraftingTable());
 
       renderer.render(scene, camera);
