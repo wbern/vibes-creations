@@ -67,6 +67,23 @@
       border-radius: 999px; font: 700 .85rem/1 system-ui, sans-serif;
       margin: 0 0 .3rem;
     }
+    /* Styrkors (D-pad) för att sikta. 44px+ rutor för fingrar. */
+    .dpad {
+      display: grid; gap: 6px;
+      grid-template: repeat(3, 48px) / repeat(3, 48px);
+    }
+    .dpad button {
+      font-size: 1.3rem; color: #fff; background: var(--ink);
+      border: 0; border-radius: 10px;
+      min-height: 44px; min-width: 44px;
+      touch-action: manipulation; cursor: pointer;
+    }
+    .dpad button:active { transform: scale(.92); }
+    .dpad .up    { grid-area: 1 / 2; }
+    .dpad .left  { grid-area: 2 / 1; }
+    .dpad .right { grid-area: 2 / 3; }
+    .dpad .down  { grid-area: 3 / 2; }
+    .key-hint { font-size: .85rem; opacity: .65; margin: 0; }
   </style>
 </head>
 <body>
@@ -83,7 +100,7 @@
         <!-- mållinje, längre bort mot horisonten -->
         <line x1="160" y1="225" x2="340" y2="225" stroke="white" stroke-width="2" />
 
-        <!-- målburen: lite större nu, men fortfarande en bit bort -->
+        <!-- målburen -->
         <g id="goalFrame" stroke="white" stroke-width="5" fill="none">
           <line x1="165" y1="225" x2="165" y2="110" />
           <line x1="335" y1="225" x2="335" y2="110" />
@@ -99,8 +116,16 @@
           <line x1="165" y1="205" x2="335" y2="205" />
         </g>
 
-        <!-- straffpunkt -->
-        <circle cx="250" cy="300" r="3" fill="white" />
+        <!-- tydlig straffpunkt, bollen står alltid här när man skjuter -->
+        <circle cx="250" cy="300" r="10" fill="none" stroke="white" stroke-width="2" opacity="0.8" />
+        <circle cx="250" cy="300" r="4" fill="white" />
+
+        <!-- siktmärke: visar var du siktar just nu -->
+        <g id="aimMarker" stroke="#ffffff" stroke-width="2" opacity="0.85">
+          <line x1="-10" y1="0" x2="10" y2="0" />
+          <line x1="0" y1="-10" x2="0" y2="10" />
+          <circle r="12" fill="none" />
+        </g>
 
         <!-- den som INTE styrs av knapparna just nu -->
         <g id="aiChar" transform="translate(250,195)"></g>
@@ -116,16 +141,21 @@
     </div>
 
     <div class="card center-text" id="statusCard">
-      <p class="pill" id="round">Skott 1 av 5 — du skjuter</p>
-      <p id="status">Välj var du skjuter!</p>
+      <p class="pill" id="round">Straff 1 av 5 — du skjuter</p>
+      <p id="status">Sikta med pilarna, sen tryck Skjut!</p>
       <p class="score">Dina mål: <span id="goals">0</span> — Dina räddningar: <span id="saves">0</span></p>
     </div>
 
-    <div class="row" id="zoneButtons">
-      <button class="btn-chunky pop" style="--c:#f4c542" data-zone="left">Vänster</button>
-      <button class="btn-chunky pop" style="--c:#ff7a5a" data-zone="mid">Mitten</button>
-      <button class="btn-chunky pop" style="--c:#3fa34d" data-zone="right">Höger</button>
+    <div class="row">
+      <div class="dpad" aria-label="Sikta">
+        <button class="up"    data-dir="up"    aria-label="Upp">↑</button>
+        <button class="left"  data-dir="left"  aria-label="Vänster">←</button>
+        <button class="right" data-dir="right" aria-label="Höger">→</button>
+        <button class="down"  data-dir="down"  aria-label="Ner">↓</button>
+      </div>
+      <button class="btn-chunky pop" id="confirmBtn" style="--c:#3fa34d">Skjut!</button>
     </div>
+    <p class="key-hint">Piltangenterna funkar också, och mellanslag för att skjuta/hoppa.</p>
 
     <button class="btn-chunky pop" id="newGameBtn" style="--c:#8a5a24; display:none;">Spela igen</button>
   </div>
@@ -133,32 +163,36 @@
   <script>
     // ============================================================
     // Straffläggning i två faser:
-    //  Fas 1 (5 straffar): DU skjuter, en hund är målvakt.
-    //  Fas 2 (5 straffar): DU är målvakt, en hund skjuter.
-    // Tre zoner i målet: vänster, mitten, höger.
+    //  Fas 1 (5 straffar): DU skjuter, en motståndare är målvakt.
+    //  Fas 2 (5 straffar): DU är målvakt, en motståndare skjuter.
+    // Du siktar FRITT inuti målet med pilar/styrkors, inte bara i
+    // tre fasta zoner — sen bekräftar du med "Skjut!"-knappen.
     // ============================================================
-    var zones = { left: { x: 210 }, mid: { x: 250 }, right: { x: 290 } };
-    var zoneKeys = Object.keys(zones);
     var ROUNDS_PER_PHASE = 5;
+    var AIM_MIN_X = 190, AIM_MAX_X = 310, AIM_MIN_Y = 125, AIM_MAX_Y = 215;
+    var SAVE_RADIUS = 55; // hur nära målvakten måste vara för att rädda
 
-    var goals = 0;   // mål du gjort som skytt
-    var saves = 0;   // räddningar du gjort som målvakt
+    var goals = 0;
+    var saves = 0;
     var roundIndex = 0; // 0..9, de första 5 är skytt-fasen
     var busy = false;
+    var aim = { x: 250, y: 170 };
 
     var ball = document.getElementById("ball");
     var youChar = document.getElementById("youChar");
     var aiChar = document.getElementById("aiChar");
+    var aimMarker = document.getElementById("aimMarker");
     var titleEl = document.getElementById("title");
     var statusEl = document.getElementById("status");
     var roundEl = document.getElementById("round");
     var goalsEl = document.getElementById("goals");
     var savesEl = document.getElementById("saves");
-    var buttons = document.querySelectorAll("#zoneButtons button");
-    var zoneButtonsWrap = document.getElementById("zoneButtons");
+    var confirmBtn = document.getElementById("confirmBtn");
     var newGameBtn = document.getElementById("newGameBtn");
 
     var SPOT_Y = 300, GOAL_Y = 195;
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
     // Enkel tecknad spelare. isKeeper=true ger utsträckta armar (som en
     // målvakt redo att hoppa), annars armar rakt ner.
@@ -175,36 +209,51 @@
         '<circle cx="0" cy="-24" r="9" fill="#f0d9b5" />';
     }
 
-    function pickRandomZone() {
-      return zoneKeys[Math.floor(Math.random() * zoneKeys.length)];
+    function isShootPhase() { return roundIndex < ROUNDS_PER_PHASE; }
+
+    function renderAim() {
+      aimMarker.setAttribute("transform", "translate(" + aim.x + "," + aim.y + ")");
     }
 
-    function isShootPhase() {
-      return roundIndex < ROUNDS_PER_PHASE;
+    function moveAim(dir) {
+      if (busy) return;
+      var step = 18;
+      if (dir === "up") aim.y -= step;
+      if (dir === "down") aim.y += step;
+      if (dir === "left") aim.x -= step;
+      if (dir === "right") aim.x += step;
+      aim.x = clamp(aim.x, AIM_MIN_X, AIM_MAX_X);
+      aim.y = clamp(aim.y, AIM_MIN_Y, AIM_MAX_Y);
+      renderAim();
     }
 
-    // Målvakten står långt bort vid det mindre målet, så den ritas
-    // mindre (scale 0.55) än den som står på straffpunkten (scale 1).
+    function randomAimPoint() {
+      return {
+        x: AIM_MIN_X + Math.random() * (AIM_MAX_X - AIM_MIN_X),
+        y: AIM_MIN_Y + Math.random() * (AIM_MAX_Y - AIM_MIN_Y)
+      };
+    }
+
     function setupVisualsForPhase() {
+      aim = { x: 250, y: 170 };
+      renderAim();
       if (isShootPhase()) {
-        // Du skjuter från straffpunkten, motståndaren är målvakt.
         youChar.innerHTML = personSvg("#58a4ff", false);
         youChar.setAttribute("transform", "translate(250," + SPOT_Y + ") scale(1)");
         aiChar.innerHTML = personSvg("#ff5a5a", true);
         aiChar.setAttribute("transform", "translate(250," + GOAL_Y + ") scale(0.7)");
         ball.setAttribute("transform", "translate(250," + SPOT_Y + ")");
         titleEl.textContent = "⚽ Du skjuter!";
+        confirmBtn.textContent = "Skjut!";
       } else {
-        // Du är målvakt, motståndaren skjuter.
         youChar.innerHTML = personSvg("#58a4ff", true);
         youChar.setAttribute("transform", "translate(250," + GOAL_Y + ") scale(0.7)");
         aiChar.innerHTML = personSvg("#ff5a5a", false);
         aiChar.setAttribute("transform", "translate(250," + SPOT_Y + ") scale(1)");
         ball.setAttribute("transform", "translate(250," + SPOT_Y + ")");
         titleEl.textContent = "🥅 Du är målvakt!";
+        confirmBtn.textContent = "Hoppa!";
       }
-      var zoneLabel = isShootPhase() ? ["Skjut vänster", "Skjut mitten", "Skjut höger"] : ["Hoppa vänster", "Stå kvar", "Hoppa höger"];
-      buttons.forEach(function (b, i) { b.textContent = zoneLabel[i]; });
     }
 
     function updateRoundLabel() {
@@ -213,25 +262,27 @@
       roundEl.textContent = "Straff " + roundInPhase + " av " + ROUNDS_PER_PHASE + " — " + phaseText;
     }
 
-    function play(zone) {
+    function confirmAction() {
       if (busy) return;
       busy = true;
-      buttons.forEach(function (b) { b.disabled = true; });
+      confirmBtn.disabled = true;
 
       var shootPhase = isShootPhase();
-      var aiZone = pickRandomZone();
-      var shotZone = shootPhase ? zone : aiZone;   // vart bollen faktiskt skjuts
-      var diveZone = shootPhase ? aiZone : zone;    // vart målvakten hoppar
+      var aiPoint = randomAimPoint();
+      var shotPoint = shootPhase ? { x: aim.x, y: aim.y } : aiPoint; // vart bollen skjuts
+      var divePoint = shootPhase ? aiPoint : { x: aim.x, y: aim.y }; // vart målvakten hoppar
 
       ball.style.transition = "transform 450ms ease-in";
-      ball.setAttribute("transform", "translate(" + zones[shotZone].x + "," + (GOAL_Y + 15) + ")");
+      ball.setAttribute("transform", "translate(" + shotPoint.x + "," + (shotPoint.y + 15) + ")");
 
       var keeperChar = shootPhase ? aiChar : youChar;
       keeperChar.style.transition = "transform 380ms ease-in";
-      keeperChar.setAttribute("transform", "translate(" + zones[diveZone].x + "," + GOAL_Y + ") scale(0.7)");
+      keeperChar.setAttribute("transform", "translate(" + divePoint.x + "," + divePoint.y + ") scale(0.7)");
 
       setTimeout(function () {
-        var savedShot = (shotZone === diveZone);
+        var dist = Math.hypot(shotPoint.x - divePoint.x, shotPoint.y - divePoint.y);
+        var savedShot = dist < SAVE_RADIUS;
+
         if (shootPhase) {
           if (savedShot) {
             statusEl.textContent = "Målvakten räddade! 🧤";
@@ -258,12 +309,12 @@
           } else {
             setupVisualsForPhase();
             updateRoundLabel();
-            buttons.forEach(function (b) { b.disabled = false; });
+            confirmBtn.disabled = false;
             busy = false;
             if (roundIndex === ROUNDS_PER_PHASE) {
               statusEl.textContent = "Nu byter ni roller — du är målvakt!";
             } else {
-              statusEl.textContent = isShootPhase() ? "Välj var du skjuter!" : "Välj vart du hoppar!";
+              statusEl.textContent = "Sikta med pilarna, sen tryck " + confirmBtn.textContent;
             }
           }
         }, 900);
@@ -271,7 +322,8 @@
     }
 
     function endGame() {
-      zoneButtonsWrap.style.display = "none";
+      document.querySelector(".dpad").style.display = "none";
+      confirmBtn.style.display = "none";
       newGameBtn.style.display = "inline-flex";
       roundEl.textContent = "Straffläggningen är klar!";
       statusEl.textContent = "Du gjorde " + goals + " av 5 mål, och räddade " + saves + " av 5 straffar! 🏆";
@@ -284,19 +336,32 @@
       roundIndex = 0;
       goalsEl.textContent = 0;
       savesEl.textContent = 0;
-      zoneButtonsWrap.style.display = "flex";
+      document.querySelector(".dpad").style.display = "grid";
+      confirmBtn.style.display = "inline-flex";
       newGameBtn.style.display = "none";
       setupVisualsForPhase();
       updateRoundLabel();
-      statusEl.textContent = "Välj var du skjuter!";
-      buttons.forEach(function (b) { b.disabled = false; });
+      statusEl.textContent = "Sikta med pilarna, sen tryck " + confirmBtn.textContent;
+      confirmBtn.disabled = false;
       busy = false;
     }
 
-    buttons.forEach(function (btn) {
-      btn.addEventListener("click", function () { play(btn.dataset.zone); });
+    document.querySelectorAll(".dpad button").forEach(function (b) {
+      b.addEventListener("click", function () { moveAim(b.dataset.dir); });
     });
+    confirmBtn.addEventListener("click", confirmAction);
     newGameBtn.addEventListener("click", resetGame);
+
+    window.addEventListener("keydown", function (e) {
+      var map = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
+      if (map[e.key]) {
+        e.preventDefault();
+        moveAim(map[e.key]);
+      } else if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        confirmAction();
+      }
+    });
 
     setupVisualsForPhase();
     updateRoundLabel();

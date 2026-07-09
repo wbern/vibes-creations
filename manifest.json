@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-09T14:09:58Z",
+  "generated_at": "2026-07-09T14:10:04Z",
   "entries": [
+    {
+      "slug": "ivriga-abborren",
+      "title": "Straffläggning",
+      "display_name": "student11",
+      "thumbnail": "students/pilot/ivriga-abborren/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/ivriga-abborren/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/ivriga-abborren",
+      "date": "2026-07-09T14:10:04Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "blanka-schimpansen",
       "title": "VGCRAFT",
@@ -75,17 +86,6 @@
       "live_url": "https://public.vibe.enmansbyra.se/students/pilot/milda-muslan/",
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/milda-muslan",
       "date": "2026-07-09T14:08:40Z",
-      "persona": "kladd",
-      "tags": []
-    },
-    {
-      "slug": "ivriga-abborren",
-      "title": "Straffläggning",
-      "display_name": "student11",
-      "thumbnail": "students/pilot/ivriga-abborren/thumbnail.webp",
-      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/ivriga-abborren/",
-      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/ivriga-abborren",
-      "date": "2026-07-09T13:33:15Z",
       "persona": "kladd",
       "tags": []
     },
