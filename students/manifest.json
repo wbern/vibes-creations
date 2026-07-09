@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "milda-muslan",
+          "boilerplate": false,
+          "student": "william1",
+          "created_at": 1783592105.7892053,
+          "display_name": "william1",
+          "title": "min sida",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T14:08:35Z",
+          "published_at": "2026-07-09T14:08:40Z",
+          "thumbnail": "students/pilot/milda-muslan/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "smala-ponnynen",
           "boilerplate": true,
           "student": "student15",
@@ -106,35 +135,6 @@
           "archived_at": "2026-07-02T16:05:17Z",
           "published_at": "2026-07-09T14:02:54Z",
           "thumbnail": "students/pilot/ivriga-radjuret/thumbnail.webp",
-          "scan": {
-            "counts": {
-              "personnummer": 0,
-              "secrets": 0,
-              "ner": 0,
-              "total": 0
-            },
-            "finding_count": 0,
-            "moderation": {
-              "action": "error",
-              "soft_flag_categories": []
-            }
-          }
-        },
-        {
-          "slug": "milda-muslan",
-          "boilerplate": false,
-          "student": "william1",
-          "created_at": 1783592105.7892053,
-          "display_name": "william1",
-          "title": "Studsboll 3D",
-          "description": null,
-          "tags": [],
-          "level": null,
-          "model": null,
-          "persona": "kladd",
-          "archived_at": "2026-07-09T09:16:14Z",
-          "published_at": "2026-07-09T14:02:47Z",
-          "thumbnail": "students/pilot/milda-muslan/thumbnail.webp",
           "scan": {
             "counts": {
               "personnummer": 0,

@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-09T14:03:15Z",
+  "generated_at": "2026-07-09T14:08:40Z",
   "entries": [
+    {
+      "slug": "milda-muslan",
+      "title": "min sida",
+      "display_name": "william1",
+      "thumbnail": "students/pilot/milda-muslan/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/milda-muslan/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/milda-muslan",
+      "date": "2026-07-09T14:08:40Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "ivriga-radjuret",
       "title": "Bilracing",
@@ -9,17 +20,6 @@
       "live_url": "https://public.vibe.enmansbyra.se/students/pilot/ivriga-radjuret/",
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/ivriga-radjuret",
       "date": "2026-07-09T14:02:54Z",
-      "persona": "kladd",
-      "tags": []
-    },
-    {
-      "slug": "milda-muslan",
-      "title": "Studsboll 3D",
-      "display_name": "william1",
-      "thumbnail": "students/pilot/milda-muslan/thumbnail.webp",
-      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/milda-muslan/",
-      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/milda-muslan",
-      "date": "2026-07-09T14:02:47Z",
       "persona": "kladd",
       "tags": []
     },
