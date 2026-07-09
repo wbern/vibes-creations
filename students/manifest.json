@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "talmodiga-lejonet",
+          "boilerplate": false,
+          "student": "student08",
+          "created_at": 1783600182.4466467,
+          "display_name": "student08",
+          "title": "Klossbanan",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T13:27:49Z",
+          "published_at": "2026-07-09T13:27:53Z",
+          "thumbnail": "students/pilot/talmodiga-lejonet/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "rena-myrsloket",
           "boilerplate": false,
           "student": "student10",
