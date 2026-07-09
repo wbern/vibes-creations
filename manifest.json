@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-09T13:13:12Z",
+  "generated_at": "2026-07-09T13:14:10Z",
   "entries": [
+    {
+      "slug": "pigga-sfinksen",
+      "title": "Ballerinan och Baletten! 🩰",
+      "display_name": "student06",
+      "thumbnail": "students/pilot/pigga-sfinksen/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/pigga-sfinksen/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/pigga-sfinksen",
+      "date": "2026-07-09T13:14:10Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "rena-myrsloket",
       "title": "Vaibhav's Block World",
@@ -62,18 +73,6 @@
       "persona": "kladd",
       "tags": [],
       "description": "Ett roligt spel där du snurrar en 3D-potatis!"
-    },
-    {
-      "slug": "pigga-sfinksen",
-      "title": "Bilracing",
-      "display_name": "student06",
-      "thumbnail": "students/pilot/pigga-sfinksen/thumbnail.webp",
-      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/pigga-sfinksen/",
-      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/pigga-sfinksen",
-      "date": "2026-07-03T06:19:05Z",
-      "persona": "kladd",
-      "tags": [],
-      "description": "Ett roligt spel om bilracing där du kan tävla med bilar!"
     },
     {
       "slug": "vita-pantern",
