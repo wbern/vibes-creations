@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "varsamma-nyckelpigan",
+          "boilerplate": false,
+          "student": "student09",
+          "created_at": 1783600294.6627445,
+          "display_name": "student09",
+          "title": "Bygg din labyrint!",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T14:09:44Z",
+          "published_at": "2026-07-09T14:09:49Z",
+          "thumbnail": "students/pilot/varsamma-nyckelpigan/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "talmodiga-lejonet",
           "boilerplate": false,
           "student": "student08",

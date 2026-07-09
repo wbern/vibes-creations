@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bygg din labyrint!</title>
+  <style>
+    html, body { margin: 0; padding: 0; min-height: 100%; overscroll-behavior: none; }
+    body {
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    :root {
+      --bg: #f4ecd8; --ink: #2b2b2b; --card: #ffffff;
+      --accent: #ff7a5a; --accent-2: #58a4ff; --radius: 16px; --lip: 6px;
+    }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+    h1 { font: 900 1.8rem/1.05 system-ui, sans-serif; letter-spacing: -0.02em; margin: .5rem 0; }
+    h2 { font: 800 1.2rem/1.15 system-ui, sans-serif; margin: 1rem 0 .25rem; }
+    .page { max-width: 40rem; margin: 0 auto; padding: 1rem; box-sizing: border-box; }
+    .row { display: flex; gap: .75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .pill {
+      display: inline-block; padding: .3rem .7rem;
+      background: var(--accent-2); color: #fff;
+      border-radius: 999px; font: 700 .9rem/1 system-ui, sans-serif;
+    }
+    .btn-chunky {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 56px; min-width: 64px; padding: 14px 22px;
+      border: 0; border-radius: var(--radius);
+      font: 800 18px/1 system-ui, sans-serif; color: #fff;
+      background: var(--c, var(--accent));
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--accent)) 70%, black);
+      cursor: pointer; touch-action: manipulation;
+      transition: transform 80ms;
+    }
+    .btn-chunky:active { transform: translateY(var(--lip)); box-shadow: 0 0 0 transparent; }
+
+    #game {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-height: 65vh;
+      background: #cfe8ff;
+      border-radius: var(--radius);
+      overflow: hidden;
+      touch-action: manipulation;
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--ink) 14%, transparent);
+    }
+    .wall {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,.25);
+    }
+    #runner, #goal, #monster {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      font-size: 26px;
+      line-height: 32px;
+      text-align: center;
+      transition: left 90ms, top 90ms;
+    }
+    #caught {
+      position: absolute; inset: 0;
+      display: none;
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: .5rem;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      font: 800 1.4rem system-ui, sans-serif;
+    }
+    #win {
+      position: absolute; inset: 0;
+      display: none;
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: .5rem;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      font: 800 1.4rem system-ui, sans-serif;
+    }
+    #palette { justify-content: center; margin-top: .75rem; }
+    .swatch {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      border: 3px solid transparent;
+      touch-action: manipulation;
+    }
+    .swatch.selected { border-color: var(--ink); }
+    .dpad { display: grid; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(3, 56px); gap: .4rem; margin: 1rem auto; justify-content: center; }
+    .dpad .btn-chunky { min-width: 0; padding: 0; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="row">
+      <h1>🧩 Bygg din labyrint!</h1>
+    </div>
+    <p>Lägg ut väggar, sen styr 🥔 till 🚩!</p>
+    <div id="game">
+      <div id="runner">🥔</div>
+      <div id="goal">🚩</div>
+      <div id="monster">👹</div>
+      <div id="win">
+        <div>🎉 Du hittade vägen!</div>
+        <button class="btn-chunky" id="playAgain" style="--c:#58a4ff">Spela igen</button>
+      </div>
+      <div id="caught">
+        <div>👹 Monstret tog dig!</div>
+        <button class="btn-chunky" id="tryAgain" style="--c:#58a4ff">Försök igen</button>
+      </div>
+    </div>
+
+    <div class="row" id="palette">
+      <button class="btn-chunky" id="buildToggle" style="--c:#3f8a4a">Bygg-läge: På</button>
+      <button class="swatch selected" style="background:#ff7a5a" data-color="#ff7a5a"></button>
+      <button class="swatch" style="background:#58a4ff" data-color="#58a4ff"></button>
+      <button class="swatch" style="background:#3f8a4a" data-color="#3f8a4a"></button>
+      <button class="swatch" style="background:#ffd166" data-color="#ffd166"></button>
+      <button class="btn-chunky" id="clearGrid" style="--c:#888">Rensa</button>
+    </div>
+
+    <h2>🕹️ Styr 🥔</h2>
+    <div class="dpad">
+      <div></div>
+      <button class="btn-chunky" id="up" style="--c:#58a4ff">⬆️</button>
+      <div></div>
+      <button class="btn-chunky" id="dpleft" style="--c:#58a4ff">⬅️</button>
+      <div></div>
+      <button class="btn-chunky" id="dpright" style="--c:#58a4ff">➡️</button>
+      <div></div>
+      <button class="btn-chunky" id="down" style="--c:#58a4ff">⬇️</button>
+      <div></div>
+    </div>
+  </div>
+  <script>
+    // Ett rutnät-baserat labyrintspel. I bygg-läge lägger du ut väggar genom
+    // att trycka i rutan. Sen styr du potatisen 🥔 med knapparna eller
+    // piltangenterna/WASD till målflaggan 🚩, utan att gå igenom väggarna.
+    const game = document.getElementById('game');
+    const runner = document.getElementById('runner');
+    const goalEl = document.getElementById('goal');
+    const winEl = document.getElementById('win');
+    const GRID = 32;
+
+    let buildMode = true;
+    let currentColor = '#ff7a5a';
+    const walls = new Set(); // "col,row" strängar för varje vägg
+    let cols = 1, rows = 1;
+    let player = { col: 0, row: 0 };
+    let goal = { col: 0, row: 0 };
+    let won = false;
+
+    function key(col, row) { return col + ',' + row; }
+
+    function measureGrid() {
+      cols = Math.max(1, Math.floor(game.clientWidth / GRID));
+      rows = Math.max(1, Math.floor(game.clientHeight / GRID));
+      goal = { col: cols - 1, row: rows - 1 };
+      layoutGoal();
+    }
+
+    function layoutRunner() {
+      runner.style.left = (player.col * GRID) + 'px';
+      runner.style.top = (player.row * GRID) + 'px';
+    }
+    function layoutGoal() {
+      goalEl.style.left = (goal.col * GRID) + 'px';
+      goalEl.style.top = (goal.row * GRID) + 'px';
+    }
+
+    window.addEventListener('resize', () => { measureGrid(); layoutRunner(); });
+    measureGrid();
+    layoutRunner();
+
+    // Bygg-läge: tryck i rutan för att lägga eller ta bort en vägg.
+    game.addEventListener('pointerdown', (e) => {
+      if (!buildMode) return;
+      e.preventDefault();
+      const rect = game.getBoundingClientRect();
+      const col = Math.floor((e.clientX - rect.left) / GRID);
+      const row = Math.floor((e.clientY - rect.top) / GRID);
+      if ((col === player.col && row === player.row) || (col === goal.col && row === goal.row)) return;
+      const k = key(col, row);
+      const existing = document.querySelector(`.wall[data-key="${k}"]`);
+      if (existing) {
+        existing.remove();
+        walls.delete(k);
+      } else {
+        const wall = document.createElement('div');
+        wall.className = 'wall';
+        wall.dataset.key = k;
+        wall.style.left = (col * GRID) + 'px';
+        wall.style.top = (row * GRID) + 'px';
+        wall.style.background = currentColor;
+        game.appendChild(wall);
+        walls.add(k);
+      }
+    });
+
+    document.getElementById('buildToggle').addEventListener('click', (e) => {
+      buildMode = !buildMode;
+      e.target.textContent = 'Bygg-läge: ' + (buildMode ? 'På' : 'Av');
+    });
+
+    document.querySelectorAll('.swatch').forEach((sw) => {
+      sw.addEventListener('click', () => {
+        document.querySelectorAll('.swatch').forEach((s) => s.classList.remove('selected'));
+        sw.classList.add('selected');
+        currentColor = sw.dataset.color;
+      });
+    });
+
+    document.getElementById('clearGrid').addEventListener('click', () => {
+      document.querySelectorAll('.wall').forEach((w) => w.remove());
+      walls.clear();
+    });
+
+    // Flytta potatisen ett steg i taget, blockerad av väggar och kanten.
+    function move(dCol, dRow) {
+      if (won || caught) return;
+      const col = player.col + dCol;
+      const row = player.row + dRow;
+      if (col < 0 || row < 0 || col >= cols || row >= rows) return;
+      if (walls.has(key(col, row))) return;
+      player = { col, row };
+      layoutRunner();
+      if (col === goal.col && row === goal.row) {
+        won = true;
+        winEl.style.display = 'flex';
+      }
+    }
+
+    document.getElementById('up').addEventListener('click', () => move(0, -1));
+    document.getElementById('down').addEventListener('click', () => move(0, 1));
+    document.getElementById('dpleft').addEventListener('click', () => move(-1, 0));
+    document.getElementById('dpright').addEventListener('click', () => move(1, 0));
+
+    window.addEventListener('keydown', (e) => {
+      if (['ArrowUp', 'w', 'W'].includes(e.key)) { e.preventDefault(); move(0, -1); }
+      if (['ArrowDown', 's', 'S'].includes(e.key)) { e.preventDefault(); move(0, 1); }
+      if (['ArrowLeft', 'a', 'A'].includes(e.key)) { e.preventDefault(); move(-1, 0); }
+      if (['ArrowRight', 'd', 'D'].includes(e.key)) { e.preventDefault(); move(1, 0); }
+    });
+
+    document.getElementById('playAgain').addEventListener('click', () => {
+      player = { col: 0, row: 0 };
+      layoutRunner();
+      won = false;
+      winEl.style.display = 'none';
+    });
+
+    // Monstret 👹 jagar dig ett steg i taget. Det väljer det steg som
+    // minskar avståndet till dig mest, men går inte igenom väggar.
+    const monsterEl = document.getElementById('monster');
+    const caughtEl = document.getElementById('caught');
+    let monster = { col: 0, row: 0 };
+    let caught = false;
+
+    function layoutMonster() {
+      monsterEl.style.left = (monster.col * GRID) + 'px';
+      monsterEl.style.top = (monster.row * GRID) + 'px';
+    }
+
+    function resetMonster() {
+      // Startar i motsatt hörn från spelaren.
+      monster = { col: cols - 1, row: 0 };
+      layoutMonster();
+      caught = false;
+      caughtEl.style.display = 'none';
+    }
+
+    function monsterStep() {
+      if (won || caught) return;
+      const options = [
+        { col: monster.col + 1, row: monster.row },
+        { col: monster.col - 1, row: monster.row },
+        { col: monster.col, row: monster.row + 1 },
+        { col: monster.col, row: monster.row - 1 },
+      ].filter((p) => p.col >= 0 && p.row >= 0 && p.col < cols && p.row < rows && !walls.has(key(p.col, p.row)));
+
+      if (options.length) {
+        options.sort((a, b) =>
+          (Math.abs(a.col - player.col) + Math.abs(a.row - player.row)) -
+          (Math.abs(b.col - player.col) + Math.abs(b.row - player.row))
+        );
+        monster = options[0];
+        layoutMonster();
+      }
+
+      if (monster.col === player.col && monster.row === player.row) {
+        caught = true;
+        caughtEl.style.display = 'flex';
+      }
+    }
+
+    document.getElementById('tryAgain').addEventListener('click', () => {
+      player = { col: 0, row: 0 };
+      layoutRunner();
+      resetMonster();
+    });
+
+    resetMonster();
+    setInterval(monsterStep, 700);
+  </script>
+</body>
+</html>

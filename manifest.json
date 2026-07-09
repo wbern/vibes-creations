@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-09T14:09:42Z",
+  "generated_at": "2026-07-09T14:09:49Z",
   "entries": [
+    {
+      "slug": "varsamma-nyckelpigan",
+      "title": "Bygg din labyrint!",
+      "display_name": "student09",
+      "thumbnail": "students/pilot/varsamma-nyckelpigan/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/varsamma-nyckelpigan/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/varsamma-nyckelpigan",
+      "date": "2026-07-09T14:09:49Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "talmodiga-lejonet",
       "title": "Klossbanan",
