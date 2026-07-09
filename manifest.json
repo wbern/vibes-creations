@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-09T14:03:01Z",
+  "generated_at": "2026-07-09T14:03:08Z",
   "entries": [
     {
       "slug": "ivriga-radjuret",
@@ -53,17 +53,6 @@
       "description": "VGCRAFT: en egen liten Minecraft-värld med by, bybor, crafting, dygnscykel och portaler till Nether och The End.",
       "level": "avancerad",
       "model": "claude-opus-4-6"
-    },
-    {
-      "slug": "talmodiga-lejonet",
-      "title": "Klossbanan",
-      "display_name": "student08",
-      "thumbnail": "students/pilot/talmodiga-lejonet/thumbnail.webp",
-      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/talmodiga-lejonet/",
-      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/talmodiga-lejonet",
-      "date": "2026-07-09T13:27:53Z",
-      "persona": "kladd",
-      "tags": []
     },
     {
       "slug": "rena-myrsloket",
