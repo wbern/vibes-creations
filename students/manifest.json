@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "smala-ponnynen",
+          "boilerplate": false,
+          "student": "student15",
+          "created_at": 1783601086.958091,
+          "display_name": "student15",
+          "title": "Asien-quiz",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T14:10:32Z",
+          "published_at": "2026-07-09T14:10:37Z",
+          "thumbnail": "students/pilot/smala-ponnynen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "vita-algen",
           "boilerplate": false,
           "student": "student14",
@@ -309,35 +338,6 @@
           "archived_at": "2026-07-09T14:08:35Z",
           "published_at": "2026-07-09T14:08:40Z",
           "thumbnail": "students/pilot/milda-muslan/thumbnail.webp",
-          "scan": {
-            "counts": {
-              "personnummer": 0,
-              "secrets": 0,
-              "ner": 0,
-              "total": 0
-            },
-            "finding_count": 0,
-            "moderation": {
-              "action": "error",
-              "soft_flag_categories": []
-            }
-          }
-        },
-        {
-          "slug": "smala-ponnynen",
-          "boilerplate": true,
-          "student": "student15",
-          "created_at": 1783601086.958091,
-          "display_name": "student15",
-          "title": "min sida",
-          "description": null,
-          "tags": [],
-          "level": null,
-          "model": null,
-          "persona": "kladd",
-          "archived_at": "2026-07-08T21:24:11Z",
-          "published_at": "2026-07-09T14:03:15Z",
-          "thumbnail": "students/pilot/smala-ponnynen/thumbnail.webp",
           "scan": {
             "counts": {
               "personnummer": 0,

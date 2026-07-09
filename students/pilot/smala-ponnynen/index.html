@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>min sida</title>
+  <title>Asien-quiz</title>
   <!-- pilot-student15 -->
   <style>
     /* Theme tokens — the four presets are papper · skog · hav · neon.
@@ -31,184 +31,1427 @@
       box-sizing: border-box;
       color: var(--ink);
     }
+    h1, .h1 { font: 900 2.2rem/1.05 system-ui, sans-serif; letter-spacing: -0.02em; margin: 0 0 .25rem; }
+    h2, .h2 { font: 800 1.4rem/1.2 system-ui, sans-serif; margin: 0 0 1rem; }
+    .page { max-width: 32rem; margin: 0 auto; width: 100%; }
+    .stack { display: flex; flex-direction: column; gap: 1rem; }
+    .row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+    .center { text-align: center; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--ink)) 14%, transparent);
+    }
+    .pill {
+      display: inline-block;
+      padding: .3rem .7rem;
+      background: var(--c, var(--accent-2));
+      color: #fff;
+      border-radius: 999px;
+      font: 700 .85rem/1 system-ui, sans-serif;
+    }
+    .btn-chunky {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 56px;
+      width: 100%;
+      padding: 14px 22px;
+      border: 0;
+      border-radius: var(--radius);
+      font: 800 17px/1.2 system-ui, sans-serif;
+      color: #fff;
+      background: var(--c, var(--accent));
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--accent)) 70%, black);
+      cursor: pointer;
+      transition: transform 80ms, box-shadow 80ms, filter 120ms;
+    }
+    .btn-chunky:active { transform: translateY(var(--lip)); box-shadow: 0 0 0 transparent; }
+    .btn-chunky.correct { --c: #3f8a4a; }
+    .btn-chunky.wrong { --c: #c0392b; }
+    .pop { transition: transform 80ms; }
+    .pop:active { transform: scale(.96); }
+    @keyframes pop-in { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .pop-in { animation: pop-in 240ms cubic-bezier(.5,1.6,.4,1) both; }
+    .bg-scene {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    .level-btn.selected { outline: 4px solid var(--ink); outline-offset: 2px; }
   </style>
 </head>
 <body>
-  <!--
-    ============================================================
-    PLACEHOLDER SECTION — Claude, this whole <section> is the
-    starter splash. When the kid asks you to build their page,
-    REMOVE this entire <section data-placeholder> block (including
-    its inline <style> and <script>) and write fresh content in
-    its place. Nothing outside this section needs to be touched.
-    Everything tutorial-related (the wiggling arrow, the dismiss
-    handler, the localStorage key) lives inside this section on
-    purpose so a single delete clears it all.
-    ============================================================
-  -->
-  <section data-placeholder data-persona="kladd">
-    <style>
-      [data-placeholder] {
-        max-width: 36rem;
-        margin: 0 auto;
-        text-align: center;
-      }
-      [data-placeholder] h1 {
-        font: 900 3rem/1.05 system-ui, sans-serif;
-        letter-spacing: -0.02em;
-        margin: 0 0 .25rem;
-      }
-      [data-placeholder] h1 .wave {
-        display: inline-block;
-        transform-origin: 70% 70%;
-        animation: ph-wave 1.6s infinite;
-      }
-      @keyframes ph-wave {
-        0%, 100% { transform: rotate(0); }
-        25% { transform: rotate(20deg); }
-        75% { transform: rotate(-10deg); }
-      }
-      [data-placeholder] .ph-lead {
-        font-size: 1.25rem;
-        margin: 1rem 0 1.5rem;
-        line-height: 1.4;
-      }
-      [data-placeholder] footer {
-        margin-top: 1.5rem;
-        opacity: 0.55;
-        font-size: 0.9rem;
-      }
+  <!-- Bakgrund: sol, berg, pagod, moln, lyktor och en torii-port, ritad i SVG. -->
+  <svg class="bg-scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <!-- Sol -->
+    <circle cx="200" cy="100" r="55" fill="#e8524a" opacity="0.8" />
+    <!-- Moln, som vågiga asiatiska molnmönster -->
+    <g fill="#ffffff" opacity="0.35">
+      <path d="M20 55 q15 -18 30 0 q10 -12 22 -2 q14 -10 24 4 q-4 12 -20 10 q-30 4 -56 -12 z" />
+      <path d="M280 40 q15 -16 30 0 q10 -10 22 -2 q14 -9 24 4 q-4 11 -20 9 q-30 4 -56 -11 z" />
+    </g>
+    <!-- Berg -->
+    <polygon points="0,220 90,140 160,220" fill="#8a5a3f" opacity="0.55" />
+    <polygon points="120,230 220,120 320,230" fill="#6f4531" opacity="0.6" />
+    <polygon points="240,225 320,160 400,225" fill="#8a5a3f" opacity="0.55" />
+    <!-- Pagod till vänster -->
+    <g fill="#7a2e22" opacity="0.7">
+      <polygon points="35,150 65,150 60,160 40,160" />
+      <rect x="45" y="160" width="10" height="14" />
+      <polygon points="28,160 72,160 66,168 34,168" />
+      <rect x="47" y="168" width="6" height="12" />
+      <polygon points="25,168 75,168 68,176 32,176" />
+      <rect x="49" y="176" width="2" height="8" />
+    </g>
+    <!-- Bambu till höger -->
+    <g stroke="#3f6b3f" stroke-width="4" opacity="0.55" fill="none">
+      <line x1="355" y1="180" x2="355" y2="240" />
+      <line x1="365" y1="170" x2="365" y2="240" />
+      <line x1="375" y1="185" x2="375" y2="240" />
+    </g>
+    <g fill="#3f6b3f" opacity="0.5">
+      <ellipse cx="350" cy="190" rx="10" ry="4" />
+      <ellipse cx="372" cy="180" rx="10" ry="4" />
+    </g>
+    <!-- Hängande lyktor -->
+    <g opacity="0.65">
+      <line x1="90" y1="0" x2="90" y2="18" stroke="#7a2e22" stroke-width="2" />
+      <ellipse cx="90" cy="28" rx="10" ry="13" fill="#e8524a" />
+      <line x1="90" y1="41" x2="90" y2="48" stroke="#7a2e22" stroke-width="2" />
+      <line x1="310" y1="0" x2="310" y2="14" stroke="#7a2e22" stroke-width="2" />
+      <ellipse cx="310" cy="24" rx="9" ry="12" fill="#e8524a" />
+      <line x1="310" y1="36" x2="310" y2="42" stroke="#7a2e22" stroke-width="2" />
+    </g>
+    <!-- Torii-port -->
+    <g fill="#c0392b">
+      <rect x="150" y="150" width="10" height="90" />
+      <rect x="240" y="150" width="10" height="90" />
+      <rect x="140" y="145" width="120" height="10" />
+      <rect x="145" y="160" width="110" height="8" />
+    </g>
+    <!-- Körsbärsblomsgren uppe i hörnet -->
+    <g opacity="0.6">
+      <path d="M370 5 Q355 15 340 12 Q350 25 335 35" stroke="#7a2e22" stroke-width="2" fill="none" />
+      <g fill="#f7b7c2">
+        <circle cx="355" cy="14" r="4" />
+        <circle cx="343" cy="22" r="4" />
+        <circle cx="336" cy="32" r="4" />
+        <circle cx="362" cy="8" r="3" />
+      </g>
+    </g>
+    <!-- Fallande blomblad -->
+    <g fill="#f7b7c2" opacity="0.5">
+      <circle cx="60" cy="90" r="3" />
+      <circle cx="300" cy="130" r="2.5" />
+      <circle cx="200" cy="60" r="2.5" />
+      <circle cx="330" cy="70" r="2" />
+    </g>
+    <!-- Vågmönster längst ner, i stil med japansk konst -->
+    <g stroke="#1e5f7a" stroke-width="3" fill="none" opacity="0.35">
+      <path d="M-10 280 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0" />
+      <path d="M-10 292 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0 q20 -14 40 0" />
+    </g>
+    <!-- Liten drake som ringlar sig över himlen -->
+    <g opacity="0.4" fill="none" stroke="#3f8a4a" stroke-width="5" stroke-linecap="round">
+      <path d="M10 25 Q40 5 70 25 Q100 45 130 25" />
+    </g>
+    <g fill="#3f8a4a" opacity="0.45">
+      <circle cx="10" cy="25" r="7" />
+      <polygon points="4,18 0,10 8,16" />
+      <polygon points="14,18 20,10 12,16" />
+    </g>
+  </svg>
 
-      /* Arrow tutorial — fixed near the viewport bottom-right corner,
-       * pointing toward the chat icon (parent SPA's 3rem FAB sitting
-       * at right:1rem; bottom:1rem; z-index ~2147483640). The arrow's
-       * own z-index is intentionally well below that, so we offset the
-       * SVG away from the corner (right:5rem) to keep the arrowhead
-       * visible next to — not behind — the FAB. */
-      [data-placeholder] .ph-arrow {
-        position: fixed;
-        right: 5rem;
-        bottom: 1rem;
-        width: clamp(140px, 38vw, 220px);
-        pointer-events: none;
-        z-index: 9;
-        transform-origin: 90% 90%;
-        animation: ph-arrow-bob 1.8s ease-in-out infinite;
-      }
-      [data-placeholder] .ph-arrow.is-dismissed {
-        animation: ph-arrow-out .4s ease-in forwards;
-      }
-      [data-placeholder] .ph-arrow svg {
-        display: block;
-        width: 100%;
-        height: auto;
-        overflow: visible;
-      }
-      [data-placeholder] .ph-arrow .ph-arrow-stroke {
-        stroke-dasharray: 320;
-        stroke-dashoffset: 320;
-        animation: ph-arrow-draw 1.6s ease-out .2s forwards;
-      }
-      [data-placeholder] .ph-arrow .ph-arrow-label {
-        display: inline-block;
-        /* rgba, not color-mix — iOS 15.8.3 (iPhone 7 test floor) drops the
-         * whole declaration on unrecognised color-mix and the label goes
-         * unreadable white-on-cream. */
-        background: rgba(43, 43, 43, 0.92);
-        color: #fff;
-        font: 600 .95rem/1.2 system-ui, sans-serif;
-        padding: .4rem .65rem;
-        border-radius: 10px;
-        transform: rotate(-4deg);
-        /* Long persona labels ("tryck här för att prata med Claudina") clip
-         * outside the viewport on iPhone 7 (375px) with nowrap. Allow wrap;
-         * cap the width so the box stays compact rather than stretching the
-         * full label width on desktop. */
-        max-width: 11rem;
-        box-shadow: 0 4px 0 rgba(43, 43, 43, 0.25);
-      }
-      [data-placeholder] .ph-arrow-label-wrap {
-        position: absolute;
-        left: 0;
-        top: 0;
-        transform: translate(-6%, -10%);
-      }
-      @keyframes ph-arrow-bob {
-        0%, 100% { transform: translate(0, 0) rotate(0); }
-        50%      { transform: translate(-6px, -8px) rotate(-2deg); }
-      }
-      @keyframes ph-arrow-draw {
-        to { stroke-dashoffset: 0; }
-      }
-      @keyframes ph-arrow-out {
-        to { opacity: 0; transform: translate(10px, 10px) scale(.9); }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        [data-placeholder] h1 .wave,
-        [data-placeholder] .ph-arrow { animation: none; }
-        [data-placeholder] .ph-arrow .ph-arrow-stroke { stroke-dashoffset: 0; }
-      }
-      @media (max-width: 480px) {
-        [data-placeholder] h1 { font-size: 2.4rem; }
-        [data-placeholder] .ph-arrow { width: clamp(120px, 44vw, 180px); }
-      }
-    </style>
+  <div class="page">
+    <div class="stack center">
+      <h1>🌏 Asien-quiz</h1>
+      <p>Testa vad du vet om länder och språk i Asien!</p>
 
-    <h1>hej! <span class="wave" aria-hidden="true">👋</span></h1>
-    <p class="ph-lead">vill du göra en sida om <b>ditt favoritdjur</b>?</p>
-
-    <footer>byggd av dig + Claude</footer><div class="ph-arrow" aria-hidden="true">
-      <div class="ph-arrow-label-wrap">
-        <span class="ph-arrow-label">tryck här för att prata med Claude</span>
+      <div class="card" id="menu-card">
+        <h2>Vad vill du göra?</h2>
+        <div class="stack">
+          <button class="btn-chunky pop" id="menu-quiz-btn" style="--c:#58a4ff">📝 Quiz</button>
+          <button class="btn-chunky pop" id="menu-train-btn" style="--c:#ff7a5a">🐼 Talking Panda</button>
+        </div>
       </div>
-      <svg viewBox="0 0 220 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path class="ph-arrow-stroke"
-              d="M 20 40
-                 C 70 30, 110 60, 140 80
-                 S 190 120, 200 128"
-              stroke="#2b2b2b"
-              stroke-width="4"
-              stroke-linecap="round"
-              stroke-linejoin="round" /><path d="M 200 128 L 180 122 L 187 108 Z"
-              fill="#2b2b2b"
-              stroke="#2b2b2b"
-              stroke-width="2"
-              stroke-linejoin="round" />
-      </svg>
-    </div>
 
-    <script>
-      // One-time tutorial dismiss. Three triggers:
-      //  1) localStorage flag from a prior visit — skip the arrow entirely.
-      //  2) postMessage {type:"workshop:chat-opened"} from the parent SPA
-      //     when the kid taps the chat icon (App.jsx openChat()).
-      //  3) Defensive fallback: if the SPA never sends the message (older
-      //     deploy), the arrow is harmless — it'll disappear the moment
-      //     Claude rewrites this <section>.
-      // Lives inside the placeholder on purpose: Claude deleting the
-      // section removes this script too, so no leftover handlers haunt
-      // the kid's final page when they ship to the gallery.
-      (function () {
-        var KEY = "workshop:placeholder-arrow:dismissed";
-        var arrow = document.querySelector("[data-placeholder] .ph-arrow");
-        if (!arrow) return;
-        try {
-          if (localStorage.getItem(KEY)) { arrow.remove(); return; }
-        } catch (e) { /* private mode / disabled storage — keep arrow */ }
-        function dismiss() {
-          if (!arrow.isConnected) return;
-          arrow.classList.add("is-dismissed");
-          try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
-          setTimeout(function () { arrow.remove(); }, 450);
+      <div class="card" id="level-card" style="display:none">
+        <button class="btn-chunky pop back-btn" data-back="menu" style="--c:#c0392b; width:auto; min-height:40px; padding:8px 16px; margin-bottom:.75rem">⬅ Tillbaka</button>
+        <h2>Välj level</h2>
+        <div class="stack" id="level-list"></div>
+      </div>
+
+      <div class="card" id="quiz-card" style="display:none">
+        <button class="btn-chunky pop back-btn" data-back="level" style="--c:#c0392b; width:auto; min-height:40px; padding:8px 16px; margin-bottom:.75rem">⬅ Tillbaka</button>
+        <p id="progress" class="pill">Fråga 1</p>
+        <h2 id="question">Laddar fråga...</h2>
+        <div class="stack" id="answers"></div>
+      </div>
+
+      <div class="card" id="lang-select-card" style="display:none">
+        <button class="btn-chunky pop back-btn" data-back="menu" style="--c:#c0392b; width:auto; min-height:40px; padding:8px 16px; margin-bottom:.75rem">⬅ Tillbaka</button>
+        <h2>🐼 Talking Panda — välj språk</h2>
+        <div class="stack" id="lang-select-list"></div>
+      </div>
+
+      <div class="card" id="lang-level-card" style="display:none">
+        <button class="btn-chunky pop back-btn" data-back="langselect" style="--c:#c0392b; width:auto; min-height:40px; padding:8px 16px; margin-bottom:.75rem">⬅ Tillbaka</button>
+        <h2 id="lang-level-title">Välj level</h2>
+        <div class="stack" id="lang-level-list"></div>
+      </div>
+
+      <div class="card" id="train-card" style="display:none">
+        <button class="btn-chunky pop back-btn" data-back="langlevel" style="--c:#c0392b; width:auto; min-height:40px; padding:8px 16px; margin-bottom:.75rem">⬅ Tillbaka</button>
+        <div class="row" style="justify-content:space-between">
+          <p id="train-progress" class="pill">Ord 1 av 6</p>
+          <p id="train-streak" class="pill" style="--c:#e8a33d">🔥 0</p>
+        </div>
+        <h2 id="train-question">Hur säger man "hej"?</h2>
+        <div class="stack" id="train-answers"></div>
+
+        <!-- Talking Panda: en ritad panda som ger en ledtråd när man trycker. -->
+        <div class="row" style="justify-content:center; margin-top:1rem; gap:.5rem">
+          <button class="btn-chunky pop" id="hint-btn" style="--c:#e8a33d; width:auto; padding:10px 18px">
+            <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true" style="margin-right:8px; vertical-align:middle">
+              <!-- Pandans huvud -->
+              <circle cx="16" cy="14" r="9" fill="#2b2b2b" />
+              <circle cx="48" cy="14" r="9" fill="#2b2b2b" />
+              <circle cx="32" cy="34" r="22" fill="#ffffff" />
+              <ellipse cx="23" cy="30" rx="7" ry="9" fill="#2b2b2b" />
+              <ellipse cx="41" cy="30" rx="7" ry="9" fill="#2b2b2b" />
+              <circle cx="23" cy="31" r="2.5" fill="#ffffff" />
+              <circle cx="41" cy="31" r="2.5" fill="#ffffff" />
+              <ellipse cx="32" cy="38" rx="5" ry="4" fill="#2b2b2b" />
+              <path d="M26 45 Q32 49 38 45" stroke="#2b2b2b" stroke-width="2" fill="none" stroke-linecap="round" />
+            </svg>
+            Ledtråd
+          </button>
+        </div>
+        <p id="hint-text" class="pop-in" style="text-align:center; min-height:1.5rem; font-weight:700"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Alla frågor om Asien i en enda lista. Vi delar upp den i tio
+    // levels lite längre ner (5 frågor per level), så level 1 är
+    // lättast och level 10 är svårast.
+    // "answers" är fyra alternativ, "correct" är index (0-3) på rätt svar.
+    var QUESTION_BANK_START = [
+        {
+          q: "Vilket land i Asien har flest invånare?",
+          answers: ["Indien", "Japan", "Thailand", "Saudiarabien"],
+          correct: 0
+        },
+        {
+          q: "Vad heter Japans huvudstad?",
+          answers: ["Seoul", "Peking", "Tokyo", "Bangkok"],
+          correct: 2
+        },
+        {
+          q: "Vilket språk talas mest i Kina?",
+          answers: ["Mandarin", "Koreanska", "Vietnamesiska", "Hindi"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk talar man i Japan?",
+          answers: ["Japanska", "Koreanska", "Thailändska", "Mandarin"],
+          correct: 0
+        },
+        {
+          q: "Vad heter Sydkoreas huvudstad?",
+          answers: ["Pyongyang", "Seoul", "Osaka", "Hanoi"],
+          correct: 1
+        },
+        {
+          q: "Vilken världsdel ligger Kina, Indien och Japan i?",
+          answers: ["Asien", "Afrika", "Europa", "Sydamerika"],
+          correct: 0
+        },
+        {
+          q: "Vad heter Kinas huvudstad?",
+          answers: ["Shanghai", "Peking", "Hongkong", "Kanton"],
+          correct: 1
+        },
+        {
+          q: "Vilket hav ligger öster om Japan?",
+          answers: ["Stilla havet", "Atlanten", "Medelhavet", "Norra ishavet"],
+          correct: 0
+        },
+        {
+          q: "Vad heter Thailands huvudstad?",
+          answers: ["Bangkok", "Hanoi", "Manila", "Phnom Penh"],
+          correct: 0
+        },
+        {
+          q: "Vilket land är känt för Taj Mahal?",
+          answers: ["Indien", "Pakistan", "Nepal", "Bangladesh"],
+          correct: 0
+        },
+        {
+          q: "Vad heter Vietnams huvudstad?",
+          answers: ["Ho Chi Minh-staden", "Hanoi", "Da Nang", "Hue"],
+          correct: 1
+        },
+        {
+          q: "Vilket djur är en symbol för Kina?",
+          answers: ["Pandan", "Lejonet", "Elefanten", "Kängurun"],
+          correct: 0
+        },
+        {
+          q: "Vad heter Filippinernas huvudstad?",
+          answers: ["Manila", "Jakarta", "Bangkok", "Hanoi"],
+          correct: 0
+        },
+        {
+          q: "Vilket land ligger Himalaya-bergen mest i?",
+          answers: ["Nepal", "Thailand", "Vietnam", "Filippinerna"],
+          correct: 0
+        },
+        {
+          q: "Vilket land ligger Mount Everest i (på gränsen till)?",
+          answers: ["Nepal", "Sri Lanka", "Mongoliet", "Filippinerna"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk pratar man mest i Indien tillsammans med engelska?",
+          answers: ["Hindi", "Arabiska", "Thailändska", "Malajiska"],
+          correct: 0
+        },
+        {
+          q: "Vilket land kallas ibland för \"leendenas land\"?",
+          answers: ["Thailand", "Iran", "Kazakstan", "Israel"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Indonesien?",
+          answers: ["Kuala Lumpur", "Manila", "Jakarta", "Hanoi"],
+          correct: 2
+        },
+        {
+          q: "Vilket språk talar de flesta i Vietnam?",
+          answers: ["Vietnamesiska", "Khmer", "Burmesiska", "Tagalog"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Malaysia?",
+          answers: ["Jakarta", "Kuala Lumpur", "Manila", "Singapore"],
+          correct: 1
+        },
+        {
+          q: "Vilket land i Asien består av över 17 000 öar?",
+          answers: ["Indonesien", "Vietnam", "Mongoliet", "Kazakstan"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Myanmar (Burma)?",
+          answers: ["Yangon", "Naypyidaw", "Mandalay", "Bagan"],
+          correct: 1
+        },
+        {
+          q: "Vilket språk talar man i Filippinerna, tillsammans med engelska?",
+          answers: ["Tagalog", "Malajiska", "Khmer", "Laotiska"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Kambodja?",
+          answers: ["Phnom Penh", "Vientiane", "Hanoi", "Bangkok"],
+          correct: 0
+        },
+        {
+          q: "Vilket land har templet Angkor Wat?",
+          answers: ["Kambodja", "Laos", "Myanmar", "Thailand"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Laos?",
+          answers: ["Vientiane", "Luang Prabang", "Phnom Penh", "Hanoi"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk talas i Bangladesh?",
+          answers: ["Bengali", "Hindi", "Urdu", "Nepalesiska"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Singapore?",
+          answers: ["Singapore", "Kuala Lumpur", "Jakarta", "Manila"],
+          correct: 0
+        },
+        {
+          q: "Vilket land ligger klämt mellan Indien och Kina, känt för Himalaya?",
+          answers: ["Bhutan", "Bangladesh", "Sri Lanka", "Malaysia"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk skrivs med det arabiska alfabetet och talas i bl.a. Saudiarabien?",
+          answers: ["Arabiska", "Persiska", "Urdu", "Hebreiska"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Mongoliet?",
+          answers: ["Ulaanbaatar", "Astana", "Tasjkent", "Bisjkek"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk talas i Iran?",
+          answers: ["Persiska (farsi)", "Arabiska", "Turkiska", "Pashto"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Kazakstan?",
+          answers: ["Almaty", "Astana", "Tasjkent", "Bisjkek"],
+          correct: 1
+        },
+        {
+          q: "Vilket språk talas mest i Pakistan?",
+          answers: ["Urdu", "Bengali", "Nepalesiska", "Tamil"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Sri Lanka (den administrativa)?",
+          answers: ["Colombo", "Sri Jayawardenepura Kotte", "Kandy", "Galle"],
+          correct: 1
+        },
+        {
+          q: "Vad heter huvudstaden i Uzbekistan?",
+          answers: ["Tasjkent", "Almaty", "Bisjkek", "Dusjanbe"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk talas i Turkiet?",
+          answers: ["Turkiska", "Arabiska", "Persiska", "Kurdiska"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Kirgizistan?",
+          answers: ["Bisjkek", "Astana", "Dusjanbe", "Asjchabad"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk talas i Israel, förutom arabiska?",
+          answers: ["Hebreiska", "Persiska", "Turkiska", "Kurdiska"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Tadzjikistan?",
+          answers: ["Dusjanbe", "Bisjkek", "Tasjkent", "Astana"],
+          correct: 0
+        },
+        {
+          q: "Vilket land har flaggan med en röd sol i mitten?",
+          answers: ["Japan", "Sydkorea", "Vietnam", "Kina"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Turkmenistan?",
+          answers: ["Asjchabad", "Tasjkent", "Astana", "Bisjkek"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk skrivs med kilskrift-liknande tecken och talas i Georgien?",
+          answers: ["Georgiska", "Armeniska", "Azerbajdzjanska", "Ryska"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Azerbajdzjan?",
+          answers: ["Baku", "Jerevan", "Tbilisi", "Ankara"],
+          correct: 0
+        },
+        {
+          q: "Vilket land är till ytan störst i hela Asien?",
+          answers: ["Ryssland (asiatiska delen)", "Kina", "Indien", "Kazakstan"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk har flest modersmålstalare i hela världen?",
+          answers: ["Mandarin", "Engelska", "Hindi", "Spanska"],
+          correct: 0
+        },
+        {
+          q: "Vad heter valutan i Japan?",
+          answers: ["Yen", "Won", "Yuan", "Baht"],
+          correct: 0
+        },
+        {
+          q: "Vilket land styrs som en delad ö, med Nord- och Syddelen?",
+          answers: ["Korea", "Vietnam", "Cypern", "Kina"],
+          correct: 0
+        },
+        {
+          q: "Vad heter det längsta floden i Asien, som rinner genom Kina?",
+          answers: ["Yangtze", "Mekong", "Ganges", "Indus"],
+          correct: 0
+        },
+        {
+          q: "Vilket land ligger Great Wall (Kinesiska muren) i?",
+          answers: ["Kina", "Mongoliet", "Nordkorea", "Ryssland"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Nordkorea?",
+          answers: ["Pyongyang", "Seoul", "Peking", "Vladivostok"],
+          correct: 0
+        },
+        {
+          q: "Vilket land är känt för sushi?",
+          answers: ["Japan", "Kina", "Thailand", "Sydkorea"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Bhutan?",
+          answers: ["Thimphu", "Kathmandu", "Dhaka", "Naypyidaw"],
+          correct: 0
+        },
+        {
+          q: "Vilket land firar nyår med festivalen Songkran (vattenfestival)?",
+          answers: ["Thailand", "Japan", "Sydkorea", "Kina"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Nepal?",
+          answers: ["Kathmandu", "Thimphu", "Dhaka", "Colombo"],
+          correct: 0
+        },
+        {
+          q: "Vilket skriftsystem används för att skriva japanska, förutom kanji?",
+          answers: ["Hiragana/katakana", "Kyrilliska", "Devanagari", "Hangul"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk talas i Myanmar (Burma)?",
+          answers: ["Burmesiska", "Khmer", "Laotiska", "Thailändska"],
+          correct: 0
+        },
+        {
+          q: "Vilket land uppfann pandaparker och har flest vildpandor?",
+          answers: ["Kina", "Japan", "Vietnam", "Nepal"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Maldiverna?",
+          answers: ["Malé", "Colombo", "Delhi", "Dhaka"],
+          correct: 0
+        },
+        {
+          q: "Vilket land har flaggan med en vit stjärna och måne på röd botten (Turkiet)?",
+          answers: ["Turkiet", "Pakistan", "Malaysia", "Tunisien"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Qatar?",
+          answers: ["Doha", "Abu Dhabi", "Manama", "Kuwait City"],
+          correct: 0
+        },
+        {
+          q: "Vilket skriftsystem används för koreanska?",
+          answers: ["Hangul", "Kanji", "Devanagari", "Kyrilliska"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Förenade Arabemiraten?",
+          answers: ["Abu Dhabi", "Dubai", "Doha", "Manama"],
+          correct: 0
+        },
+        {
+          q: "Vilket land är känt för Bollywood-filmer?",
+          answers: ["Indien", "Pakistan", "Bangladesh", "Sri Lanka"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk talas i Kambodja?",
+          answers: ["Khmer", "Laotiska", "Vietnamesiska", "Thailändska"],
+          correct: 0
+        },
+        {
+          q: "Vilket hav ligger mellan Arabiska halvön och Iran?",
+          answers: ["Persiska viken", "Röda havet", "Svarta havet", "Kaspiska havet"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Bahrain?",
+          answers: ["Manama", "Doha", "Riyadh", "Muscat"],
+          correct: 0
+        },
+        {
+          q: "Vilket land äger halva ön Borneo tillsammans med Malaysia och Brunei?",
+          answers: ["Indonesien", "Filippinerna", "Vietnam", "Thailand"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Oman?",
+          answers: ["Muscat", "Doha", "Riyadh", "Manama"],
+          correct: 0
+        },
+        {
+          q: "Vilket land har en flagga med enbart grönt och en vit halvmåne och stjärna (delvis)?",
+          answers: ["Pakistan", "Turkiet", "Tunisien", "Algeriet"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk talas i Laos?",
+          answers: ["Laotiska", "Khmer", "Burmesiska", "Vietnamesiska"],
+          correct: 0
+        },
+        {
+          q: "Vilken asiatisk stad är känd som en av världens mest folkrika städer, i Japan?",
+          answers: ["Tokyo", "Osaka", "Kyoto", "Yokohama"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Libanon?",
+          answers: ["Beirut", "Damaskus", "Amman", "Nicosia"],
+          correct: 0
+        },
+        {
+          q: "Vilket land har templen i Bagan, med tusentals gamla pagoder?",
+          answers: ["Myanmar", "Kambodja", "Laos", "Thailand"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk talas i Mongoliet?",
+          answers: ["Mongoliska", "Kazakiska", "Ryska", "Kinesiska"],
+          correct: 0
+        },
+        {
+          q: "Vilket land ligger Petra (den uthuggna klippstaden) i?",
+          answers: ["Jordanien", "Israel", "Saudiarabien", "Egypten"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Syrien?",
+          answers: ["Damaskus", "Beirut", "Amman", "Bagdad"],
+          correct: 0
+        },
+        {
+          q: "Vilket land har både öken och regnskog, och ön Borneo delas mellan tre länder — vilket är inte ett av dem?",
+          answers: ["Filippinerna", "Malaysia", "Indonesien", "Brunei"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Irak?",
+          answers: ["Bagdad", "Damaskus", "Amman", "Teheran"],
+          correct: 0
+        },
+        {
+          q: "Vilket land är berömt för sina risterrasser i Banaue?",
+          answers: ["Filippinerna", "Vietnam", "Indonesien", "Thailand"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk talas i Sri Lanka, förutom tamil?",
+          answers: ["Singalesiska", "Bengali", "Nepalesiska", "Malajiska"],
+          correct: 0
+        },
+        {
+          q: "Vilket land har det största antalet moskéer i förhållande till invånare, känt som islams vagga?",
+          answers: ["Saudiarabien", "Iran", "Irak", "Jemen"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Georgien?",
+          answers: ["Tbilisi", "Jerevan", "Baku", "Ankara"],
+          correct: 0
+        },
+        {
+          q: "Vilket land har öknen Gobi?",
+          answers: ["Mongoliet", "Kazakstan", "Uzbekistan", "Kina"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Israel som landet själv anser vara sin huvudstad?",
+          answers: ["Jerusalem", "Tel Aviv", "Haifa", "Eilat"],
+          correct: 0
+        },
+        {
+          q: "Vilket land har flest tempel i Bagan-regionen och gyllene pagoder?",
+          answers: ["Myanmar", "Thailand", "Laos", "Kambodja"],
+          correct: 0
+        },
+        {
+          q: "Vad är den vanligaste religionen i Thailand?",
+          answers: ["Buddhism", "Hinduism", "Islam", "Kristendom"],
+          correct: 0
+        },
+        {
+          q: "Vilket land har flaggan med en enda röd cirkel på vit botten?",
+          answers: ["Japan", "Bangladesh", "Sydkorea", "Laos"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk talas i Nepal?",
+          answers: ["Nepalesiska", "Hindi", "Bengali", "Tibetanska"],
+          correct: 0
+        },
+        {
+          q: "Vilket land har ön Jeju som ett populärt semestermål?",
+          answers: ["Sydkorea", "Japan", "Kina", "Taiwan"],
+          correct: 0
+        },
+        {
+          q: "Vad heter huvudstaden i Taiwan?",
+          answers: ["Taipei", "Kaohsiung", "Taichung", "Tainan"],
+          correct: 0
+        },
+        {
+          q: "Vilket språk talas i Bhutan?",
+          answers: ["Dzongkha", "Nepalesiska", "Tibetanska", "Hindi"],
+          correct: 0
+        },
+        {
+          q: "Vad heter det stora berget i Japan som är landets högsta och en helig vulkan?",
+          answers: ["Fuji", "Aso", "Fuji-san (samma som Fuji)", "Yotei"],
+          correct: 0
+        },
+        {
+          q: "Vilket land i Sydostasien har flest öar totalt?",
+          answers: ["Indonesien", "Filippinerna", "Japan", "Malaysia"],
+          correct: 0
+        },
+        {
+          q: "Vad kallas den gamla handelsvägen mellan Kina och Europa genom Asien?",
+          answers: ["Sidenvägen", "Bärnstensvägen", "Kryddvägen", "Karavanvägen"],
+          correct: 0
+        },
+        {
+          q: "Vilket land odlar det berömda Darjeeling-teet?",
+          answers: ["Indien", "Sri Lanka", "Kina", "Japan"],
+          correct: 0
+        },
+        {
+          q: "Vilket djur firas ofta med paraddraken på kinesiskt nyår?",
+          answers: ["Draken", "Fenixen", "Tigern", "Pandan"],
+          correct: 0
+        },
+        {
+          q: "Hur många djur ingår i den kinesiska zodiaken (stjärntecknen)?",
+          answers: ["12", "10", "8", "24"],
+          correct: 0
         }
-        window.addEventListener("message", function (e) {
-          var d = e && e.data;
-          if (d && typeof d === "object" && d.type === "workshop:chat-opened") {
-            dismiss();
-          }
+    ];
+
+    var QUESTION_BANK = QUESTION_BANK_START;
+
+    // Delar upp alla frågor i tjugo levels med 5 frågor i varje.
+    // Level 1 blir de första fem (lättast), level 20 de sista fem (svårast).
+    var LEVELS = {};
+    var QUESTIONS_PER_LEVEL = 5;
+    for (var lvl = 1; lvl <= 20; lvl++) {
+      var start = (lvl - 1) * QUESTIONS_PER_LEVEL;
+      LEVELS[lvl] = QUESTION_BANK.slice(start, start + QUESTIONS_PER_LEVEL);
+    }
+
+    var QUESTIONS = [];
+    var current = 0;   // vilken fråga vi är på
+    var score = 0;     // hur många rätt
+
+    var menuCardEl = document.getElementById("menu-card");
+    var levelCardEl = document.getElementById("level-card");
+    var levelListEl = document.getElementById("level-list");
+    var progressEl = document.getElementById("progress");
+    var questionEl = document.getElementById("question");
+    var answersEl = document.getElementById("answers");
+    var cardEl = document.getElementById("quiz-card");
+    var langSelectCardEl = document.getElementById("lang-select-card");
+    var langSelectListEl = document.getElementById("lang-select-list");
+    var langLevelCardEl = document.getElementById("lang-level-card");
+    var langLevelTitleEl = document.getElementById("lang-level-title");
+    var langLevelListEl = document.getElementById("lang-level-list");
+    var trainCardEl = document.getElementById("train-card");
+
+    // Döljer alla skärmar utom den som skickas in — håller reda på "var i appen"
+    // spelaren är just nu, så bara en ruta syns åt gången.
+    function showScreen(el) {
+      [menuCardEl, levelCardEl, cardEl, langSelectCardEl, langLevelCardEl, trainCardEl].forEach(function (s) {
+        s.style.display = (s === el) ? "" : "none";
+      });
+    }
+
+    // Alla tillbaka-knappar delar samma logik: data-back säger vilken
+    // skärm de ska hoppa till.
+    var BACK_TARGETS = {
+      menu: menuCardEl,
+      level: levelCardEl,
+      langselect: langSelectCardEl,
+      langlevel: langLevelCardEl
+    };
+    document.querySelectorAll(".back-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        showScreen(BACK_TARGETS[btn.dataset.back]);
+      });
+    });
+
+    // Räknar ut en färg mellan grönt (lätt) och rött (svårt) för level-knappar.
+    // "i" är index (0-baserat), "total" är hur många levels det finns totalt.
+    function levelColor(i, total) {
+      var t = total > 1 ? i / (total - 1) : 0;
+      var from = [0x3f, 0x8a, 0x4a];   // grönt
+      var to = [0xc0, 0x39, 0x2b];     // rött
+      var mix = from.map(function (c, idx) {
+        return Math.round(c + (to[idx] - c) * t);
+      });
+      return "#" + mix.map(function (c) { return c.toString(16).padStart(2, "0"); }).join("");
+    }
+
+    // Startknappar på huvudmenyn.
+    document.getElementById("menu-quiz-btn").addEventListener("click", function () {
+      showScreen(levelCardEl);
+    });
+    document.getElementById("menu-train-btn").addEventListener("click", function () {
+      showScreen(langSelectCardEl);
+    });
+
+    // Bygger de tjugo level-knapparna för quizet.
+    var TOTAL_LEVELS = 20;
+    for (var lvlNum = 1; lvlNum <= TOTAL_LEVELS; lvlNum++) {
+      (function (lvlNum) {
+        var btn = document.createElement("button");
+        btn.className = "btn-chunky pop level-btn";
+        btn.style.setProperty("--c", levelColor(lvlNum - 1, TOTAL_LEVELS));
+        btn.textContent = "Level " + lvlNum;
+        btn.addEventListener("click", function () {
+          QUESTIONS = LEVELS[lvlNum];
+          current = 0;
+          score = 0;
+          showScreen(cardEl);
+          showQuestion();
         });
-      })();
-    </script>
-  </section>
+        levelListEl.appendChild(btn);
+      })(lvlNum);
+    }
+
+    // Ritar upp nuvarande fråga med fyra knappar att klicka på.
+    // Ordningen på svaren blandas varje gång, så rätt svar inte alltid
+    // ligger först.
+    function showQuestion() {
+      var item = QUESTIONS[current];
+      progressEl.textContent = "Fråga " + (current + 1) + " av " + QUESTIONS.length;
+      questionEl.textContent = item.q;
+      answersEl.innerHTML = "";
+
+      var options = shuffle(item.answers.map(function (answer, i) {
+        return { text: answer, isCorrect: i === item.correct };
+      }));
+
+      options.forEach(function (opt) {
+        var btn = document.createElement("button");
+        btn.className = "btn-chunky pop";
+        btn.textContent = opt.text;
+        btn.addEventListener("click", function () { pickAnswer(opt.isCorrect, btn); });
+        answersEl.appendChild(btn);
+      });
+    }
+
+    // Kollar om svaret var rätt, färgar knapparna och går vidare.
+    function pickAnswer(isCorrect, btn) {
+      var allBtns = answersEl.querySelectorAll("button");
+      allBtns.forEach(function (b) { b.disabled = true; });
+
+      if (isCorrect) {
+        score++;
+        btn.classList.add("correct");
+      } else {
+        btn.classList.add("wrong");
+        // Hitta rätt-knappen bland de övriga och markera den grön.
+        var correctItem = QUESTIONS[current].answers[QUESTIONS[current].correct];
+        allBtns.forEach(function (b) {
+          if (b.textContent === correctItem) { b.classList.add("correct"); }
+        });
+      }
+
+      setTimeout(function () {
+        current++;
+        if (current < QUESTIONS.length) {
+          showQuestion();
+        } else {
+          showResult();
+        }
+      }, 900);
+    }
+
+    // Visar slutresultatet med en knapp för att välja nivå igen.
+    function showResult() {
+      cardEl.innerHTML =
+        '<h2>Klart! 🎉</h2>' +
+        '<p class="pop-in">Du fick <b>' + score + ' av ' + QUESTIONS.length + '</b> rätt.</p>' +
+        '<button class="btn-chunky pop" id="restart-btn">Till menyn</button>';
+      document.getElementById("restart-btn").addEventListener("click", function () {
+        // Bygg tillbaka quiz-kortets innehåll så det är klart nästa gång.
+        cardEl.innerHTML =
+          '<p id="progress" class="pill">Fråga 1</p>' +
+          '<h2 id="question">Laddar fråga...</h2>' +
+          '<div class="stack" id="answers"></div>';
+        progressEl = document.getElementById("progress");
+        questionEl = document.getElementById("question");
+        answersEl = document.getElementById("answers");
+        showScreen(menuCardEl);
+      });
+    }
+
+    // ============================================================
+    // Språkträning — som ett litet Duolingo. Välj språk, välj level,
+    // och svara på flervalsfrågor: "Hur säger man ordet på språket?"
+    // ============================================================
+    var LANGUAGES = {
+      hindi: {
+        name: "Hindi 🇮🇳",
+        words: [
+          { sv: "hej", word: "नमस्ते", say: "namasté" },
+          { sv: "tack", word: "धन्यवाद", say: "dhanjaväd" },
+          { sv: "ja", word: "हाँ", say: "hã" },
+          { sv: "nej", word: "नहीं", say: "nahĩ" },
+          { sv: "vän", word: "दोस्त", say: "dost" },
+          { sv: "vatten", word: "पानी", say: "paani" },
+          { sv: "mat", word: "खाना", say: "khaanaa" },
+          { sv: "bra", word: "अच्छा", say: "achha" },
+          { sv: "en", word: "एक", say: "ek" },
+          { sv: "hej då", word: "अलविदा", say: "alavidaa" },
+          { sv: "dålig", word: "बुरा", say: "buraa" },
+          { sv: "två", word: "दो", say: "do" },
+          { sv: "tre", word: "तीन", say: "teen" },
+          { sv: "mamma", word: "माँ", say: "maa" },
+          { sv: "pappa", word: "पापा", say: "paapaa" },
+          { sv: "hund", word: "कुत्ता", say: "kuttaa" },
+          { sv: "katt", word: "बिल्ली", say: "billee" },
+          { sv: "hus", word: "घर", say: "ghar" },
+          { sv: "sol", word: "सूरज", say: "sooraj" },
+          { sv: "måne", word: "चाँद", say: "chaand" }
+        ]
+      },
+      kinesiska: {
+        name: "Kinesiska 🇨🇳",
+        words: [
+          { sv: "hej", word: "你好", say: "nǐ hǎo" },
+          { sv: "tack", word: "谢谢", say: "xièxiè" },
+          { sv: "ja", word: "是", say: "shì" },
+          { sv: "nej", word: "不", say: "bù" },
+          { sv: "vän", word: "朋友", say: "péngyǒu" },
+          { sv: "vatten", word: "水", say: "shuǐ" },
+          { sv: "mat", word: "食物", say: "shíwù" },
+          { sv: "bra", word: "好", say: "hǎo" },
+          { sv: "en", word: "一", say: "yī" },
+          { sv: "hej då", word: "再见", say: "zàijiàn" },
+          { sv: "dålig", word: "不好", say: "bù hǎo" },
+          { sv: "två", word: "二", say: "èr" },
+          { sv: "tre", word: "三", say: "sān" },
+          { sv: "mamma", word: "妈妈", say: "māma" },
+          { sv: "pappa", word: "爸爸", say: "bàba" },
+          { sv: "hund", word: "狗", say: "gǒu" },
+          { sv: "katt", word: "猫", say: "māo" },
+          { sv: "hus", word: "房子", say: "fángzi" },
+          { sv: "sol", word: "太阳", say: "tàiyáng" },
+          { sv: "måne", word: "月亮", say: "yuèliàng" }
+        ]
+      },
+      japanska: {
+        name: "Japanska 🇯🇵",
+        words: [
+          { sv: "hej", word: "こんにちは", say: "konnichiwa" },
+          { sv: "tack", word: "ありがとう", say: "arigatou" },
+          { sv: "ja", word: "はい", say: "hai" },
+          { sv: "nej", word: "いいえ", say: "iie" },
+          { sv: "vän", word: "友達", say: "tomodachi" },
+          { sv: "vatten", word: "水", say: "mizu" },
+          { sv: "mat", word: "食べ物", say: "tabemono" },
+          { sv: "bra", word: "いい", say: "ii" },
+          { sv: "en", word: "一", say: "ichi" },
+          { sv: "hej då", word: "さようなら", say: "sayounara" },
+          { sv: "dålig", word: "悪い", say: "warui" },
+          { sv: "två", word: "二", say: "ni" },
+          { sv: "tre", word: "三", say: "san" },
+          { sv: "mamma", word: "お母さん", say: "okaasan" },
+          { sv: "pappa", word: "お父さん", say: "otousan" },
+          { sv: "hund", word: "犬", say: "inu" },
+          { sv: "katt", word: "猫", say: "neko" },
+          { sv: "hus", word: "家", say: "ie" },
+          { sv: "sol", word: "太陽", say: "taiyou" },
+          { sv: "måne", word: "月", say: "tsuki" }
+        ]
+      },
+      koreanska: {
+        name: "Koreanska 🇰🇷",
+        words: [
+          { sv: "hej", word: "안녕하세요", say: "annyeonghaseyo" },
+          { sv: "tack", word: "감사합니다", say: "gamsahamnida" },
+          { sv: "ja", word: "네", say: "ne" },
+          { sv: "nej", word: "아니요", say: "aniyo" },
+          { sv: "vän", word: "친구", say: "chingu" },
+          { sv: "vatten", word: "물", say: "mul" },
+          { sv: "mat", word: "음식", say: "eumsik" },
+          { sv: "bra", word: "좋아요", say: "joayo" },
+          { sv: "en", word: "하나", say: "hana" },
+          { sv: "hej då", word: "안녕히 가세요", say: "annyeonghi gaseyo" },
+          { sv: "dålig", word: "나쁜", say: "nappeun" },
+          { sv: "två", word: "둘", say: "dul" },
+          { sv: "tre", word: "셋", say: "set" },
+          { sv: "mamma", word: "엄마", say: "eomma" },
+          { sv: "pappa", word: "아빠", say: "appa" },
+          { sv: "hund", word: "개", say: "gae" },
+          { sv: "katt", word: "고양이", say: "goyangi" },
+          { sv: "hus", word: "집", say: "jip" },
+          { sv: "sol", word: "태양", say: "taeyang" },
+          { sv: "måne", word: "달", say: "dal" }
+        ]
+      },
+      thailandska: {
+        name: "Thailändska 🇹🇭",
+        words: [
+          { sv: "hej", word: "สวัสดี", say: "sawatdee" },
+          { sv: "tack", word: "ขอบคุณ", say: "khop khun" },
+          { sv: "ja", word: "ใช่", say: "chai" },
+          { sv: "nej", word: "ไม่", say: "mai" },
+          { sv: "vän", word: "เพื่อน", say: "phuean" },
+          { sv: "vatten", word: "น้ำ", say: "nam" },
+          { sv: "mat", word: "อาหาร", say: "aahaan" },
+          { sv: "bra", word: "ดี", say: "dee" },
+          { sv: "en", word: "หนึ่ง", say: "neung" },
+          { sv: "hej då", word: "ลาก่อน", say: "laa gorn" },
+          { sv: "dålig", word: "ไม่ดี", say: "mai dee" },
+          { sv: "två", word: "สอง", say: "song" },
+          { sv: "tre", word: "สาม", say: "saam" },
+          { sv: "mamma", word: "แม่", say: "mae" },
+          { sv: "pappa", word: "พ่อ", say: "phor" },
+          { sv: "hund", word: "หมา", say: "maa" },
+          { sv: "katt", word: "แมว", say: "maeo" },
+          { sv: "hus", word: "บ้าน", say: "baan" },
+          { sv: "sol", word: "ดวงอาทิตย์", say: "duang aathit" },
+          { sv: "måne", word: "ดวงจันทร์", say: "duang jan" }
+        ]
+      },
+      arabiska: {
+        name: "Arabiska 🇸🇦",
+        words: [
+          { sv: "hej", word: "مرحبا", say: "marhaban" },
+          { sv: "tack", word: "شكرا", say: "shukran" },
+          { sv: "ja", word: "نعم", say: "na'am" },
+          { sv: "nej", word: "لا", say: "laa" },
+          { sv: "vän", word: "صديق", say: "sadiiq" },
+          { sv: "vatten", word: "ماء", say: "maa'" },
+          { sv: "mat", word: "طعام", say: "ta'aam" },
+          { sv: "bra", word: "جيد", say: "jayyid" },
+          { sv: "en", word: "واحد", say: "waahid" },
+          { sv: "hej då", word: "مع السلامة", say: "ma'a as-salaama" },
+          { sv: "dålig", word: "سيء", say: "sayyi'" },
+          { sv: "två", word: "اثنان", say: "ithnaan" },
+          { sv: "tre", word: "ثلاثة", say: "thalaatha" },
+          { sv: "mamma", word: "أم", say: "umm" },
+          { sv: "pappa", word: "أب", say: "ab" },
+          { sv: "hund", word: "كلب", say: "kalb" },
+          { sv: "katt", word: "قطة", say: "qitta" },
+          { sv: "hus", word: "بيت", say: "bayt" },
+          { sv: "sol", word: "شمس", say: "shams" },
+          { sv: "måne", word: "قمر", say: "qamar" }
+        ]
+      },
+      vietnamesiska: {
+        name: "Vietnamesiska 🇻🇳",
+        words: [
+          { sv: "hej", word: "xin chào", say: "sin tjåå" },
+          { sv: "tack", word: "cảm ơn", say: "gam un" },
+          { sv: "ja", word: "vâng", say: "vang" },
+          { sv: "nej", word: "không", say: "khång" },
+          { sv: "vän", word: "bạn", say: "ban" },
+          { sv: "vatten", word: "nước", say: "nuoc" },
+          { sv: "mat", word: "đồ ăn", say: "do an" },
+          { sv: "bra", word: "tốt", say: "tot" },
+          { sv: "en", word: "một", say: "mot" },
+          { sv: "hej då", word: "tạm biệt", say: "tam biet" },
+          { sv: "dålig", word: "xấu", say: "xau" },
+          { sv: "två", word: "hai", say: "hai" },
+          { sv: "tre", word: "ba", say: "ba" },
+          { sv: "mamma", word: "mẹ", say: "me" },
+          { sv: "pappa", word: "bố", say: "bo" },
+          { sv: "hund", word: "chó", say: "cho" },
+          { sv: "katt", word: "mèo", say: "meo" },
+          { sv: "hus", word: "nhà", say: "nya" },
+          { sv: "sol", word: "mặt trời", say: "mat troi" },
+          { sv: "måne", word: "mặt trăng", say: "mat trang" }
+        ]
+      },
+      persiska: {
+        name: "Persiska 🇮🇷",
+        words: [
+          { sv: "hej", word: "سلام", say: "salaam" },
+          { sv: "tack", word: "متشکرم", say: "moteshakkeram" },
+          { sv: "ja", word: "بله", say: "baleh" },
+          { sv: "nej", word: "نه", say: "na" },
+          { sv: "vän", word: "دوست", say: "doost" },
+          { sv: "vatten", word: "آب", say: "aab" },
+          { sv: "mat", word: "غذا", say: "ghazaa" },
+          { sv: "bra", word: "خوب", say: "khoob" },
+          { sv: "en", word: "یک", say: "yek" },
+          { sv: "hej då", word: "خداحافظ", say: "khodaahaafez" },
+          { sv: "dålig", word: "بد", say: "bad" },
+          { sv: "två", word: "دو", say: "do" },
+          { sv: "tre", word: "سه", say: "se" },
+          { sv: "mamma", word: "مادر", say: "maadar" },
+          { sv: "pappa", word: "پدر", say: "pedar" },
+          { sv: "hund", word: "سگ", say: "sag" },
+          { sv: "katt", word: "گربه", say: "gorbeh" },
+          { sv: "hus", word: "خانه", say: "khaaneh" },
+          { sv: "sol", word: "خورشید", say: "khorshid" },
+          { sv: "måne", word: "ماه", say: "maah" }
+        ]
+      },
+      urdu: {
+        name: "Urdu 🇵🇰",
+        words: [
+          { sv: "hej", word: "السلام علیکم", say: "assalamu alaikum" },
+          { sv: "tack", word: "شکریہ", say: "shukriya" },
+          { sv: "ja", word: "ہاں", say: "haan" },
+          { sv: "nej", word: "نہیں", say: "nahi" },
+          { sv: "vän", word: "دوست", say: "dost" },
+          { sv: "vatten", word: "پانی", say: "paani" },
+          { sv: "mat", word: "کھانا", say: "khaana" },
+          { sv: "bra", word: "اچھا", say: "acha" },
+          { sv: "en", word: "ایک", say: "ek" },
+          { sv: "hej då", word: "خدا حافظ", say: "khuda hafiz" },
+          { sv: "dålig", word: "برا", say: "bura" },
+          { sv: "två", word: "دو", say: "do" },
+          { sv: "tre", word: "تین", say: "teen" },
+          { sv: "mamma", word: "ماں", say: "maan" },
+          { sv: "pappa", word: "ابا", say: "abba" },
+          { sv: "hund", word: "کتا", say: "kutta" },
+          { sv: "katt", word: "بلی", say: "billi" },
+          { sv: "hus", word: "گھر", say: "ghar" },
+          { sv: "sol", word: "سورج", say: "suraj" },
+          { sv: "måne", word: "چاند", say: "chaand" }
+        ]
+      },
+      malajiska: {
+        name: "Malajiska 🇲🇾",
+        words: [
+          { sv: "hej", word: "halo", say: "halo" },
+          { sv: "tack", word: "terima kasih", say: "terima kasi" },
+          { sv: "ja", word: "ya", say: "ja" },
+          { sv: "nej", word: "tidak", say: "tidak" },
+          { sv: "vän", word: "teman", say: "teman" },
+          { sv: "vatten", word: "air", say: "a-ir" },
+          { sv: "mat", word: "makanan", say: "makanan" },
+          { sv: "bra", word: "bagus", say: "bagus" },
+          { sv: "en", word: "satu", say: "satu" },
+          { sv: "hej då", word: "selamat tinggal", say: "selamat tinggal" },
+          { sv: "dålig", word: "buruk", say: "buruk" },
+          { sv: "två", word: "dua", say: "dua" },
+          { sv: "tre", word: "tiga", say: "tiga" },
+          { sv: "mamma", word: "ibu", say: "ibu" },
+          { sv: "pappa", word: "ayah", say: "ayah" },
+          { sv: "hund", word: "anjing", say: "anjing" },
+          { sv: "katt", word: "kucing", say: "kucing" },
+          { sv: "hus", word: "rumah", say: "rumah" },
+          { sv: "sol", word: "matahari", say: "matahari" },
+          { sv: "måne", word: "bulan", say: "bulan" }
+        ]
+      },
+      bengali: {
+        name: "Bengali 🇧🇩",
+        words: [
+          { sv: "hej", word: "নমস্কার", say: "nomoshkar" },
+          { sv: "tack", word: "ধন্যবাদ", say: "dhonnobad" },
+          { sv: "ja", word: "হ্যাঁ", say: "hyan" },
+          { sv: "nej", word: "না", say: "na" },
+          { sv: "vän", word: "বন্ধু", say: "bondhu" },
+          { sv: "vatten", word: "পানি", say: "pani" },
+          { sv: "mat", word: "খাবার", say: "khabar" },
+          { sv: "bra", word: "ভালো", say: "bhalo" },
+          { sv: "en", word: "এক", say: "æk" },
+          { sv: "hej då", word: "বিদায়", say: "biday" }
+        ]
+      },
+      burmesiska: {
+        name: "Burmesiska 🇲🇲",
+        words: [
+          { sv: "hej", word: "မင်္ဂလာပါ", say: "mingalaba" },
+          { sv: "tack", word: "ကျေးဇူးတင်ပါတယ်", say: "kyayzu tin ba de" },
+          { sv: "ja", word: "ဟုတ်ကဲ့", say: "houk kae" },
+          { sv: "nej", word: "မဟုတ်ဘူး", say: "ma houk bu" },
+          { sv: "vän", word: "သူငယ်ချင်း", say: "thu ngae chin" },
+          { sv: "vatten", word: "ရေ", say: "yay" },
+          { sv: "mat", word: "အစားအစာ", say: "a sar a sar" },
+          { sv: "bra", word: "ကောင်းတယ်", say: "kaung de" },
+          { sv: "en", word: "တစ်", say: "tit" },
+          { sv: "hej då", word: "သွားတော့မယ်", say: "thwarr taw mae" }
+        ]
+      },
+      khmer: {
+        name: "Khmer 🇰🇭",
+        words: [
+          { sv: "hej", word: "ជំរាបសួរ", say: "chumreap suor" },
+          { sv: "tack", word: "អរគុណ", say: "arkoun" },
+          { sv: "ja", word: "បាទ", say: "baat" },
+          { sv: "nej", word: "ទេ", say: "te" },
+          { sv: "vän", word: "មិត្ត", say: "mit" },
+          { sv: "vatten", word: "ទឹក", say: "teuk" },
+          { sv: "mat", word: "អាហារ", say: "aahaa" },
+          { sv: "bra", word: "ល្អ", say: "la-or" },
+          { sv: "en", word: "មួយ", say: "muoy" },
+          { sv: "hej då", word: "លាហើយ", say: "lea haeuy" }
+        ]
+      },
+      laotiska: {
+        name: "Laotiska 🇱🇦",
+        words: [
+          { sv: "hej", word: "ສະບາຍດີ", say: "sabaidee" },
+          { sv: "tack", word: "ຂອບໃຈ", say: "khop jai" },
+          { sv: "ja", word: "ແມ່ນ", say: "maen" },
+          { sv: "nej", word: "ບໍ່", say: "bor" },
+          { sv: "vän", word: "ເພື່ອນ", say: "phuan" },
+          { sv: "vatten", word: "ນ້ຳ", say: "nam" },
+          { sv: "mat", word: "ອາຫານ", say: "aahaan" },
+          { sv: "bra", word: "ດີ", say: "dee" },
+          { sv: "en", word: "ໜຶ່ງ", say: "neung" },
+          { sv: "hej då", word: "ລາກ່ອນ", say: "laa gorn" }
+        ]
+      },
+      tagalog: {
+        name: "Tagalog 🇵🇭",
+        words: [
+          { sv: "hej", word: "kumusta", say: "kumusta" },
+          { sv: "tack", word: "salamat", say: "salamat" },
+          { sv: "ja", word: "oo", say: "o-o" },
+          { sv: "nej", word: "hindi", say: "hindi" },
+          { sv: "vän", word: "kaibigan", say: "ka-ibigan" },
+          { sv: "vatten", word: "tubig", say: "tubig" },
+          { sv: "mat", word: "pagkain", say: "pagkain" },
+          { sv: "bra", word: "mabuti", say: "mabuti" },
+          { sv: "en", word: "isa", say: "isa" },
+          { sv: "hej då", word: "paalam", say: "pa-alam" }
+        ]
+      },
+      mongoliska: {
+        name: "Mongoliska 🇲🇳",
+        words: [
+          { sv: "hej", word: "сайн байна уу", say: "sain baina uu" },
+          { sv: "tack", word: "баярлалаа", say: "bayarlalaa" },
+          { sv: "ja", word: "тийм", say: "tiim" },
+          { sv: "nej", word: "үгүй", say: "ugui" },
+          { sv: "vän", word: "найз", say: "naiz" },
+          { sv: "vatten", word: "ус", say: "us" },
+          { sv: "mat", word: "хоол", say: "khool" },
+          { sv: "bra", word: "сайн", say: "sain" },
+          { sv: "en", word: "нэг", say: "neg" },
+          { sv: "hej då", word: "баяртай", say: "bayartai" }
+        ]
+      },
+      hebreiska: {
+        name: "Hebreiska 🇮🇱",
+        words: [
+          { sv: "hej", word: "שלום", say: "shalom" },
+          { sv: "tack", word: "תודה", say: "toda" },
+          { sv: "ja", word: "כן", say: "ken" },
+          { sv: "nej", word: "לא", say: "lo" },
+          { sv: "vän", word: "חבר", say: "chaver" },
+          { sv: "vatten", word: "מים", say: "mayim" },
+          { sv: "mat", word: "אוכל", say: "ochel" },
+          { sv: "bra", word: "טוב", say: "tov" },
+          { sv: "en", word: "אחת", say: "achat" },
+          { sv: "hej då", word: "להתראות", say: "lehitraot" }
+        ]
+      },
+      turkiska: {
+        name: "Turkiska 🇹🇷",
+        words: [
+          { sv: "hej", word: "merhaba", say: "merhaba" },
+          { sv: "tack", word: "teşekkürler", say: "teshekkyrler" },
+          { sv: "ja", word: "evet", say: "evet" },
+          { sv: "nej", word: "hayır", say: "hayyr" },
+          { sv: "vän", word: "arkadaş", say: "arkadash" },
+          { sv: "vatten", word: "su", say: "su" },
+          { sv: "mat", word: "yemek", say: "yemek" },
+          { sv: "bra", word: "iyi", say: "iyi" },
+          { sv: "en", word: "bir", say: "bir" },
+          { sv: "hej då", word: "hoşça kal", say: "hoshtja kal" }
+        ]
+      },
+      nepalesiska: {
+        name: "Nepalesiska 🇳🇵",
+        words: [
+          { sv: "hej", word: "नमस्ते", say: "namaste" },
+          { sv: "tack", word: "धन्यवाद", say: "dhanyabaad" },
+          { sv: "ja", word: "हो", say: "ho" },
+          { sv: "nej", word: "होइन", say: "hoina" },
+          { sv: "vän", word: "साथी", say: "saathi" },
+          { sv: "vatten", word: "पानी", say: "paani" },
+          { sv: "mat", word: "खाना", say: "khaana" },
+          { sv: "bra", word: "राम्रो", say: "raamro" },
+          { sv: "en", word: "एक", say: "ek" },
+          { sv: "hej då", word: "फेरि भेटौंला", say: "feri bhetaunla" }
+        ]
+      },
+      singalesiska: {
+        name: "Singalesiska 🇱🇰",
+        words: [
+          { sv: "hej", word: "ආයුබෝවන්", say: "aayubowan" },
+          { sv: "tack", word: "ස්තූතියි", say: "istuutiyi" },
+          { sv: "ja", word: "ඔව්", say: "ow" },
+          { sv: "nej", word: "නෑ", say: "nae" },
+          { sv: "vän", word: "යාළුවා", say: "yaaluwa" },
+          { sv: "vatten", word: "වතුර", say: "watura" },
+          { sv: "mat", word: "කෑම", say: "kaema" },
+          { sv: "bra", word: "හොඳයි", say: "hondai" },
+          { sv: "en", word: "එක", say: "eka" },
+          { sv: "hej då", word: "ආයෙත් හම්බෙමු", say: "aayeth hambemu" }
+        ]
+      }
+    };
+
+    var WORDS_PER_LANG_LEVEL = 5;
+    var currentLangKey = "";
+    var trainWords = [];   // orden i den valda leveln
+    var trainAll = [];     // alla ord i språket (för att hitta felaktiga alternativ)
+    var trainIndex = 0;
+    var trainScore = 0;
+    var trainStreak = 0;
+
+    var trainQuestionEl = document.getElementById("train-question");
+    var trainAnswersEl = document.getElementById("train-answers");
+    var trainProgressEl = document.getElementById("train-progress");
+    var trainStreakEl = document.getElementById("train-streak");
+
+    // Bygger knapp-rutorna för varje språk att välja bland.
+    Object.keys(LANGUAGES).forEach(function (key) {
+      var btn = document.createElement("button");
+      btn.className = "btn-chunky pop";
+      btn.style.setProperty("--c", "#58a4ff");
+      btn.textContent = LANGUAGES[key].name;
+      btn.addEventListener("click", function () {
+        currentLangKey = key;
+        showLangLevels(key);
+      });
+      langSelectListEl.appendChild(btn);
+    });
+
+    // Visar level-knappar för det valda språket (5 ord per level).
+    function showLangLevels(key) {
+      var lang = LANGUAGES[key];
+      var numLevels = Math.ceil(lang.words.length / WORDS_PER_LANG_LEVEL);
+      langLevelTitleEl.textContent = "Välj level — " + lang.name;
+      langLevelListEl.innerHTML = "";
+      for (var i = 0; i < numLevels; i++) {
+        (function (i) {
+          var btn = document.createElement("button");
+          btn.className = "btn-chunky pop";
+          btn.style.setProperty("--c", levelColor(i, numLevels));
+          btn.textContent = "Level " + (i + 1);
+          btn.addEventListener("click", function () {
+            var start = i * WORDS_PER_LANG_LEVEL;
+            trainWords = lang.words.slice(start, start + WORDS_PER_LANG_LEVEL);
+            trainAll = lang.words;
+            trainIndex = 0;
+            trainScore = 0;
+            trainStreak = 0;
+            showScreen(trainCardEl);
+            showTrainQuestion();
+          });
+          langLevelListEl.appendChild(btn);
+        })(i);
+      }
+      showScreen(langLevelCardEl);
+    }
+
+    // Blandar en lista slumpmässigt (Fisher-Yates).
+    function shuffle(arr) {
+      var copy = arr.slice();
+      for (var i = copy.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = copy[i]; copy[i] = copy[j]; copy[j] = tmp;
+      }
+      return copy;
+    }
+
+    var hintBtnEl = document.getElementById("hint-btn");
+    var hintTextEl = document.getElementById("hint-text");
+    var currentTrainItem = null;
+
+    // Visar en flervalsfråga: "Hur säger man X?" med fyra ord-alternativ.
+    function showTrainQuestion() {
+      var item = trainWords[trainIndex];
+      currentTrainItem = item;
+      trainProgressEl.textContent = "Ord " + (trainIndex + 1) + " av " + trainWords.length;
+      trainStreakEl.textContent = "🔥 " + trainStreak;
+      trainQuestionEl.textContent = 'Hur säger man "' + item.sv + '"?';
+      hintTextEl.textContent = "";
+      hintBtnEl.disabled = false;
+      hintBtnEl.style.opacity = "1";
+
+      // Ta tre felaktiga ord från samma språk (inte samma som rätt svar).
+      var others = trainAll.filter(function (w) { return w.word !== item.word; });
+      var wrongOnes = shuffle(others).slice(0, 3);
+      var options = shuffle([item].concat(wrongOnes));
+
+      trainAnswersEl.innerHTML = "";
+      options.forEach(function (opt) {
+        var btn = document.createElement("button");
+        btn.className = "btn-chunky pop";
+        btn.textContent = opt.word + "  (" + opt.say + ")";
+        btn.dataset.isCorrect = (opt === item) ? "1" : "0";
+        btn.addEventListener("click", function () { pickTrainAnswer(opt === item, btn); });
+        trainAnswersEl.appendChild(btn);
+      });
+    }
+
+    // Talking Panda ger en ledtråd: visar uttalet och stryker ett
+    // felaktigt alternativ. Fungerar bara en gång per fråga.
+    hintBtnEl.addEventListener("click", function () {
+      hintBtnEl.disabled = true;
+      hintBtnEl.style.opacity = ".5";
+      hintTextEl.textContent = '🐼 Det låter ungefär som "' + currentTrainItem.say + '"';
+
+      var wrongBtns = Array.prototype.filter.call(
+        trainAnswersEl.querySelectorAll("button"),
+        function (b) { return b.dataset.isCorrect === "0" && !b.disabled; }
+      );
+      if (wrongBtns.length) {
+        var toFade = wrongBtns[Math.floor(Math.random() * wrongBtns.length)];
+        toFade.disabled = true;
+        toFade.style.opacity = ".35";
+      }
+    });
+
+    // Kollar svaret, färgar knapparna, räknar poäng/streak och går vidare.
+    function pickTrainAnswer(isCorrect, btn) {
+      var allBtns = trainAnswersEl.querySelectorAll("button");
+      allBtns.forEach(function (b) { b.disabled = true; });
+
+      if (isCorrect) {
+        trainScore++;
+        trainStreak++;
+        btn.classList.add("correct");
+      } else {
+        trainStreak = 0;
+        btn.classList.add("wrong");
+      }
+      trainStreakEl.textContent = "🔥 " + trainStreak;
+
+      setTimeout(function () {
+        trainIndex++;
+        if (trainIndex < trainWords.length) {
+          showTrainQuestion();
+        } else {
+          showTrainResult();
+        }
+      }, 900);
+    }
+
+    // Visar resultatet för språk-leveln, med knapp tillbaka till level-valet.
+    function showTrainResult() {
+      trainCardEl.querySelector(".back-btn").style.display = "none";
+      hintBtnEl.style.display = "none";
+      hintTextEl.textContent = "";
+      trainQuestionEl.textContent = "";
+      trainAnswersEl.innerHTML =
+        '<p class="pop-in">Du fick <b>' + trainScore + ' av ' + trainWords.length + '</b> rätt! 🎉</p>' +
+        '<button class="btn-chunky pop" id="train-result-btn" style="--c:#3f8a4a">Tillbaka till levels</button>';
+      document.getElementById("train-result-btn").addEventListener("click", function () {
+        trainCardEl.querySelector(".back-btn").style.display = "";
+        hintBtnEl.style.display = "";
+        showLangLevels(currentLangKey);
+      });
+    }
+  </script>
 </body>
 </html>
