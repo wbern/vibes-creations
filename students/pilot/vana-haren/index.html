@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>min sida</title>
+  <!-- pilot-student13 -->
+  <style>
+    /* Theme tokens — the four presets are papper · skog · hav · neon.
+     * The chunky helpers (.card, .btn-chunky, .pill, .wobble, .pop-in)
+     * come from the boilerplate Claude uses for every new page. */
+    :root {
+      --bg: #0f0c1a;
+      --ink: #f5f5f5;
+      --card: #1c1830;
+      --accent: #ff3ea5;
+      --accent-2: #3ef0ff;
+      --radius: 20px;
+      --lip: 8px;
+    }
+    html, body { margin: 0; min-height: 100vh; -webkit-text-size-adjust: 100%; overscroll-behavior: none; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      box-sizing: border-box;
+      color: var(--ink);
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    h1, .h1 { font: 900 1.8rem/1.05 system-ui, sans-serif; letter-spacing: -0.02em; margin: 0 0 .5rem; }
+    h2, .h2 { font: 800 1.3rem/1.15 system-ui, sans-serif; margin: 0 0 .5rem; }
+    .page  { max-width: 26rem; margin: 0 auto; padding: 1rem; box-sizing: border-box; }
+    .stack { display: flex; flex-direction: column; gap: 1rem; }
+    .row   { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+    .center{ text-align: center; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--ink)) 14%, transparent);
+    }
+    .btn-chunky {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 56px; padding: 14px 22px;
+      border: 0; border-radius: var(--radius);
+      font: 800 18px/1 system-ui, sans-serif; color: #fff;
+      letter-spacing: .5px; text-transform: uppercase;
+      background: var(--c, var(--accent));
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--accent)) 70%, black);
+      cursor: pointer;
+      transition: transform 80ms, box-shadow 80ms, filter 120ms;
+      width: 100%;
+    }
+    .btn-chunky:active { transform: translateY(var(--lip)); box-shadow: 0 0 0 transparent; }
+    .pill {
+      display: inline-block; padding: .3rem .7rem;
+      background: var(--c, var(--accent-2)); color: #10131a;
+      border-radius: 999px; font: 800 .95rem/1 system-ui, sans-serif;
+    }
+    .pop        { transition: transform 80ms; }
+    .pop:active { transform: scale(.94); }
+    @keyframes wobble {
+      0%,100% { transform: rotate(0); }
+      25%     { transform: rotate(6deg); }
+      75%     { transform: rotate(-6deg); }
+    }
+    .wobble     { animation: wobble 2.2s ease-in-out infinite; transform-origin: 50% 80%; }
+    @keyframes pop-in { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .pop-in     { animation: pop-in 240ms cubic-bezier(.5,1.6,.4,1) both; }
+    @media (prefers-reduced-motion: reduce) {
+      .btn-chunky, .pop { transition: none; }
+      .wobble, .pop-in  { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page stack">
+    <div class="row" style="justify-content: space-between;">
+      <h1 id="planetName">Planet 1</h1>
+      <span class="pill" id="coinPill">💰 0</span>
+    </div>
+
+    <div class="card center" id="scene" style="position: relative; overflow: hidden; padding-bottom: .5rem;">
+      <!-- Marken på planeten -->
+      <svg viewBox="0 0 300 180" width="100%" style="display:block;">
+        <ellipse cx="150" cy="160" rx="150" ry="20" id="ground" fill="#3a2f57" />
+
+        <!-- Rymdgubben, längst till vänster -->
+        <g id="hero" class="wobble" transform="translate(60,90)">
+          <circle cx="0" cy="0" r="22" fill="#e8ecf1" /> <!-- hjälm -->
+          <circle cx="0" cy="0" r="15" fill="#3ef0ff" opacity="0.5" /> <!-- visir -->
+          <rect x="-14" y="18" width="28" height="34" rx="8" fill="#ff3ea5" /> <!-- kropp -->
+          <rect x="-13" y="52" width="10" height="18" rx="4" fill="#e8ecf1" />
+          <rect x="3" y="52" width="10" height="18" rx="4" fill="#e8ecf1" />
+        </g>
+
+        <!-- Monstret, längst till höger -->
+        <g id="monster" transform="translate(220,95)">
+          <circle cx="0" cy="0" r="28" fill="#7a3ff2" />
+          <circle cx="-9" cy="-6" r="5" fill="#fff" />
+          <circle cx="9" cy="-6" r="5" fill="#fff" />
+          <circle cx="-9" cy="-6" r="2" fill="#10131a" />
+          <circle cx="9" cy="-6" r="2" fill="#10131a" />
+          <path d="M -10 12 Q 0 22 10 12" stroke="#10131a" stroke-width="3" fill="none" stroke-linecap="round" />
+        </g>
+      </svg>
+
+      <!-- Monstrets liv -->
+      <div style="background:#10131a; border-radius: 999px; height: 14px; margin: .25rem 1rem 0;">
+        <div id="monsterHp" style="background:var(--accent-2); height:100%; border-radius:999px; width:100%; transition: width 120ms;"></div>
+      </div>
+    </div>
+
+    <button class="btn-chunky pop" id="attackBtn" style="--c: var(--accent);">Attackera!</button>
+    <button class="btn-chunky pop" id="travelBtn" style="--c: var(--accent-2);">🚀 Res till nästa planet</button>
+  </div>
+
+  <script>
+    // Alla planeter gubben kan resa till. Varje planet har egen färg
+    // på marken och monstret, så det känns som en ny plats.
+    const PLANETS = [
+      { name: "Planet Glöd",  ground: "#3a2f57", monster: "#7a3ff2" },
+      { name: "Planet Frost", ground: "#1f3a4a", monster: "#3ef0ff" },
+      { name: "Planet Eld",   ground: "#4a1f22", monster: "#ff5a3e" },
+      { name: "Planet Gift",  ground: "#1f4a2a", monster: "#5aff7a" },
+    ];
+
+    let planetIndex = 0;
+    let coins = 0;
+    let monsterHp = 100;
+
+    const planetNameEl = document.getElementById("planetName");
+    const coinPillEl = document.getElementById("coinPill");
+    const groundEl = document.getElementById("ground");
+    const monsterEl = document.getElementById("monster");
+    const monsterHpEl = document.getElementById("monsterHp");
+    const heroEl = document.getElementById("hero");
+    const attackBtn = document.getElementById("attackBtn");
+    const travelBtn = document.getElementById("travelBtn");
+
+    // Rita om scenen med den planetens färger.
+    function paintPlanet() {
+      const p = PLANETS[planetIndex];
+      planetNameEl.textContent = p.name;
+      groundEl.setAttribute("fill", p.ground);
+      monsterEl.querySelector("circle").setAttribute("fill", p.monster);
+    }
+
+    // Tryck på "Attackera" — gubben hoppar fram och monstret tappar liv.
+    attackBtn.addEventListener("click", () => {
+      monsterHp = Math.max(0, monsterHp - 20);
+      monsterHpEl.style.width = monsterHp + "%";
+
+      // Gubben studsar fram mot monstret som en liten attackrörelse.
+      heroEl.style.transition = "transform 100ms";
+      heroEl.setAttribute("transform", "translate(90,90)");
+      setTimeout(() => heroEl.setAttribute("transform", "translate(60,90)"), 120);
+
+      // Monstret skakar till när det blir träffat.
+      monsterEl.style.transition = "transform 80ms";
+      monsterEl.setAttribute("transform", "translate(226,95) scale(0.92)");
+      setTimeout(() => monsterEl.setAttribute("transform", "translate(220,95)"), 100);
+
+      if (monsterHp <= 0) {
+        const reward = 10 + Math.floor(Math.random() * 10);
+        coins += reward;
+        coinPillEl.textContent = "💰 " + coins;
+        spawnNewMonster();
+      }
+    });
+
+    // Ett nytt monster dyker upp på samma planet, redo att slåss mot.
+    function spawnNewMonster() {
+      monsterHp = 100;
+      monsterHpEl.style.width = "100%";
+      monsterEl.classList.remove("pop-in");
+      void monsterEl.offsetWidth; // tvinga webbläsaren att starta om animationen
+      monsterEl.classList.add("pop-in");
+    }
+
+    // Tryck på "Res till nästa planet" — byt planet och färska monster.
+    travelBtn.addEventListener("click", () => {
+      planetIndex = (planetIndex + 1) % PLANETS.length;
+      paintPlanet();
+      spawnNewMonster();
+    });
+
+    paintPlanet();
+  </script>
+</body>
+</html>

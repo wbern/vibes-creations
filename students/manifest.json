@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "vana-haren",
+          "boilerplate": false,
+          "student": "student13",
+          "created_at": 1783600491.72562,
+          "display_name": "student13",
+          "title": "min sida",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T14:10:13Z",
+          "published_at": "2026-07-09T14:10:18Z",
+          "thumbnail": "students/pilot/vana-haren/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "blaa-salen",
           "boilerplate": false,
           "student": "student12",

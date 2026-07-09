@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-09T14:10:11Z",
+  "generated_at": "2026-07-09T14:10:18Z",
   "entries": [
+    {
+      "slug": "vana-haren",
+      "title": "min sida",
+      "display_name": "student13",
+      "thumbnail": "students/pilot/vana-haren/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/vana-haren/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/vana-haren",
+      "date": "2026-07-09T14:10:18Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "blaa-salen",
       "title": "min sida",
