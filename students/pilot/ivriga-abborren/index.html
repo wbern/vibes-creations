@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Straffläggning</title>
+  <style>
+    html, body { margin: 0; padding: 0; min-height: 100%; overscroll-behavior: none; }
+    body {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    :root {
+      --bg: #f4ecd8;
+      --ink: #2b2b2b;
+      --card: #ffffff;
+      --accent: #f4c542;
+      --accent-2: #58a4ff;
+      --radius: 16px;
+      --lip: 6px;
+    }
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    h1 { font: 900 1.6rem/1.05 system-ui, sans-serif; letter-spacing: -0.02em; margin: 0 0 .6rem; text-align: center; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: .9rem 1rem;
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--ink) 14%, transparent);
+    }
+    svg { display: block; width: min(90vw, 520px); height: auto; }
+    .stack { display: flex; flex-direction: column; align-items: center; gap: .6rem; }
+    .row { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; justify-content: center; }
+    .center-text { text-align: center; }
+    .score { font-weight: 800; font-size: 1.15rem; margin: .3rem 0 0; }
+    .btn-chunky {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 56px; padding: 14px 20px;
+      border: 0; border-radius: var(--radius);
+      font: 800 16px/1 system-ui, sans-serif; color: #fff;
+      letter-spacing: .5px; text-transform: uppercase;
+      background: var(--c, var(--accent));
+      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--accent)) 70%, black);
+      cursor: pointer;
+      transition: transform 80ms, box-shadow 80ms, filter 120ms;
+    }
+    .btn-chunky:hover { filter: brightness(1.05); }
+    .btn-chunky:active { transform: translateY(var(--lip)); box-shadow: 0 0 0 transparent; }
+    .btn-chunky:disabled { opacity: .5; }
+    .pop { transition: transform 80ms; }
+    .pop:active { transform: scale(.94); }
+    .pill {
+      display: inline-block; padding: .3rem .7rem;
+      background: var(--ink); color: #fff;
+      border-radius: 999px; font: 700 .85rem/1 system-ui, sans-serif;
+      margin: 0 0 .3rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="stack">
+    <h1 id="title">⚽ Straffläggning</h1>
+    <div class="card">
+      <!-- Målet sett rakt framifrån, som på en riktig straffspark -->
+      <svg viewBox="0 0 500 350" xmlns="http://www.w3.org/2000/svg">
+        <!-- himmel -->
+        <rect width="500" height="230" fill="#bfe3f7" />
+        <!-- gräs, med lite perspektiv (bredare längst ner) -->
+        <polygon points="0,230 500,230 500,350 0,350" fill="#3fa34d" />
+        <polygon points="140,230 360,230 430,350 70,350" fill="#3a9a48" opacity="0.5" />
+        <!-- mållinje, längre bort mot horisonten -->
+        <line x1="160" y1="225" x2="340" y2="225" stroke="white" stroke-width="2" />
+
+        <!-- målburen: lite större nu, men fortfarande en bit bort -->
+        <g id="goalFrame" stroke="white" stroke-width="5" fill="none">
+          <line x1="165" y1="225" x2="165" y2="110" />
+          <line x1="335" y1="225" x2="335" y2="110" />
+          <line x1="165" y1="110" x2="335" y2="110" />
+        </g>
+        <g id="net" stroke="white" stroke-width="1" opacity="0.6">
+          <line x1="207" y1="110" x2="207" y2="225" />
+          <line x1="250" y1="110" x2="250" y2="225" />
+          <line x1="293" y1="110" x2="293" y2="225" />
+          <line x1="165" y1="135" x2="335" y2="135" />
+          <line x1="165" y1="160" x2="335" y2="160" />
+          <line x1="165" y1="185" x2="335" y2="185" />
+          <line x1="165" y1="205" x2="335" y2="205" />
+        </g>
+
+        <!-- straffpunkt -->
+        <circle cx="250" cy="300" r="3" fill="white" />
+
+        <!-- den som INTE styrs av knapparna just nu -->
+        <g id="aiChar" transform="translate(250,195)"></g>
+        <!-- spelaren som DU styr just nu -->
+        <g id="youChar" transform="translate(250,300)"></g>
+
+        <!-- bollen -->
+        <g id="ball" transform="translate(250,300)">
+          <circle r="10" fill="white" stroke="#2b2b2b" stroke-width="2" />
+          <polygon points="0,-5 4,-1.2 2.5,4 -2.5,4 -4,-1.2" fill="#2b2b2b" />
+        </g>
+      </svg>
+    </div>
+
+    <div class="card center-text" id="statusCard">
+      <p class="pill" id="round">Skott 1 av 5 — du skjuter</p>
+      <p id="status">Välj var du skjuter!</p>
+      <p class="score">Dina mål: <span id="goals">0</span> — Dina räddningar: <span id="saves">0</span></p>
+    </div>
+
+    <div class="row" id="zoneButtons">
+      <button class="btn-chunky pop" style="--c:#f4c542" data-zone="left">Vänster</button>
+      <button class="btn-chunky pop" style="--c:#ff7a5a" data-zone="mid">Mitten</button>
+      <button class="btn-chunky pop" style="--c:#3fa34d" data-zone="right">Höger</button>
+    </div>
+
+    <button class="btn-chunky pop" id="newGameBtn" style="--c:#8a5a24; display:none;">Spela igen</button>
+  </div>
+
+  <script>
+    // ============================================================
+    // Straffläggning i två faser:
+    //  Fas 1 (5 straffar): DU skjuter, en hund är målvakt.
+    //  Fas 2 (5 straffar): DU är målvakt, en hund skjuter.
+    // Tre zoner i målet: vänster, mitten, höger.
+    // ============================================================
+    var zones = { left: { x: 210 }, mid: { x: 250 }, right: { x: 290 } };
+    var zoneKeys = Object.keys(zones);
+    var ROUNDS_PER_PHASE = 5;
+
+    var goals = 0;   // mål du gjort som skytt
+    var saves = 0;   // räddningar du gjort som målvakt
+    var roundIndex = 0; // 0..9, de första 5 är skytt-fasen
+    var busy = false;
+
+    var ball = document.getElementById("ball");
+    var youChar = document.getElementById("youChar");
+    var aiChar = document.getElementById("aiChar");
+    var titleEl = document.getElementById("title");
+    var statusEl = document.getElementById("status");
+    var roundEl = document.getElementById("round");
+    var goalsEl = document.getElementById("goals");
+    var savesEl = document.getElementById("saves");
+    var buttons = document.querySelectorAll("#zoneButtons button");
+    var zoneButtonsWrap = document.getElementById("zoneButtons");
+    var newGameBtn = document.getElementById("newGameBtn");
+
+    var SPOT_Y = 300, GOAL_Y = 195;
+
+    // Enkel tecknad spelare. isKeeper=true ger utsträckta armar (som en
+    // målvakt redo att hoppa), annars armar rakt ner.
+    function personSvg(color, isKeeper) {
+      var arms = isKeeper
+        ? '<rect x="-24" y="-10" width="14" height="7" rx="3" fill="' + color + '" stroke="#2b2b2b" stroke-width="1" />' +
+          '<rect x="10" y="-10" width="14" height="7" rx="3" fill="' + color + '" stroke="#2b2b2b" stroke-width="1" />'
+        : '<rect x="-17" y="-8" width="7" height="16" rx="3" fill="' + color + '" stroke="#2b2b2b" stroke-width="1" />' +
+          '<rect x="10" y="-8" width="7" height="16" rx="3" fill="' + color + '" stroke="#2b2b2b" stroke-width="1" />';
+      return '<rect x="-9" y="14" width="7" height="18" fill="#2b2b2b" />' +
+        '<rect x="2" y="14" width="7" height="18" fill="#2b2b2b" />' +
+        '<rect x="-13" y="-14" width="26" height="30" rx="6" fill="' + color + '" stroke="#2b2b2b" stroke-width="1.5" />' +
+        arms +
+        '<circle cx="0" cy="-24" r="9" fill="#f0d9b5" />';
+    }
+
+    function pickRandomZone() {
+      return zoneKeys[Math.floor(Math.random() * zoneKeys.length)];
+    }
+
+    function isShootPhase() {
+      return roundIndex < ROUNDS_PER_PHASE;
+    }
+
+    // Målvakten står långt bort vid det mindre målet, så den ritas
+    // mindre (scale 0.55) än den som står på straffpunkten (scale 1).
+    function setupVisualsForPhase() {
+      if (isShootPhase()) {
+        // Du skjuter från straffpunkten, motståndaren är målvakt.
+        youChar.innerHTML = personSvg("#58a4ff", false);
+        youChar.setAttribute("transform", "translate(250," + SPOT_Y + ") scale(1)");
+        aiChar.innerHTML = personSvg("#ff5a5a", true);
+        aiChar.setAttribute("transform", "translate(250," + GOAL_Y + ") scale(0.7)");
+        ball.setAttribute("transform", "translate(250," + SPOT_Y + ")");
+        titleEl.textContent = "⚽ Du skjuter!";
+      } else {
+        // Du är målvakt, motståndaren skjuter.
+        youChar.innerHTML = personSvg("#58a4ff", true);
+        youChar.setAttribute("transform", "translate(250," + GOAL_Y + ") scale(0.7)");
+        aiChar.innerHTML = personSvg("#ff5a5a", false);
+        aiChar.setAttribute("transform", "translate(250," + SPOT_Y + ") scale(1)");
+        ball.setAttribute("transform", "translate(250," + SPOT_Y + ")");
+        titleEl.textContent = "🥅 Du är målvakt!";
+      }
+      var zoneLabel = isShootPhase() ? ["Skjut vänster", "Skjut mitten", "Skjut höger"] : ["Hoppa vänster", "Stå kvar", "Hoppa höger"];
+      buttons.forEach(function (b, i) { b.textContent = zoneLabel[i]; });
+    }
+
+    function updateRoundLabel() {
+      var roundInPhase = (roundIndex % ROUNDS_PER_PHASE) + 1;
+      var phaseText = isShootPhase() ? "du skjuter" : "du är målvakt";
+      roundEl.textContent = "Straff " + roundInPhase + " av " + ROUNDS_PER_PHASE + " — " + phaseText;
+    }
+
+    function play(zone) {
+      if (busy) return;
+      busy = true;
+      buttons.forEach(function (b) { b.disabled = true; });
+
+      var shootPhase = isShootPhase();
+      var aiZone = pickRandomZone();
+      var shotZone = shootPhase ? zone : aiZone;   // vart bollen faktiskt skjuts
+      var diveZone = shootPhase ? aiZone : zone;    // vart målvakten hoppar
+
+      ball.style.transition = "transform 450ms ease-in";
+      ball.setAttribute("transform", "translate(" + zones[shotZone].x + "," + (GOAL_Y + 15) + ")");
+
+      var keeperChar = shootPhase ? aiChar : youChar;
+      keeperChar.style.transition = "transform 380ms ease-in";
+      keeperChar.setAttribute("transform", "translate(" + zones[diveZone].x + "," + GOAL_Y + ") scale(0.7)");
+
+      setTimeout(function () {
+        var savedShot = (shotZone === diveZone);
+        if (shootPhase) {
+          if (savedShot) {
+            statusEl.textContent = "Målvakten räddade! 🧤";
+          } else {
+            goals++;
+            goalsEl.textContent = goals;
+            statusEl.textContent = "MÅÅÅL! ⚽🎉";
+          }
+        } else {
+          if (savedShot) {
+            saves++;
+            savesEl.textContent = saves;
+            statusEl.textContent = "Du räddade straffen! 🧤";
+          } else {
+            statusEl.textContent = "Motståndaren gjorde mål på dig! ⚽";
+          }
+        }
+
+        roundIndex++;
+
+        setTimeout(function () {
+          if (roundIndex >= ROUNDS_PER_PHASE * 2) {
+            endGame();
+          } else {
+            setupVisualsForPhase();
+            updateRoundLabel();
+            buttons.forEach(function (b) { b.disabled = false; });
+            busy = false;
+            if (roundIndex === ROUNDS_PER_PHASE) {
+              statusEl.textContent = "Nu byter ni roller — du är målvakt!";
+            } else {
+              statusEl.textContent = isShootPhase() ? "Välj var du skjuter!" : "Välj vart du hoppar!";
+            }
+          }
+        }, 900);
+      }, 550);
+    }
+
+    function endGame() {
+      zoneButtonsWrap.style.display = "none";
+      newGameBtn.style.display = "inline-flex";
+      roundEl.textContent = "Straffläggningen är klar!";
+      statusEl.textContent = "Du gjorde " + goals + " av 5 mål, och räddade " + saves + " av 5 straffar! 🏆";
+      busy = false;
+    }
+
+    function resetGame() {
+      goals = 0;
+      saves = 0;
+      roundIndex = 0;
+      goalsEl.textContent = 0;
+      savesEl.textContent = 0;
+      zoneButtonsWrap.style.display = "flex";
+      newGameBtn.style.display = "none";
+      setupVisualsForPhase();
+      updateRoundLabel();
+      statusEl.textContent = "Välj var du skjuter!";
+      buttons.forEach(function (b) { b.disabled = false; });
+      busy = false;
+    }
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () { play(btn.dataset.zone); });
+    });
+    newGameBtn.addEventListener("click", resetGame);
+
+    setupVisualsForPhase();
+    updateRoundLabel();
+  </script>
+</body>
+</html>

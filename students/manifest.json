@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "ivriga-abborren",
+          "boilerplate": false,
+          "student": "student11",
+          "created_at": 1783600399.5091684,
+          "display_name": "student11",
+          "title": "Straffläggning",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T13:33:10Z",
+          "published_at": "2026-07-09T13:33:15Z",
+          "thumbnail": "students/pilot/ivriga-abborren/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "blanka-schimpansen",
           "boilerplate": false,
           "student": "student10",
