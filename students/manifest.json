@@ -5,6 +5,34 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "fria-sfinksen",
+          "boilerplate": false,
+          "student": "student07",
+          "display_name": "student07",
+          "title": "min sida",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T13:12:29Z",
+          "published_at": "2026-07-09T13:12:34Z",
+          "thumbnail": "students/pilot/fria-sfinksen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "rena-myrsloket",
           "boilerplate": false,
           "student": "student10",
@@ -115,31 +143,6 @@
               "total": 0
             },
             "finding_count": 0,
-            "moderation": {
-              "action": "error",
-              "soft_flag_categories": []
-            }
-          }
-        },
-        {
-          "slug": "fria-sfinksen",
-          "boilerplate": false,
-          "student": "student07",
-          "display_name": "student07",
-          "title": "Mat-Quiz",
-          "description": "Det här är ett roligt matquiz där du svarar på frågor om mat och samlar poäng!",
-          "persona": "kladd",
-          "archived_at": "2026-07-02T16:06:24Z",
-          "published_at": "2026-07-03T06:18:55Z",
-          "thumbnail": "students/pilot/fria-sfinksen/thumbnail.webp",
-          "scan": {
-            "counts": {
-              "personnummer": 0,
-              "secrets": 75,
-              "ner": 0,
-              "total": 75
-            },
-            "finding_count": 75,
             "moderation": {
               "action": "error",
               "soft_flag_categories": []
