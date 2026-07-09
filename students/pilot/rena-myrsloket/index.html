@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Vaibhav's Block World</title>
+  <title>VGCRAFT</title>
   <style>
     html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
     body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
@@ -40,13 +40,25 @@
     }
     #restartBtn { background: #d64545; box-shadow: 0 4px 0 #8f2c2c; }
     #closeMenuBtn, #closeInvBtn { background: #58a4ff; box-shadow: 0 4px 0 #2f6bb0; }
-    #invBtn {
-      position: fixed; top: .6rem; left: 4.4rem; z-index: 5;
+    #invBtn, #craftMenuBtn {
+      position: fixed; top: .6rem; z-index: 5;
       border: 0; border-radius: 10px; width: 44px; height: 44px;
       font: 1.3rem/1 system-ui, sans-serif; background: rgba(0,0,0,.5);
       box-shadow: 0 4px 0 rgba(0,0,0,.3); cursor: pointer;
     }
-    #invBtn:active { transform: translateY(4px); box-shadow: none; }
+    #invBtn { left: 4.4rem; }
+    #craftMenuBtn { left: 7.4rem; }
+    #invBtn:active, #craftMenuBtn:active { transform: translateY(4px); box-shadow: none; }
+    #closeCraftBtn { background: #58a4ff; box-shadow: 0 4px 0 #2f6bb0; }
+    .recipe-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: .5rem; padding: .4rem 0; font: 700 .95rem system-ui, sans-serif;
+      border-bottom: 1px solid #eee;
+    }
+    .recipe-row button {
+      width: auto; margin: 0; padding: .4rem .8rem; background: #9a6b3f;
+      box-shadow: 0 3px 0 #6b4a2b; font-size: .85rem;
+    }
     #invList { text-align: left; max-height: 50vh; overflow-y: auto; }
     #invList .inv-row {
       display: flex; align-items: center; gap: .5rem; padding: .3rem 0;
@@ -96,6 +108,14 @@
       font: 800 1.9rem/1 system-ui, sans-serif; color: #fff; background: #3f8a4a;
       box-shadow: 0 5px 0 #285c30; cursor: pointer; transition: transform 80ms;
     }
+    #craftBtn {
+      display: none; position: fixed; left: 50%; bottom: 6.2rem; z-index: 6;
+      transform: translateX(-50%);
+      border: 0; border-radius: 14px; padding: .8rem 1.2rem;
+      font: 800 1rem system-ui, sans-serif; color: #fff; background: #9a6b3f;
+      box-shadow: 0 5px 0 #6b4a2b; cursor: pointer;
+    }
+    #craftBtn.show { display: block; }
 
     /* Left thumb: joystick to walk. Right side of screen: drag to look. */
     #joyBase {
@@ -158,7 +178,7 @@
 </head>
 <body>
   <div id="startScreen">
-    <h1>🧱 Vaibhav's Block World</h1>
+    <h1>🧱 VGCRAFT</h1>
     <p>Bygg, gräv, jaga djur och utforska byn!</p>
     <button id="playBtn">▶ Spela</button>
   </div>
@@ -167,6 +187,14 @@
     <div id="info">Joystick = walk · drag right side = look · 🧱 place · ⛏️ break</div>
   </div>
   <button id="invBtn" title="Inventory">🎒</button>
+  <button id="craftMenuBtn" title="Crafting">🛠️</button>
+  <div id="craftOverlay" class="overlay">
+    <div class="card">
+      <h2>Crafting</h2>
+      <div id="recipeList"></div>
+      <button id="closeCraftBtn">✖ Stäng</button>
+    </div>
+  </div>
   <div id="invOverlay" class="overlay">
     <div class="card">
       <h2>Inventory</h2>
@@ -179,6 +207,9 @@
     <div class="card">
       <h2>Meny</h2>
       <button id="modeBtn">⚔️ Survival</button>
+      <button id="goOverworldBtn" style="background:#3f8a4a;box-shadow:0 4px 0 #285c30">🌍 Overworld</button>
+      <button id="goNetherBtn" style="background:#c9451f;box-shadow:0 4px 0 #7a2410">🔥 Nether</button>
+      <button id="goEndBtn" style="background:#6a4f9e;box-shadow:0 4px 0 #40305e">🌌 The End</button>
       <button id="restartBtn">🔄 Börja om världen</button>
       <button id="closeMenuBtn">✖ Stäng</button>
     </div>
@@ -191,6 +222,7 @@
   <div id="joyBase"><div id="joyStick"></div></div>
   <button id="jumpBtn">JUMP</button>
   <div id="crosshair"></div>
+  <button id="craftBtn">🛠️ Craft: 2 Wood → 1 Planks</button>
   <div id="healthWrap"><div id="healthBar"></div></div>
   <div id="clockDisplay">☀️ 06:00</div>
 
@@ -227,10 +259,14 @@
     const ironMat = new THREE.MeshStandardMaterial({ color: 0xd8a878 });
     const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd23f });
     const diamondMat = new THREE.MeshStandardMaterial({ color: 0x53e0e0 });
+    const waterMat = new THREE.MeshStandardMaterial({ color: 0x2f6fd6, transparent: true, opacity: 0.75 });
+    const lavaMat = new THREE.MeshStandardMaterial({ color: 0xff5a1f, emissive: 0xff3300, emissiveIntensity: 0.6 });
     // Deeper stone has a small chance of turning into an ore block instead —
     // coal is common near the top of the stone, diamond only shows up deep.
-    function maybeOre(depthFromTop) {
+    // Very deep stone can turn into glowing lava instead.
+    function maybeOre(depthFromTop, isDeepest) {
       const roll = Math.random();
+      if (isDeepest && roll < 0.05) return lavaMat;
       if (depthFromTop > 3 && roll < 0.02) return diamondMat;
       if (depthFromTop > 2 && roll < 0.05) return goldMat;
       if (roll < 0.09) return ironMat;
@@ -253,9 +289,9 @@
           const depthFromTop = h - y;
           let mat;
           if (y === h - DEPTH) mat = bedrockMat;
-          else if (depthFromTop === 0) mat = grassMat;
+          else if (depthFromTop === 0) mat = h === 0 ? waterMat : grassMat;
           else if (depthFromTop <= 2) mat = dirtMat;
-          else mat = maybeOre(depthFromTop);
+          else mat = maybeOre(depthFromTop, y === h - DEPTH + 1);
           const block = new THREE.Mesh(geo, mat);
           block.position.set(x + 0.5, y, z + 0.5);
           scene.add(block);
@@ -342,6 +378,34 @@
       layPath(villageSpots[0][0], villageSpots[0][1], villageSpots[i][0], villageSpots[i][1]);
     }
 
+    // ---- Crafting table: a little workbench standing in the village ---
+    const craftLegMat = new THREE.MeshStandardMaterial({ color: 0x6b4a2b });
+    const craftTopMat = new THREE.MeshStandardMaterial({ color: 0x9a6b3f });
+    const craftGridMat = new THREE.MeshStandardMaterial({ color: 0x4a3020 });
+    function makeCraftingTable() {
+      const group = new THREE.Group();
+      [[-0.35, -0.35], [-0.35, 0.35], [0.35, -0.35], [0.35, 0.35]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.8, 0.15), craftLegMat);
+        leg.position.set(lx, 0.4, lz);
+        group.add(leg);
+      });
+      const top = new THREE.Mesh(new THREE.BoxGeometry(1, 0.15, 1), craftTopMat);
+      top.position.y = 0.85;
+      group.add(top);
+      const grid = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.03, 0.7), craftGridMat);
+      grid.position.y = 0.93;
+      group.add(grid);
+      return group;
+    }
+    const craftingTables = [];
+    [[9, 9], [7, 6]].forEach(([cx, cz]) => {
+      const table = makeCraftingTable();
+      const h = heightAt(cx, cz);
+      table.position.set(cx + 0.5, h, cz + 0.5);
+      scene.add(table);
+      craftingTables.push(table.position);
+    });
+
     // ---- Extra detail: flowers on the grass, clouds in the sky --------
     const flowerColors = [0xff5a7a, 0xffe14a, 0xff9f4a, 0xffffff];
     for (let x = -HALF; x < HALF; x++) {
@@ -369,6 +433,88 @@
       cloud.position.set((Math.random() - 0.5) * HALF * 3, 14 + Math.random() * 6, (Math.random() - 0.5) * HALF * 3);
       scene.add(cloud);
     }
+
+    // ---- Two extra dimensions: a fiery Nether and a spooky End --------
+    // Both are just small standalone platforms parked far away from the
+    // main world, so nothing here has to touch the overworld's terrain.
+    const netherrackMat = new THREE.MeshStandardMaterial({ color: 0x7a2a20 });
+    const endStoneMat = new THREE.MeshStandardMaterial({ color: 0xdcd6a3 });
+    const obsidianMat = new THREE.MeshStandardMaterial({ color: 0x1a1425 });
+
+    const NETHER = { x: 300, z: 0 };
+    const END = { x: -300, z: 0 };
+    function buildFlatDimension(center, floorMat, sizeHalf, lavaChance) {
+      for (let x = -sizeHalf; x < sizeHalf; x++) {
+        for (let z = -sizeHalf; z < sizeHalf; z++) {
+          const useLava = lavaChance && Math.random() < lavaChance;
+          const block = new THREE.Mesh(geo, useLava ? lavaMat : floorMat);
+          block.position.set(center.x + x + 0.5, 0, center.z + z + 0.5);
+          scene.add(block);
+        }
+      }
+    }
+    buildFlatDimension(NETHER, netherrackMat, 14, 0.05);
+    buildFlatDimension(END, endStoneMat, 12, 0);
+
+    // Glowstone spikes scattered around the Nether for a bit of atmosphere.
+    const glowstoneMat = new THREE.MeshStandardMaterial({ color: 0xffe27a, emissive: 0xffcc33, emissiveIntensity: 0.8 });
+    for (let i = 0; i < 10; i++) {
+      const px = NETHER.x + Math.round((Math.random() - 0.5) * 24);
+      const pz = NETHER.z + Math.round((Math.random() - 0.5) * 24);
+      const height = 2 + Math.floor(Math.random() * 3);
+      for (let y = 1; y <= height; y++) {
+        const spike = new THREE.Mesh(geo, y === height ? glowstoneMat : netherrackMat);
+        spike.position.set(px + 0.5, y, pz + 0.5);
+        scene.add(spike);
+      }
+    }
+
+    // Tall pale pillars scattered around The End, like broken towers.
+    for (let i = 0; i < 6; i++) {
+      const px = END.x + Math.round((Math.random() - 0.5) * 20);
+      const pz = END.z + Math.round((Math.random() - 0.5) * 20);
+      const height = 4 + Math.floor(Math.random() * 5);
+      for (let y = 1; y <= height; y++) {
+        const seg = new THREE.Mesh(geo, endStoneMat);
+        seg.position.set(px + 0.5, y, pz + 0.5);
+        scene.add(seg);
+      }
+    }
+
+    // Obsidian portal frames with a glowing inside — walk into the glow
+    // and it teleports you. Each portal remembers where it sends you.
+    const portalGlowMats = {
+      nether: new THREE.MeshStandardMaterial({ color: 0xff7a30, emissive: 0xff5500, emissiveIntensity: 0.9, transparent: true, opacity: 0.75 }),
+      end: new THREE.MeshStandardMaterial({ color: 0x9a5fe0, emissive: 0x6a2ecc, emissiveIntensity: 0.9, transparent: true, opacity: 0.75 }),
+      overworld: new THREE.MeshStandardMaterial({ color: 0x5fe08a, emissive: 0x2ecc55, emissiveIntensity: 0.9, transparent: true, opacity: 0.75 }),
+    };
+    const portals = [];
+    function buildPortal(cx, cz, baseY, glowKind, targetX, targetZ, targetDim) {
+      for (let y = 1; y <= 4; y++) {
+        [[-1, 0], [1, 0]].forEach(([dx]) => {
+          const block = new THREE.Mesh(geo, obsidianMat);
+          block.position.set(cx + dx, baseY + y, cz);
+          scene.add(block);
+        });
+      }
+      [0, 1].forEach((dx) => {
+        [1, 4].forEach((y) => {
+          const block = new THREE.Mesh(geo, obsidianMat);
+          block.position.set(cx - 1 + dx * 2, baseY + y, cz);
+          scene.add(block);
+        });
+      });
+      const glow = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2, 0.15), portalGlowMats[glowKind]);
+      glow.position.set(cx, baseY + 2.5, cz);
+      scene.add(glow);
+      portals.push({ x: cx, z: cz, targetX, targetZ, targetDim });
+    }
+    // Two portals near spawn: one to the Nether, one to the End.
+    buildPortal(2, 9, heightAt(2, 9), "nether", NETHER.x + 0.5, NETHER.z + 0.5, "nether");
+    buildPortal(2, 13, heightAt(2, 13), "end", END.x + 0.5, END.z + 0.5, "end");
+    // A return portal inside each dimension, back to the overworld spawn.
+    buildPortal(NETHER.x - 5, NETHER.z, 0, "overworld", 0.5, 0.5, "overworld");
+    buildPortal(END.x - 4, END.z, 0, "overworld", 0.5, 0.5, "overworld");
 
     // ---- First-person walking player -------------------------------
     // The camera itself IS the player's eyes. We track position, a
@@ -447,17 +593,23 @@
     });
 
     // All placeable blocks live in this array so the raycaster can hit them.
+    // Water and lava are NOT solid — they're left out so you can mine/build
+    // straight through them instead of the raycast stopping on the surface.
     const blocks = [];
-    scene.children.forEach((c) => { if (c.isMesh) blocks.push(c); });
+    const glowMatSet = new Set(Object.values(portalGlowMats));
+    scene.children.forEach((c) => {
+      if (c.isMesh && c.material !== waterMat && c.material !== lavaMat && !glowMatSet.has(c.material)) blocks.push(c);
+    });
 
     // Every collectible material is named here once — this map is used both
     // to label inventory pills AND to look up which material to build with.
     const meatMat = new THREE.MeshStandardMaterial({ color: 0xd9635e });
     const furMat = new THREE.MeshStandardMaterial({ color: 0xcabba0 });
+    const planksMat = new THREE.MeshStandardMaterial({ color: 0xc9995f });
     const namedMats = {
       Grass: grassMat, Dirt: dirtMat, Stone: stoneMat,
       Coal: coalMat, Iron: ironMat, Gold: goldMat, Diamond: diamondMat,
-      Wood: trunkMat, Leaves: leavesMat, Meat: meatMat, Fur: furMat,
+      Wood: trunkMat, Leaves: leavesMat, Meat: meatMat, Fur: furMat, Planks: planksMat,
     };
     const oreNames = new Map(Object.entries(namedMats).map(([name, mat]) => [mat, name]));
     let currentName = null; // nothing selected until you've mined something
@@ -557,6 +709,27 @@
     document.getElementById("closeMenuBtn").addEventListener("pointerup", () => menuOverlay.classList.remove("open"));
     document.getElementById("restartBtn").addEventListener("pointerup", () => location.reload());
 
+    // ---- Travel between dimensions -------------------------------------
+    let dimension = "overworld";
+    function teleport(dim, x, z) {
+      dimension = dim;
+      player.x = x; player.z = z; player.vy = 0;
+      player.y = (dim === "overworld" ? groundSurfaceY(x, z) : 1) + EYE_HEIGHT;
+      menuOverlay.classList.remove("open");
+    }
+    document.getElementById("goOverworldBtn").addEventListener("pointerup", () => teleport("overworld", 0.5, 0.5));
+    document.getElementById("goNetherBtn").addEventListener("pointerup", () => teleport("nether", NETHER.x + 0.5, NETHER.z + 0.5));
+    document.getElementById("goEndBtn").addEventListener("pointerup", () => teleport("end", END.x + 0.5, END.z + 0.5));
+
+    // Walking into a glowing portal teleports you — a short cooldown after
+    // arriving stops you from bouncing straight back through it.
+    let portalCooldown = 0;
+    function checkPortals(dt) {
+      if (portalCooldown > 0) { portalCooldown -= dt; return; }
+      const hit = portals.find((p) => Math.hypot(p.x - player.x, p.z - player.z) < 1.1);
+      if (hit) { teleport(hit.targetDim, hit.targetX, hit.targetZ); portalCooldown = 1.5; }
+    }
+
     // ---- Inventory panel: a bigger list of everything you're carrying --
     const invOverlay = document.getElementById("invOverlay");
     const invList = document.getElementById("invList");
@@ -584,6 +757,50 @@
     document.getElementById("playBtn").addEventListener("pointerup", () => {
       document.getElementById("startScreen").classList.add("hidden");
     });
+
+    // ---- Crafting: show the button only when standing near a table ----
+    const craftBtn = document.getElementById("craftBtn");
+    function nearCraftingTable() {
+      return craftingTables.some((p) => Math.hypot(p.x - player.x, p.z - player.z) < 2.2);
+    }
+    craftBtn.addEventListener("pointerup", () => {
+      if ((inventory.Wood || 0) < 2) return;
+      inventory.Wood -= 2;
+      addToInventory(planksMat, 1);
+    });
+
+    // ---- Crafting menu button: same recipes, usable from anywhere -----
+    const RECIPES = [
+      { need: { Wood: 2 }, makes: "Planks", count: 1 },
+    ];
+    const craftOverlay = document.getElementById("craftOverlay");
+    const recipeList = document.getElementById("recipeList");
+    function renderRecipes() {
+      recipeList.innerHTML = "";
+      RECIPES.forEach((r) => {
+        const need = Object.entries(r.need).map(([n, c]) => `${c} ${n}`).join(" + ");
+        const row = document.createElement("div");
+        row.className = "recipe-row";
+        row.innerHTML = `<span>${need} → ${r.count} ${r.makes}</span>`;
+        const btn = document.createElement("button");
+        btn.textContent = "Craft";
+        const canMake = Object.entries(r.need).every(([n, c]) => (inventory[n] || 0) >= c);
+        btn.disabled = !canMake;
+        btn.style.opacity = canMake ? 1 : 0.4;
+        btn.addEventListener("pointerup", () => {
+          Object.entries(r.need).forEach(([n, c]) => { inventory[n] -= c; });
+          addToInventory(namedMats[r.makes], r.count);
+          renderRecipes();
+        });
+        row.appendChild(btn);
+        recipeList.appendChild(row);
+      });
+    }
+    document.getElementById("craftMenuBtn").addEventListener("pointerup", () => {
+      renderRecipes();
+      craftOverlay.classList.add("open");
+    });
+    document.getElementById("closeCraftBtn").addEventListener("pointerup", () => craftOverlay.classList.remove("open"));
 
     addEventListener("resize", () => {
       camera.aspect = innerWidth / innerHeight;
@@ -716,12 +933,26 @@
     const clock = new THREE.Clock();
 
     // ---- Day/night cycle: one full day takes 3 real minutes -----------
-    const DAY_LENGTH = 180;
+    const DAY_LENGTH = 24 * 60; // a full day takes 24 real minutes
     let gameTime = 0.25; // start mid-morning
     const skyDay = new THREE.Color(0x87ceeb);
     const skyNight = new THREE.Color(0x0a1030);
     const clockEl = document.getElementById("clockDisplay");
+    const skyNether = new THREE.Color(0x3a0e05);
+    const skyEnd = new THREE.Color(0x120a1f);
     function updateDayNight(dt) {
+      if (dimension === "nether") {
+        scene.background = skyNether;
+        sun.intensity = 0.3; ambient.intensity = 0.6;
+        clockEl.textContent = "🔥 Nether";
+        return;
+      }
+      if (dimension === "end") {
+        scene.background = skyEnd;
+        sun.intensity = 0.2; ambient.intensity = 0.5;
+        clockEl.textContent = "🌌 The End";
+        return;
+      }
       gameTime = (gameTime + dt / DAY_LENGTH) % 1;
       const angle = gameTime * Math.PI * 2;
       // Sun swings across the sky; brightness follows how high it is.
@@ -743,6 +974,12 @@
     renderer.setAnimationLoop(() => {
       const dt = Math.min(clock.getDelta(), 0.05);
 
+      // Water tiles are the overworld's lowest, flattest spots. Swimming
+      // is slower than walking on land.
+      const inWater = dimension === "overworld" &&
+        heightAt(Math.floor(player.x), Math.floor(player.z)) === 0 && !creative;
+      const speedMul = inWater ? 0.6 : 1;
+
       // Combine joystick + keyboard into one movement vector (forward/strafe).
       let fwd = -joyVec.y, strafe = joyVec.x;
       if (keys["w"] || keys["arrowup"]) fwd = 1;
@@ -751,15 +988,27 @@
       if (keys["d"] || keys["arrowright"]) strafe = 1;
 
       const sinY = Math.sin(player.yaw), cosY = Math.cos(player.yaw);
-      player.x += (-fwd * sinY + strafe * cosY) * WALK_SPEED * dt;
-      player.z += (-fwd * cosY - strafe * sinY) * WALK_SPEED * dt;
+      player.x += (-fwd * sinY + strafe * cosY) * WALK_SPEED * speedMul * dt;
+      player.z += (-fwd * cosY - strafe * sinY) * WALK_SPEED * speedMul * dt;
 
       // Gravity + jumping, with simple "stand on top of the terrain" collision.
-      const ground = groundSurfaceY(player.x, player.z) + EYE_HEIGHT;
+      // The Nether/End are flat platforms, not the overworld's hill formula.
+      const ground = (dimension === "overworld" ? groundSurfaceY(player.x, player.z) : 1) + EYE_HEIGHT;
       if (creative) {
         // Flying: hold jump to rise, otherwise sink gently. No fall damage.
         player.y += (jumpHeld ? 5 : -1.5) * dt;
         if (player.y < ground) player.y = ground;
+        wantsJump = false;
+      } else if (inWater) {
+        // Swimming: gentle bob instead of a hard drop, hold JUMP to rise up,
+        // and you can duck a little below the surface to look around.
+        player.vy += ((jumpHeld ? 2.2 : -1) - player.vy) * Math.min(1, dt * 4);
+        player.y += player.vy * dt;
+        const floorY = ground - 1.3, surfaceY = ground + 0.2;
+        if (player.y > surfaceY) { player.y = surfaceY; player.vy = 0; }
+        if (player.y < floorY) { player.y = floorY; player.vy = 0; }
+        player.onGround = true;
+        player.jumpsLeft = 2;
         wantsJump = false;
       } else {
         if (wantsJump && player.jumpsLeft > 0) {
@@ -792,6 +1041,8 @@
       updateAnimals(dt);
       updateVillagers(dt);
       updateDayNight(dt);
+      checkPortals(dt);
+      craftBtn.classList.toggle("show", nearCraftingTable());
 
       renderer.render(scene, camera);
     });

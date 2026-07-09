@@ -1,6 +1,26 @@
 {
-  "generated_at": "2026-07-09T13:14:10Z",
+  "generated_at": "2026-07-09T13:24:27Z",
   "entries": [
+    {
+      "slug": "rena-myrsloket",
+      "title": "VGCRAFT",
+      "display_name": "student10",
+      "thumbnail": "students/pilot/rena-myrsloket/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/rena-myrsloket/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/rena-myrsloket",
+      "date": "2026-07-09T13:24:27Z",
+      "persona": "kladd",
+      "tags": [
+        "3d-spel",
+        "byggspel",
+        "minecraft",
+        "portaler",
+        "crafting"
+      ],
+      "description": "VGCRAFT: en egen liten Minecraft-värld med by, bybor, crafting, dygnscykel och portaler till Nether och The End.",
+      "level": "avancerad",
+      "model": "claude-opus-4-6"
+    },
     {
       "slug": "pigga-sfinksen",
       "title": "Ballerinan och Baletten! 🩰",
@@ -11,26 +31,6 @@
       "date": "2026-07-09T13:14:10Z",
       "persona": "kladd",
       "tags": []
-    },
-    {
-      "slug": "rena-myrsloket",
-      "title": "Vaibhav's Block World",
-      "display_name": "student10",
-      "thumbnail": "students/pilot/rena-myrsloket/thumbnail.webp",
-      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/rena-myrsloket/",
-      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/rena-myrsloket",
-      "date": "2026-07-09T13:13:12Z",
-      "persona": "kladd",
-      "tags": [
-        "3d-spel",
-        "byggspel",
-        "minecraft",
-        "överlevnad",
-        "dygnscykel"
-      ],
-      "description": "En egen liten Minecraft-värld med kullar, gruvgångar full av malm, en by med bybor, dygn med sol och måne, och djur att jaga för kött och päls.",
-      "level": "medel",
-      "model": "claude-opus-4-6"
     },
     {
       "slug": "fria-sfinksen",
