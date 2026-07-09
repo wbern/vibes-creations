@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "ivriga-radjuret",
+          "boilerplate": false,
+          "student": "student06",
+          "created_at": 1783600061.9923666,
+          "display_name": "student06",
+          "title": "Bilracing",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-02T16:05:17Z",
+          "published_at": "2026-07-09T14:02:54Z",
+          "thumbnail": "students/pilot/ivriga-radjuret/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "milda-muslan",
           "boilerplate": false,
           "student": "william1",
@@ -83,42 +112,6 @@
           "archived_at": "2026-07-09T13:31:13Z",
           "published_at": "2026-07-09T13:31:20Z",
           "thumbnail": "students/pilot/blanka-schimpansen/thumbnail.webp",
-          "scan": {
-            "counts": {
-              "personnummer": 0,
-              "secrets": 0,
-              "ner": 0,
-              "total": 0
-            },
-            "finding_count": 0,
-            "moderation": {
-              "action": "error",
-              "soft_flag_categories": []
-            }
-          }
-        },
-        {
-          "slug": "ivriga-radjuret",
-          "boilerplate": false,
-          "student": "student06",
-          "created_at": 1783600061.9923666,
-          "display_name": "student06",
-          "title": "Ballerinan och Baletten! 🩰",
-          "description": "En balettdansande hamster och en ballerina i tiara snurrar, hoppar och gör splitt på en riktig teaterscen till egen komponerad vals.",
-          "tags": [
-            "balett",
-            "dans",
-            "hamster",
-            "teater",
-            "animation",
-            "musik"
-          ],
-          "level": "medel",
-          "model": "claude-opus-4-6",
-          "persona": "kladd",
-          "archived_at": "2026-07-09T13:28:43Z",
-          "published_at": "2026-07-09T13:28:48Z",
-          "thumbnail": "students/pilot/ivriga-radjuret/thumbnail.webp",
           "scan": {
             "counts": {
               "personnummer": 0,

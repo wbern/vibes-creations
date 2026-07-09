@@ -3,327 +3,219 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Ballerinan och Baletten! 🩰</title>
-  <!-- pilot-student06 -->
+  <title>Bilracing</title>
   <style>
-    /* Theme tokens — the four presets are papper · skog · hav · neon.
-     * The chunky helpers (.card, .btn-chunky, .pill, .wobble, .pop-in)
-     * come from the boilerplate Claude uses for every new page. */
-    :root {
-      --bg: #f4ecd8;
-      --ink: #2b2b2b;
-      --card: #ffffff;
-      --accent: #ff7a5a;
-      --accent-2: #58a4ff;
-      --radius: 20px;
-      --lip: 8px;
-    }
-    html, body { margin: 0; min-height: 100vh; -webkit-text-size-adjust: 100%; }
+    html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; background: #2b2b2b; }
     body {
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
       font-family: system-ui, sans-serif;
-      background: var(--bg);
-      background-image:
-        radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--accent) 30%, transparent) 0, transparent 40%),
-        radial-gradient(circle at 80% 90%, color-mix(in srgb, var(--accent-2) 25%, transparent) 0, transparent 45%);
-      display: grid;
-      place-items: center;
-      padding: 2rem;
-      box-sizing: border-box;
-      color: var(--ink);
     }
-    .page { max-width: 24rem; margin: 0 auto; text-align: center; }
-    .card { background: var(--card); border-radius: var(--radius); padding: 1.5rem; box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--ink) 14%, transparent); }
-    .btn-chunky {
-      display: inline-flex; align-items: center; justify-content: center;
-      min-height: 56px; padding: 14px 22px; border: 0; border-radius: var(--radius);
-      font: 800 18px/1 system-ui, sans-serif; color: #fff; letter-spacing: .5px;
-      background: var(--c, var(--accent));
-      box-shadow: 0 var(--lip) 0 color-mix(in srgb, var(--c, var(--accent)) 70%, black);
-      cursor: pointer; margin-top: 1rem;
-    }
-    .btn-chunky:active { transform: translateY(var(--lip)); box-shadow: 0 0 0 transparent; }
-    @keyframes wobble { 0%,100% { transform: rotate(0); } 25% { transform: rotate(6deg); } 75% { transform: rotate(-6deg); } }
-    .wobble { animation: wobble 2.2s ease-in-out infinite; transform-origin: 50% 85%; }
+    #game { position: fixed; inset: 0; }
+    canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
-    /* Scenen: en liten "film"-ruta med gardiner som dras isär */
-    .stage {
-      position: relative;
-      overflow: hidden;
-      height: 260px;
-      border-radius: var(--radius);
-      background: radial-gradient(circle at 50% 30%, #4a2f5c, #1e1430 75%);
+    /* Styrknappar längst ner till vänster — undviker chattbubblan
+       som brukar sitta nere till höger. */
+    #controls {
+      position: fixed; left: 0.75rem; bottom: 0.75rem;
+      display: flex; gap: 0.75rem; z-index: 5;
     }
-    /* strålkastare som lyser ner mot scenen, bakom allt annat */
-    .stage .spotlights {
-      position: absolute; inset: 0; z-index: 0;
-      background:
-        radial-gradient(ellipse 90px 220px at 30% -10%, rgba(255,244,200,.35), transparent 70%),
-        radial-gradient(ellipse 90px 220px at 70% -10%, rgba(255,244,200,.35), transparent 70%);
+    #controls button {
+      min-width: 64px; min-height: 64px;
+      font-size: 1.8rem; font-weight: 800;
+      border: 0; border-radius: 16px;
+      background: #ffd166; color: #2b2b2b;
+      box-shadow: 0 6px 0 #b98f2f;
+      touch-action: manipulation;
     }
-    /* draperi upptill, som en scen-valang med scalloped kant */
-    .stage .valance {
-      position: absolute; top: 0; left: 0; right: 0; height: 34px; z-index: 3;
-      background: #8a1620;
-      -webkit-mask-image: radial-gradient(circle 14px at 14px 0, transparent 13px, #000 14px);
-      mask-image: radial-gradient(circle 14px at 14px 0, transparent 13px, #000 14px);
-      -webkit-mask-size: 28px 28px;
-      mask-size: 28px 28px;
-      -webkit-mask-repeat: repeat-x;
-      mask-repeat: repeat-x;
-      box-shadow: 0 4px 8px rgba(0,0,0,.4);
-    }
-    /* fotramp längs golvets framkant */
-    .stage .footlights {
-      position: absolute; left: 8%; right: 8%; bottom: 34px; height: 6px; z-index: 2;
-      background: repeating-linear-gradient(90deg, rgba(255,225,140,.9) 0 4px, transparent 4px 14px);
-      filter: blur(.3px);
-    }
-    .stage .curtain {
-      position: absolute; top: 0; bottom: 0; width: 52%;
-      background: #b5222f;
-      box-shadow: inset 0 0 20px rgba(0,0,0,.4);
-      transition: transform 1.1s ease-in;
-      z-index: 3;
-    }
-    /* scengolv i trä, ligger bakom gardinerna men under dansarna */
-    .stage .floor {
-      position: absolute; left: 0; right: 0; bottom: 0; height: 34px;
-      background: repeating-linear-gradient(90deg, #8a5a2b 0 18px, #7a4d22 18px 20px);
-      box-shadow: 0 -3px 6px rgba(0,0,0,.35);
-      z-index: 1;
-    }
-    .stage .curtain.left { left: -1px; border-radius: 0 30px 30px 0; }
-    .stage .curtain.right { right: -1px; border-radius: 30px 0 0 30px; }
-    .stage.playing .curtain.left { transform: translateX(-100%); }
-    .stage.playing .curtain.right { transform: translateX(100%); }
-    .stage #figur { position: absolute; bottom: 10px; left: 36%; width: 120px; height: auto;
-      transform: translateX(-50%); animation: none; z-index: 2; }
-    .stage.playing #figur { animation: dance 7s ease-in-out .9s 1 both; }
-    @keyframes dance {
-      0%   { transform: translateX(-260%) rotate(0deg); }
-      15%  { transform: translateX(-50%) rotate(0deg); }
-      /* snurra runt */
-      40%  { transform: translateX(-50%) rotate(720deg); }
-      /* hoppa */
-      52%  { transform: translateX(-50%) translateY(-55px) rotate(720deg); }
-      62%  { transform: translateX(-50%) translateY(0) rotate(720deg); }
-      /* sätta sig ner på golvet, benen sprids i splitt (se legL/legR nedan) */
-      88%  { transform: translateX(-50%) translateY(12px) rotate(720deg); }
-      100% { transform: translateX(-50%) translateY(12px) rotate(720deg); }
-    }
-    /* benen sprids isär till en splitt på golvet */
-    .stage.playing #legL { animation: splitL 7s ease-in-out .9s 1 both; }
-    .stage.playing #legR { animation: splitR 7s ease-in-out .9s 1 both; }
-    @keyframes splitL { 0%, 75% { transform: rotate(0deg); } 90%, 100% { transform: rotate(-85deg); } }
-    @keyframes splitR { 0%, 75% { transform: rotate(0deg); } 90%, 100% { transform: rotate(85deg); } }
-
-    /* hamstern dansar in från höger, med samma sorts rörelser */
-    .stage #hamster { position: absolute; bottom: 10px; left: 68%; width: 92px; height: auto;
-      transform: translateX(-50%); animation: none; z-index: 2; }
-    .stage.playing #hamster { animation: dance-hamster 7s ease-in-out .9s 1 both; }
-    @keyframes dance-hamster {
-      0%   { transform: translateX(280%) rotate(0deg); }
-      15%  { transform: translateX(-50%) rotate(0deg); }
-      40%  { transform: translateX(-50%) rotate(-720deg); }
-      52%  { transform: translateX(-50%) translateY(-38px) rotate(-720deg); }
-      62%  { transform: translateX(-50%) translateY(0) rotate(-720deg); }
-      88%  { transform: translateX(-50%) translateY(9px) rotate(-720deg); }
-      100% { transform: translateX(-50%) translateY(9px) rotate(-720deg); }
-    }
-    .stage.playing #legHL { animation: splitL 7s ease-in-out .9s 1 both; }
-    .stage.playing #legHR { animation: splitR 7s ease-in-out .9s 1 both; }
-    .stage .the-end {
-      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-      color: #fff; font: 900 1.4rem system-ui, sans-serif; opacity: 0; z-index: 4;
-      transition: opacity .6s ease;
-    }
-    .stage.show-end .the-end { opacity: 1; }
-
-    /* publiken klappar händerna */
-    .stage .audience {
-      position: absolute; bottom: 6px; left: 0; right: 0; text-align: center;
-      font-size: 1.5rem; opacity: 0; z-index: 4; letter-spacing: .3rem;
-    }
-    .stage.applaud .audience { opacity: 1; animation: clap .3s ease-in-out infinite; }
-    @keyframes clap { 0%,100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.15) rotate(-6deg); } }
-
-    /* blommor som regnar ner över scenen */
-    .stage .flowers span {
-      position: absolute; top: -20px; font-size: 1.3rem; opacity: 0; z-index: 4;
-    }
-    .stage .flowers span:nth-child(1) { left: 15%; }
-    .stage .flowers span:nth-child(2) { left: 32%; }
-    .stage .flowers span:nth-child(3) { left: 50%; }
-    .stage .flowers span:nth-child(4) { left: 68%; }
-    .stage .flowers span:nth-child(5) { left: 84%; }
-    .stage.applaud .flowers span {
-      opacity: 1;
-      animation: fall 1.6s ease-in forwards;
-    }
-    .stage.applaud .flowers span:nth-child(2) { animation-delay: .15s; }
-    .stage.applaud .flowers span:nth-child(3) { animation-delay: .3s; }
-    .stage.applaud .flowers span:nth-child(4) { animation-delay: .1s; }
-    .stage.applaud .flowers span:nth-child(5) { animation-delay: .25s; }
-    @keyframes fall {
-      from { transform: translateY(0) rotate(0deg); opacity: 1; }
-      to   { transform: translateY(230px) rotate(200deg); opacity: 1; }
-    }
+    #controls button:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
   </style>
 </head>
 <body>
-  <div class="page">
-    <h1>Ballerinan och Baletten! 🩰🧑🏼‍🩰</h1>
-    <div class="card">
-    <div class="stage" id="stage">
-      <div class="spotlights"></div>
-      <div class="floor"></div>
-      <div class="footlights"></div>
-      <div class="valance"></div>
-      <div class="curtain left"></div>
-      <div class="curtain right"></div>
-      <div class="audience">👏 👏 👏 👏 👏</div>
-      <div class="flowers"><span>🌸</span><span>🌷</span><span>🌸</span><span>🌷</span><span>🌸</span></div>
-      <div class="the-end">BRAVO! 🎉</div>
-      <!-- En enkel figur ritad med former: kropp, huvud, ögon, armar, ben -->
-      <svg id="figur" viewBox="0 0 200 240" width="200" height="240">
-        <!-- vänster ben, egen grupp så den kan spreta ut i splitten -->
-        <g id="legL" style="transform-origin: 73px 150px">
-          <rect x="66" y="150" width="14" height="45" fill="#ffe0e0"/>
-          <path d="M 66 160 L 82 178 M 82 160 L 66 178" stroke="#ff8fa3" stroke-width="3"/>
-          <ellipse cx="73" cy="200" rx="16" ry="9" fill="#fff"/>
-        </g>
-        <!-- höger ben, egen grupp -->
-        <g id="legR" style="transform-origin: 127px 150px">
-          <rect x="120" y="150" width="14" height="45" fill="#ffe0e0"/>
-          <path d="M 120 160 L 136 178 M 136 160 L 120 178" stroke="#ff8fa3" stroke-width="3"/>
-          <ellipse cx="127" cy="200" rx="16" ry="9" fill="#fff"/>
-        </g>
-        <!-- tutu-kjol -->
-        <path d="M 55 140 Q 100 175 145 140 Q 150 165 100 178 Q 50 165 55 140 Z" fill="#ffb6d5"/>
-        <!-- kropp / linne -->
-        <ellipse cx="100" cy="120" rx="34" ry="38" fill="#ff8fa3"/>
-        <!-- armar -->
-        <rect x="38" y="100" width="16" height="50" rx="8" fill="#ffd9c2" transform="rotate(-18 46 100)"/>
-        <rect x="146" y="100" width="16" height="50" rx="8" fill="#ffd9c2" transform="rotate(18 154 100)"/>
-        <!-- huvud -->
-        <circle cx="100" cy="65" r="40" fill="#ffd9c2"/>
-        <!-- blont hår, knut ovanpå + lite längd ner mot axlarna -->
-        <path d="M 60 55 Q 55 5 100 8 Q 145 5 140 55 Q 145 90 128 95 Q 138 60 100 55 Q 62 60 72 95 Q 55 90 60 55 Z" fill="#f5d76e"/>
-        <circle cx="100" cy="18" r="14" fill="#f5d76e"/>
-        <!-- rosa tiara -->
-        <path d="M 76 42 L 82 28 L 90 40 L 100 24 L 110 40 L 118 28 L 124 42 Z" fill="#ff8fc7" stroke="#e858a0" stroke-width="2" stroke-linejoin="round"/>
-        <circle cx="82" cy="34" r="2.5" fill="#fff"/>
-        <circle cx="100" cy="30" r="3" fill="#fff"/>
-        <circle cx="118" cy="34" r="2.5" fill="#fff"/>
-        <!-- grönblå ögon -->
-        <circle cx="84" cy="62" r="7" fill="#fff"/>
-        <circle cx="116" cy="62" r="7" fill="#fff"/>
-        <circle cx="84" cy="62" r="4" fill="#2fa6a1"/>
-        <circle cx="116" cy="62" r="4" fill="#2fa6a1"/>
-        <!-- leende -->
-        <path d="M 84 82 Q 100 94 116 82" stroke="#b5563f" stroke-width="4" fill="none" stroke-linecap="round"/>
-      </svg>
-      <!-- hamster i balettkläder -->
-      <svg id="hamster" viewBox="0 0 160 160" width="160" height="160">
-        <!-- ben med balettskor, egna grupper för splitten -->
-        <g id="legHL" style="transform-origin: 62px 118px">
-          <ellipse cx="62" cy="128" rx="10" ry="16" fill="#c98a4b"/>
-          <ellipse cx="62" cy="146" rx="12" ry="7" fill="#fff"/>
-          <path d="M 56 136 L 68 150 M 68 136 L 56 150" stroke="#ff8fa3" stroke-width="2"/>
-        </g>
-        <g id="legHR" style="transform-origin: 98px 118px">
-          <ellipse cx="98" cy="128" rx="10" ry="16" fill="#c98a4b"/>
-          <ellipse cx="98" cy="146" rx="12" ry="7" fill="#fff"/>
-          <path d="M 92 136 L 104 150 M 104 136 L 92 150" stroke="#ff8fa3" stroke-width="2"/>
-        </g>
-        <!-- tutu -->
-        <path d="M 42 108 Q 80 135 118 108 Q 122 128 80 138 Q 38 128 42 108 Z" fill="#ffb6d5"/>
-        <!-- kropp -->
-        <ellipse cx="80" cy="95" rx="42" ry="38" fill="#d69a5c"/>
-        <!-- armar -->
-        <ellipse cx="40" cy="95" rx="9" ry="16" fill="#d69a5c" transform="rotate(-20 40 95)"/>
-        <ellipse cx="120" cy="95" rx="9" ry="16" fill="#d69a5c" transform="rotate(20 120 95)"/>
-        <!-- huvud -->
-        <circle cx="80" cy="52" r="32" fill="#e6b076"/>
-        <!-- öron -->
-        <circle cx="55" cy="24" r="13" fill="#e6b076"/>
-        <circle cx="105" cy="24" r="13" fill="#e6b076"/>
-        <circle cx="55" cy="24" r="6" fill="#ffcbdb"/>
-        <circle cx="105" cy="24" r="6" fill="#ffcbdb"/>
-        <!-- rosa tiara, matchar ballerinan -->
-        <path d="M 62 34 L 67 22 L 74 32 L 80 18 L 86 32 L 93 22 L 98 34 Z" fill="#ff8fc7" stroke="#e858a0" stroke-width="1.5" stroke-linejoin="round"/>
-        <!-- ögon och nos -->
-        <circle cx="68" cy="50" r="4" fill="#2b2b2b"/>
-        <circle cx="92" cy="50" r="4" fill="#2b2b2b"/>
-        <ellipse cx="80" cy="60" rx="5" ry="3.5" fill="#ffb0a8"/>
-        <!-- morrhår -->
-        <path d="M 68 62 L 50 58 M 68 65 L 50 66 M 92 62 L 110 58 M 92 65 L 110 66" stroke="#8a5a2b" stroke-width="1.5"/>
-      </svg>
-    </div>
-    <button class="btn-chunky pop" style="--c:#b5222f" onclick="playFilm()">▶ Spela filmen</button>
-    </div>
+  <div id="game">
+    <canvas id="c"></canvas>
   </div>
-
+  <div id="controls">
+    <button id="leftBtn" aria-label="Vänster">◀</button>
+    <button id="rightBtn" aria-label="Höger">▶</button>
+  </div>
   <script>
-    // En liten klassisk vals byggd av toner (ingen ljudfil behövs).
-    // Varje ton är en oscillator som tonar in och ut mjukt, i 3/4-takt.
-    var NOTE_HZ = {
-      C4:261.63, D4:293.66, E4:329.63, F4:349.23, G4:392.00,
-      A4:440.00, B4:493.88, C5:523.25, D5:587.33, E5:659.25, G3:196.00
-    };
-    var audioCtx = null;
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d");
 
-    function playTone(freq, startTime, dur) {
-      var osc = audioCtx.createOscillator();
-      var gain = audioCtx.createGain();
-      osc.type = "triangle";
-      osc.frequency.value = freq;
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(0.18, startTime + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
-      osc.start(startTime);
-      osc.stop(startTime + dur + 0.05);
+    function resize() {
+      canvas.width = innerWidth;
+      canvas.height = innerHeight;
+    }
+    resize();
+    addEventListener("resize", resize);
+
+    // Vägen har gräs på sidorna och streckade körfältslinjer i mitten.
+    // laneStripeY flyttas nedåt varje bildruta för att ge känslan av att köra.
+    let laneStripeY = 0;
+
+    function drawRoad() {
+      ctx.fillStyle = "#4a7c2f"; // gräs
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const roadW = Math.min(canvas.width * 0.7, 320);
+      const roadX = (canvas.width - roadW) / 2;
+      ctx.fillStyle = "#3a3a3a"; // asfalt
+      ctx.fillRect(roadX, 0, roadW, canvas.height);
+
+      // streckad mittlinje
+      ctx.fillStyle = "#f4d35e";
+      const stripeH = 40, gap = 30;
+      for (let y = laneStripeY - stripeH; y < canvas.height; y += stripeH + gap) {
+        ctx.fillRect(canvas.width / 2 - 4, y, 8, stripeH);
+      }
+      return roadX + roadW / 2; // vägens mittpunkt, används av bilarna
     }
 
-    function playWaltz() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === "suspended") audioCtx.resume();
-      // melodi (ton, längd i sekunder) + en bas-ton varje takt, 3/4-vals-känsla
-      var melody = [
-        ["G4",.5],["C5",.25],["B4",.25],["A4",.5],["G4",.5],
-        ["E4",.5],["F4",.25],["G4",.25],["A4",.75],["G3",.25],
-        ["G4",.5],["C5",.25],["B4",.25],["A4",.5],["G4",.5],
-        ["C5",.5],["D5",.25],["E5",.25],["D5",.75],["G3",.25]
-      ];
-      var t = audioCtx.currentTime + 0.05;
-      var loops = 2; // spela melodin två varv, ungefär lika långt som dansen
-      for (var l = 0; l < loops; l++) {
-        for (var i = 0; i < melody.length; i++) {
-          playTone(NOTE_HZ[melody[i][0]], t, melody[i][1] * 0.95);
-          t += melody[i][1];
+    // Ritar en enkel bil: kaross, ruta och fyra hjul.
+    function drawCar(cx, cy, w, h, body, roof) {
+      ctx.fillStyle = body;
+      roundRect(cx - w / 2, cy - h / 2, w, h, 8);
+      ctx.fillStyle = roof || "#dfefff";
+      roundRect(cx - w / 2 + w * 0.18, cy - h / 2 + h * 0.15, w * 0.64, h * 0.35, 4);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(cx - w / 2 - 3, cy - h / 2 + 6, 6, 14);
+      ctx.fillRect(cx + w / 2 - 3, cy - h / 2 + 6, 6, 14);
+      ctx.fillRect(cx - w / 2 - 3, cy + h / 2 - 20, 6, 14);
+      ctx.fillRect(cx + w / 2 - 3, cy + h / 2 - 20, 6, 14);
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Spelarens bil rör sig i sidled. playerX är bilens mittpunkt.
+    let playerX = null; // sätts när vi vet vägens position, se loop()
+    let movingLeft = false, movingRight = false;
+    const carSpeed = 6;
+
+    function heldMove(dir, on) {
+      if (dir === "left") movingLeft = on;
+      if (dir === "right") movingRight = on;
+    }
+
+    // Knappar: håll intryckt för att röra bilen, släpp för att stanna.
+    ["pointerdown", "pointerup", "pointerleave", "pointercancel"].forEach(evt => {
+      document.getElementById("leftBtn").addEventListener(evt, () =>
+        heldMove("left", evt === "pointerdown"));
+      document.getElementById("rightBtn").addEventListener(evt, () =>
+        heldMove("right", evt === "pointerdown"));
+    });
+
+    // Piltangenter / A-D fungerar också, så spelet går att spela på dator.
+    addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft" || e.key === "a") { e.preventDefault(); movingLeft = true; }
+      if (e.key === "ArrowRight" || e.key === "d") { e.preventDefault(); movingRight = true; }
+    });
+    addEventListener("keyup", e => {
+      if (e.key === "ArrowLeft" || e.key === "a") movingLeft = false;
+      if (e.key === "ArrowRight" || e.key === "d") movingRight = false;
+    });
+
+    // Mötande bilar: varje objekt är {x, y, color}. De dyker upp uppifrån
+    // och kör nedåt. Krockar med spelaren = game over.
+    let enemies = [];
+    let spawnTimer = 0;
+    let enemySpeed = 4;
+    let score = 0;
+    let gameOver = false;
+    const enemyColors = ["#4dabf7", "#ffd43b", "#69db7c", "#b197fc"];
+
+    function spawnEnemy(roadMidX, roadW) {
+      const laneX = roadMidX - roadW / 2 + 30 + Math.random() * (roadW - 60);
+      enemies.push({
+        x: laneX,
+        y: -60,
+        color: enemyColors[Math.floor(Math.random() * enemyColors.length)]
+      });
+    }
+
+    function rectsHit(ax, ay, aw, ah, bx, by, bw, bh) {
+      return Math.abs(ax - bx) < (aw + bw) / 2 - 8 &&
+             Math.abs(ay - by) < (ah + bh) / 2 - 8;
+    }
+
+    function resetGame() {
+      enemies = [];
+      spawnTimer = 0;
+      enemySpeed = 4;
+      score = 0;
+      gameOver = false;
+      playerX = null;
+    }
+
+    function loop() {
+      laneStripeY = (laneStripeY + 6) % 70;
+      const roadMidX = drawRoad();
+      const roadW = Math.min(canvas.width * 0.7, 320);
+      if (playerX === null) playerX = roadMidX;
+
+      if (!gameOver) {
+        if (movingLeft) playerX -= carSpeed;
+        if (movingRight) playerX += carSpeed;
+        const minX = roadMidX - roadW / 2 + 30;
+        const maxX = roadMidX + roadW / 2 - 30;
+        playerX = Math.max(minX, Math.min(maxX, playerX));
+
+        spawnTimer++;
+        const spawnEvery = Math.max(35, 70 - Math.floor(score / 5));
+        if (spawnTimer >= spawnEvery) {
+          spawnTimer = 0;
+          spawnEnemy(roadMidX, roadW);
+        }
+
+        enemies.forEach(en => { en.y += enemySpeed; });
+        enemies = enemies.filter(en => en.y < canvas.height + 60);
+        enemySpeed = 4 + score / 40;
+        score++;
+
+        const playerY = canvas.height - 100;
+        for (const en of enemies) {
+          if (rectsHit(playerX, playerY, 44, 74, en.x, en.y, 44, 74)) {
+            gameOver = true;
+          }
         }
       }
-    }
 
-    // Kör "filmen": gardinerna dras isär, figuren dansar in och snurrar,
-    // och till sist tonar "SLUT" fram. Går att trycka igen för repris.
-    function playFilm() {
-      var stage = document.getElementById("stage");
-      stage.classList.remove("playing", "applaud", "show-end");
-      // tvinga bort gammal animation innan vi startar om den
-      void stage.offsetWidth;
-      stage.classList.add("playing");
-      playWaltz();
-      // dansen (snurr + hopp + spagat) tar ca 7.9s, sen applåderar publiken
-      setTimeout(function () {
-        stage.classList.add("applaud");
-      }, 7900);
-      setTimeout(function () {
-        stage.classList.add("show-end");
-      }, 9200);
+      enemies.forEach(en => drawCar(en.x, en.y, 44, 74, en.color));
+      drawCar(playerX, canvas.height - 100, 44, 74, "#ff3b3b");
+
+      // Poängtavla
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 22px system-ui, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("Poäng: " + Math.floor(score / 5), 16, 34);
+
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff";
+        ctx.textAlign = "center";
+        ctx.font = "bold 32px system-ui, sans-serif";
+        ctx.fillText("Kraasch! 💥", canvas.width / 2, canvas.height / 2 - 30);
+        ctx.font = "bold 20px system-ui, sans-serif";
+        ctx.fillText("Poäng: " + Math.floor(score / 5), canvas.width / 2, canvas.height / 2 + 4);
+        ctx.fillText("Tryck var som helst för att köra igen", canvas.width / 2, canvas.height / 2 + 40);
+      }
+
+      requestAnimationFrame(loop);
     }
+    loop();
+
+    canvas.addEventListener("pointerdown", () => { if (gameOver) resetGame(); });
   </script>
 </body>
 </html>

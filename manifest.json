@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-09T14:02:47Z",
+  "generated_at": "2026-07-09T14:02:54Z",
   "entries": [
+    {
+      "slug": "ivriga-radjuret",
+      "title": "Bilracing",
+      "display_name": "student06",
+      "thumbnail": "students/pilot/ivriga-radjuret/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/ivriga-radjuret/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/ivriga-radjuret",
+      "date": "2026-07-09T14:02:54Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "milda-muslan",
       "title": "Studsboll 3D",
@@ -41,27 +52,6 @@
       ],
       "description": "VGCRAFT: en egen liten Minecraft-värld med by, bybor, crafting, dygnscykel och portaler till Nether och The End.",
       "level": "avancerad",
-      "model": "claude-opus-4-6"
-    },
-    {
-      "slug": "ivriga-radjuret",
-      "title": "Ballerinan och Baletten! 🩰",
-      "display_name": "student06",
-      "thumbnail": "students/pilot/ivriga-radjuret/thumbnail.webp",
-      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/ivriga-radjuret/",
-      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/ivriga-radjuret",
-      "date": "2026-07-09T13:28:48Z",
-      "persona": "kladd",
-      "tags": [
-        "balett",
-        "dans",
-        "hamster",
-        "teater",
-        "animation",
-        "musik"
-      ],
-      "description": "En balettdansande hamster och en ballerina i tiara snurrar, hoppar och gör splitt på en riktig teaterscen till egen komponerad vals.",
-      "level": "medel",
       "model": "claude-opus-4-6"
     },
     {
