@@ -1,6 +1,26 @@
 {
-  "generated_at": "2026-07-09T13:28:48Z",
+  "generated_at": "2026-07-09T13:31:20Z",
   "entries": [
+    {
+      "slug": "blanka-schimpansen",
+      "title": "VGCRAFT",
+      "display_name": "student10",
+      "thumbnail": "students/pilot/blanka-schimpansen/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/blanka-schimpansen/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/blanka-schimpansen",
+      "date": "2026-07-09T13:31:20Z",
+      "persona": "kladd",
+      "tags": [
+        "3d-spel",
+        "byggspel",
+        "minecraft",
+        "portaler",
+        "crafting"
+      ],
+      "description": "VGCRAFT: en egen liten Minecraft-värld med by, bybor, crafting, dygnscykel och portaler till Nether och The End.",
+      "level": "avancerad",
+      "model": "claude-opus-4-6"
+    },
     {
       "slug": "ivriga-radjuret",
       "title": "Ballerinan och Baletten! 🩰",

@@ -5,6 +5,41 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "blanka-schimpansen",
+          "boilerplate": false,
+          "student": "student10",
+          "created_at": 1783600339.6538422,
+          "display_name": "student10",
+          "title": "VGCRAFT",
+          "description": "VGCRAFT: en egen liten Minecraft-värld med by, bybor, crafting, dygnscykel och portaler till Nether och The End.",
+          "tags": [
+            "3d-spel",
+            "byggspel",
+            "minecraft",
+            "portaler",
+            "crafting"
+          ],
+          "level": "avancerad",
+          "model": "claude-opus-4-6",
+          "persona": "kladd",
+          "archived_at": "2026-07-09T13:31:13Z",
+          "published_at": "2026-07-09T13:31:20Z",
+          "thumbnail": "students/pilot/blanka-schimpansen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "ivriga-radjuret",
           "boilerplate": false,
           "student": "student06",
