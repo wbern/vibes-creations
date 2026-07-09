@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "milda-muslan",
+          "boilerplate": false,
+          "student": "william1",
+          "created_at": 1783592105.7892053,
+          "display_name": "william1",
+          "title": "Studsboll 3D",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T09:16:14Z",
+          "published_at": "2026-07-09T14:02:47Z",
+          "thumbnail": "students/pilot/milda-muslan/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "ivriga-abborren",
           "boilerplate": false,
           "student": "student11",
