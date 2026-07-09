@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-09T14:10:04Z",
+  "generated_at": "2026-07-09T14:10:11Z",
   "entries": [
+    {
+      "slug": "blaa-salen",
+      "title": "min sida",
+      "display_name": "student12",
+      "thumbnail": "students/pilot/blaa-salen/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/blaa-salen/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/blaa-salen",
+      "date": "2026-07-09T14:10:11Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "ivriga-abborren",
       "title": "Straffläggning",

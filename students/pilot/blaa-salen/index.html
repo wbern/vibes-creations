@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>min sida</title>
+  <!-- pilot-student12 -->
+  <style>
+    /* Theme tokens — the four presets are papper · skog · hav · neon.
+     * The chunky helpers (.card, .btn-chunky, .pill, .wobble, .pop-in)
+     * come from the boilerplate Claude uses for every new page. */
+    :root {
+      --bg: #f4ecd8;
+      --ink: #2b2b2b;
+      --card: #ffffff;
+      --accent: #ff7a5a;
+      --accent-2: #58a4ff;
+      --radius: 20px;
+      --lip: 8px;
+    }
+    html, body { margin: 0; min-height: 100vh; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      background-image:
+        radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--accent) 30%, transparent) 0, transparent 40%),
+        radial-gradient(circle at 80% 90%, color-mix(in srgb, var(--accent-2) 25%, transparent) 0, transparent 45%);
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+      box-sizing: border-box;
+      color: var(--ink);
+    }
+  </style>
+</head>
+<body>
+  <div class="page stack center">
+    <h1>🧪 Kemilabbet</h1>
+    <p id="lead">Håll in HÄLL och släpp precis vid mållinjen!</p>
+    <p class="pill" id="score">Poäng: 0</p>
+    <svg id="labSvg" viewBox="0 0 200 220" width="100%" style="max-width:14rem; display:block; margin:0 auto;"></svg>
+    <button class="btn-chunky pop" id="pourBtn" style="--c:#58a4ff;">HÄLL</button>
+  </div>
+
+  <script>
+    // Kemilabbet — håll in HÄLL för att hälla vätska från kolven ner i
+    // provröret. Släpp precis när nivån är i den gröna mållinjen för
+    // poäng. Häller du för mycket svämmar det över!
+    var NS = "http://www.w3.org/2000/svg";
+    var svg = document.getElementById("labSvg");
+    var scoreEl = document.getElementById("score");
+    var leadEl = document.getElementById("lead");
+    var pourBtn = document.getElementById("pourBtn");
+
+    var TUBE_X = 70, TUBE_TOP = 70, TUBE_H = 120, TUBE_W = 60;
+    var score = 0;
+    var round = 1;
+    var level = 0;          // 0–100, hur fullt provröret är
+    var pouring = false;
+    var settling = false;   // kort paus efter släpp innan nästa runda
+    var target = 55;
+    var tolerance = 14;     // hur brett den gröna mållinjen är, krymper med rundor
+
+    function newRound() {
+      target = 25 + Math.random() * 55;
+      tolerance = Math.max(6, 16 - round * 0.6);
+      level = 0;
+      settling = false;
+      leadEl.textContent = "Runda " + round + ": håll in HÄLL och släpp i mållinjen!";
+    }
+    newRound();
+
+    function el(tag, attrs) {
+      var n = document.createElementNS(NS, tag);
+      for (var k in attrs) n.setAttribute(k, attrs[k]);
+      return n;
+    }
+
+    function draw() {
+      svg.innerHTML = "";
+      var g = document.createElementNS(NS, "g");
+
+      // Provrör (kontur)
+      var tubeBottom = TUBE_TOP + TUBE_H;
+      g.appendChild(el("rect", {
+        x: TUBE_X, y: TUBE_TOP, width: TUBE_W, height: TUBE_H, rx: 10,
+        fill: "#ffffff", stroke: "#2b2b2b", "stroke-width": 3
+      }));
+
+      // Vätska i provröret (växer nedifrån)
+      var liquidH = Math.min(TUBE_H - 6, (Math.min(level, 100) / 100) * (TUBE_H - 6));
+      g.appendChild(el("rect", {
+        x: TUBE_X + 3, y: tubeBottom - 3 - liquidH, width: TUBE_W - 6, height: liquidH,
+        fill: level > 100 ? "#ff5a5a" : "#58c26a", opacity: "0.85"
+      }));
+
+      // Mållinje (grön zon)
+      var zoneTopPct = Math.min(100, target + tolerance);
+      var zoneBottomPct = Math.max(0, target - tolerance);
+      var zoneTopY = tubeBottom - 3 - (zoneTopPct / 100) * (TUBE_H - 6);
+      var zoneH = ((zoneTopPct - zoneBottomPct) / 100) * (TUBE_H - 6);
+      g.appendChild(el("rect", {
+        x: TUBE_X - 6, y: zoneTopY, width: TUBE_W + 12, height: Math.max(2, zoneH),
+        fill: "#2b2b2b", opacity: "0.18"
+      }));
+
+      // Kolv (flaska) upptill, lutar när man häller
+      var flaskTilt = pouring ? -35 : 0;
+      var flask = el("g", { transform: "translate(100,35) rotate(" + flaskTilt + ")" });
+      flask.appendChild(el("path", {
+        d: "M -8 -20 L -8 0 L -20 25 Q -20 35 -6 35 L 6 35 Q 20 35 20 25 L 8 0 L 8 -20 Z",
+        fill: "#bde0fe", stroke: "#2b2b2b", "stroke-width": 3
+      }));
+      flask.appendChild(el("rect", { x: -8, y: -26, width: 16, height: 8, fill: "#2b2b2b" }));
+      g.appendChild(flask);
+
+      // Häll-stråle om vi häller
+      if (pouring) {
+        g.appendChild(el("rect", { x: 96, y: 45, width: 4, height: TUBE_TOP - 45, fill: "#58a4ff" }));
+      }
+
+      svg.appendChild(g);
+    }
+    draw();
+
+    function startPour() {
+      if (settling) return;
+      pouring = true;
+    }
+    function stopPour() {
+      if (!pouring) return;
+      pouring = false;
+      settling = true;
+      var diff = Math.abs(level - target);
+      if (level > 100) {
+        leadEl.textContent = "Svämmade över! Runda " + round + " — försök igen.";
+      } else if (diff <= tolerance) {
+        var gained = diff <= tolerance / 2 ? 2 : 1;
+        score += gained;
+        scoreEl.textContent = "Poäng: " + score;
+        leadEl.textContent = "Perfekt hällt! +" + gained + " poäng.";
+      } else {
+        leadEl.textContent = "Nästan! Bli mer exakt nästa gång.";
+      }
+      round++;
+      setTimeout(newRound, 1200);
+    }
+
+    pourBtn.addEventListener("pointerdown", function (e) { e.preventDefault(); startPour(); });
+    pourBtn.addEventListener("pointerup", stopPour);
+    pourBtn.addEventListener("pointerleave", stopPour);
+    window.addEventListener("keydown", function (e) {
+      if (e.code === "Space") { e.preventDefault(); startPour(); }
+    });
+    window.addEventListener("keyup", function (e) {
+      if (e.code === "Space") stopPour();
+    });
+
+    function loop() {
+      if (pouring && !settling) {
+        level += 1.1 + round * 0.05;
+      }
+      draw();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

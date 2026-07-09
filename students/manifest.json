@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "blaa-salen",
+          "boilerplate": false,
+          "student": "student12",
+          "created_at": 1783600487.4813676,
+          "display_name": "student12",
+          "title": "min sida",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T14:10:06Z",
+          "published_at": "2026-07-09T14:10:11Z",
+          "thumbnail": "students/pilot/blaa-salen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "ivriga-abborren",
           "boilerplate": false,
           "student": "student11",
