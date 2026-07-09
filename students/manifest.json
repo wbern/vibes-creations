@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "vakna-blackfisken",
+          "boilerplate": false,
+          "student": "student07",
+          "created_at": 1783600080.5721107,
+          "display_name": "student07",
+          "title": "min sida",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T14:09:31Z",
+          "published_at": "2026-07-09T14:09:35Z",
+          "thumbnail": "students/pilot/vakna-blackfisken/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "ivriga-radjuret",
           "boilerplate": false,
           "student": "student06",
@@ -135,35 +164,6 @@
           "archived_at": "2026-07-02T16:06:30Z",
           "published_at": "2026-07-09T14:03:08Z",
           "thumbnail": "students/pilot/talmodiga-lejonet/thumbnail.webp",
-          "scan": {
-            "counts": {
-              "personnummer": 0,
-              "secrets": 0,
-              "ner": 0,
-              "total": 0
-            },
-            "finding_count": 0,
-            "moderation": {
-              "action": "error",
-              "soft_flag_categories": []
-            }
-          }
-        },
-        {
-          "slug": "vakna-blackfisken",
-          "boilerplate": true,
-          "student": "student07",
-          "created_at": 1783600080.5721107,
-          "display_name": "student07",
-          "title": "min sida",
-          "description": null,
-          "tags": [],
-          "level": null,
-          "model": null,
-          "persona": "kladd",
-          "archived_at": "2026-07-08T13:26:55Z",
-          "published_at": "2026-07-09T14:03:01Z",
-          "thumbnail": "students/pilot/vakna-blackfisken/thumbnail.webp",
           "scan": {
             "counts": {
               "personnummer": 0,

@@ -34,181 +34,184 @@
   </style>
 </head>
 <body>
-  <!--
-    ============================================================
-    PLACEHOLDER SECTION — Claude, this whole <section> is the
-    starter splash. When the kid asks you to build their page,
-    REMOVE this entire <section data-placeholder> block (including
-    its inline <style> and <script>) and write fresh content in
-    its place. Nothing outside this section needs to be touched.
-    Everything tutorial-related (the wiggling arrow, the dismiss
-    handler, the localStorage key) lives inside this section on
-    purpose so a single delete clears it all.
-    ============================================================
-  -->
-  <section data-placeholder data-persona="kladd">
-    <style>
-      [data-placeholder] {
-        max-width: 36rem;
-        margin: 0 auto;
-        text-align: center;
-      }
-      [data-placeholder] h1 {
-        font: 900 3rem/1.05 system-ui, sans-serif;
-        letter-spacing: -0.02em;
-        margin: 0 0 .25rem;
-      }
-      [data-placeholder] h1 .wave {
-        display: inline-block;
-        transform-origin: 70% 70%;
-        animation: ph-wave 1.6s infinite;
-      }
-      @keyframes ph-wave {
-        0%, 100% { transform: rotate(0); }
-        25% { transform: rotate(20deg); }
-        75% { transform: rotate(-10deg); }
-      }
-      [data-placeholder] .ph-lead {
-        font-size: 1.25rem;
-        margin: 1rem 0 1.5rem;
-        line-height: 1.4;
-      }
-      [data-placeholder] footer {
-        margin-top: 1.5rem;
-        opacity: 0.55;
-        font-size: 0.9rem;
-      }
+  <div class="page stack center">
+    <h1>Tre katters film 🐱</h1>
+    <div class="card" id="stage" style="position:relative;">
+      <svg id="scene-svg" viewBox="0 0 300 180" style="width:100%; height:auto; max-width:22rem;">
+        <!-- himmel & mark -->
+        <rect x="0" y="0" width="300" height="130" fill="#cfe8ff"/>
+        <rect x="0" y="130" width="300" height="50" fill="#8bc48a"/>
+        <circle cx="255" cy="30" r="18" fill="#ffe27a"/>
 
-      /* Arrow tutorial — fixed near the viewport bottom-right corner,
-       * pointing toward the chat icon (parent SPA's 3rem FAB sitting
-       * at right:1rem; bottom:1rem; z-index ~2147483640). The arrow's
-       * own z-index is intentionally well below that, so we offset the
-       * SVG away from the corner (right:5rem) to keep the arrowhead
-       * visible next to — not behind — the FAB. */
-      [data-placeholder] .ph-arrow {
-        position: fixed;
-        right: 5rem;
-        bottom: 1rem;
-        width: clamp(140px, 38vw, 220px);
-        pointer-events: none;
-        z-index: 9;
-        transform-origin: 90% 90%;
-        animation: ph-arrow-bob 1.8s ease-in-out infinite;
-      }
-      [data-placeholder] .ph-arrow.is-dismissed {
-        animation: ph-arrow-out .4s ease-in forwards;
-      }
-      [data-placeholder] .ph-arrow svg {
-        display: block;
-        width: 100%;
-        height: auto;
-        overflow: visible;
-      }
-      [data-placeholder] .ph-arrow .ph-arrow-stroke {
-        stroke-dasharray: 320;
-        stroke-dashoffset: 320;
-        animation: ph-arrow-draw 1.6s ease-out .2s forwards;
-      }
-      [data-placeholder] .ph-arrow .ph-arrow-label {
-        display: inline-block;
-        /* rgba, not color-mix — iOS 15.8.3 (iPhone 7 test floor) drops the
-         * whole declaration on unrecognised color-mix and the label goes
-         * unreadable white-on-cream. */
-        background: rgba(43, 43, 43, 0.92);
-        color: #fff;
-        font: 600 .95rem/1.2 system-ui, sans-serif;
-        padding: .4rem .65rem;
-        border-radius: 10px;
-        transform: rotate(-4deg);
-        /* Long persona labels ("tryck här för att prata med Claudina") clip
-         * outside the viewport on iPhone 7 (375px) with nowrap. Allow wrap;
-         * cap the width so the box stays compact rather than stretching the
-         * full label width on desktop. */
-        max-width: 11rem;
-        box-shadow: 0 4px 0 rgba(43, 43, 43, 0.25);
-      }
-      [data-placeholder] .ph-arrow-label-wrap {
-        position: absolute;
-        left: 0;
-        top: 0;
-        transform: translate(-6%, -10%);
-      }
-      @keyframes ph-arrow-bob {
-        0%, 100% { transform: translate(0, 0) rotate(0); }
-        50%      { transform: translate(-6px, -8px) rotate(-2deg); }
-      }
-      @keyframes ph-arrow-draw {
-        to { stroke-dashoffset: 0; }
-      }
-      @keyframes ph-arrow-out {
-        to { opacity: 0; transform: translate(10px, 10px) scale(.9); }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        [data-placeholder] h1 .wave,
-        [data-placeholder] .ph-arrow { animation: none; }
-        [data-placeholder] .ph-arrow .ph-arrow-stroke { stroke-dashoffset: 0; }
-      }
-      @media (max-width: 480px) {
-        [data-placeholder] h1 { font-size: 2.4rem; }
-        [data-placeholder] .ph-arrow { width: clamp(120px, 44vw, 180px); }
-      }
-    </style>
+        <!-- Biografen — gömd i början, tonas in när katterna ska på bio -->
+        <g id="cinema">
+          <polygon points="205,55 290,55 247,28" fill="#8a5a3f"/>
+          <rect x="212" y="55" width="70" height="75" fill="#5b3a29"/>
+          <rect x="232" y="92" width="30" height="38" fill="#2b2b2b"/>
+          <rect x="200" y="42" width="94" height="16" rx="4" fill="#ffd400"/>
+          <text x="247" y="53" font-size="9" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="system-ui, sans-serif">PINOKIO</text>
+        </g>
 
-    <h1>hej! <span class="wave" aria-hidden="true">👋</span></h1>
-    <p class="ph-lead">vill du göra en sida om <b>ditt favoritdjur</b>?</p>
+        <!-- Katt 1: orange -->
+        <g id="cat1" class="cat" transform="translate(40,110)">
+          <ellipse cx="0" cy="20" rx="22" ry="14" fill="#3f7fd6"/>
+          <circle cx="0" cy="0" r="15" fill="#3f7fd6"/>
+          <polygon points="-12,-10 -6,-24 -2,-8" fill="#3f7fd6"/>
+          <polygon points="12,-10 6,-24 2,-8" fill="#3f7fd6"/>
+          <circle cx="-5" cy="-2" r="2" fill="#2b2b2b"/>
+          <circle cx="5" cy="-2" r="2" fill="#2b2b2b"/>
+          <path d="M22,20 Q40,10 34,-4" stroke="#3f7fd6" stroke-width="6" fill="none" stroke-linecap="round"/>
+        </g>
 
-    <footer>byggd av dig + Claude</footer><div class="ph-arrow" aria-hidden="true">
-      <div class="ph-arrow-label-wrap">
-        <span class="ph-arrow-label">tryck här för att prata med Claude</span>
-      </div>
-      <svg viewBox="0 0 220 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path class="ph-arrow-stroke"
-              d="M 20 40
-                 C 70 30, 110 60, 140 80
-                 S 190 120, 200 128"
-              stroke="#2b2b2b"
-              stroke-width="4"
-              stroke-linecap="round"
-              stroke-linejoin="round" /><path d="M 200 128 L 180 122 L 187 108 Z"
-              fill="#2b2b2b"
-              stroke="#2b2b2b"
-              stroke-width="2"
-              stroke-linejoin="round" />
+        <!-- Katt 2: grå -->
+        <g id="cat2" class="cat" transform="translate(150,110)">
+          <ellipse cx="0" cy="20" rx="22" ry="14" fill="#e34b4b"/>
+          <circle cx="0" cy="0" r="15" fill="#e34b4b"/>
+          <polygon points="-12,-10 -6,-24 -2,-8" fill="#e34b4b"/>
+          <polygon points="12,-10 6,-24 2,-8" fill="#e34b4b"/>
+          <circle cx="-5" cy="-2" r="2" fill="#2b2b2b"/>
+          <circle cx="5" cy="-2" r="2" fill="#2b2b2b"/>
+          <path d="M22,20 Q40,10 34,-4" stroke="#e34b4b" stroke-width="6" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <!-- Katt 3: svart -->
+        <g id="cat3" class="cat" transform="translate(260,110)">
+          <ellipse cx="0" cy="20" rx="22" ry="14" fill="#3fae5c"/>
+          <circle cx="0" cy="0" r="15" fill="#3fae5c"/>
+          <polygon points="-12,-10 -6,-24 -2,-8" fill="#3fae5c"/>
+          <polygon points="12,-10 6,-24 2,-8" fill="#3fae5c"/>
+          <circle cx="-5" cy="-2" r="2" fill="#2b2b2b"/>
+          <circle cx="5" cy="-2" r="2" fill="#2b2b2b"/>
+          <path d="M22,20 Q40,10 34,-4" stroke="#3fae5c" stroke-width="6" fill="none" stroke-linecap="round"/>
+        </g>
       </svg>
-    </div>
 
-    <script>
-      // One-time tutorial dismiss. Three triggers:
-      //  1) localStorage flag from a prior visit — skip the arrow entirely.
-      //  2) postMessage {type:"workshop:chat-opened"} from the parent SPA
-      //     when the kid taps the chat icon (App.jsx openChat()).
-      //  3) Defensive fallback: if the SPA never sends the message (older
-      //     deploy), the arrow is harmless — it'll disappear the moment
-      //     Claude rewrites this <section>.
-      // Lives inside the placeholder on purpose: Claude deleting the
-      // section removes this script too, so no leftover handlers haunt
-      // the kid's final page when they ship to the gallery.
-      (function () {
-        var KEY = "workshop:placeholder-arrow:dismissed";
-        var arrow = document.querySelector("[data-placeholder] .ph-arrow");
-        if (!arrow) return;
-        try {
-          if (localStorage.getItem(KEY)) { arrow.remove(); return; }
-        } catch (e) { /* private mode / disabled storage — keep arrow */ }
-        function dismiss() {
-          if (!arrow.isConnected) return;
-          arrow.classList.add("is-dismissed");
-          try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
-          setTimeout(function () { arrow.remove(); }, 450);
+      <!-- Filmduken — visar en liten bit av "Pinokio" i slutscenen -->
+      <div id="movie-screen">
+        <svg viewBox="0 0 120 120" style="width:60%; max-width:9rem;">
+          <!-- huvud -->
+          <circle cx="60" cy="55" r="26" fill="#e8b878"/>
+          <!-- lång näsa -->
+          <polygon points="60,58 100,52 60,64" fill="#c9944f"/>
+          <!-- kinder -->
+          <circle cx="46" cy="60" r="4" fill="#e08a6b"/>
+          <circle cx="74" cy="60" r="4" fill="#e08a6b"/>
+          <!-- ögon -->
+          <circle cx="50" cy="48" r="3" fill="#2b2b2b"/>
+          <circle cx="66" cy="48" r="3" fill="#2b2b2b"/>
+          <!-- leende mun -->
+          <path d="M48,68 Q60,76 72,68" stroke="#2b2b2b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <!-- hatt -->
+          <polygon points="34,38 86,38 60,10" fill="#4a7a4f"/>
+          <rect x="30" y="36" width="60" height="8" rx="3" fill="#3a5f3e"/>
+          <!-- kropp -->
+          <rect x="40" y="80" width="40" height="34" rx="8" fill="#4a7a4f"/>
+        </svg>
+        <p class="pill" style="--c:var(--accent-2); margin-top:.5rem;">Pinokio 🎬</p>
+      </div>
+
+      <p id="scene-text">Tryck på Spela för att starta filmen!</p>
+    </div>
+    <button class="btn-chunky pop" id="play-btn" style="--c:var(--accent)">Spela</button>
+  </div>
+
+  <style>
+    /* Katterna glider mjukt när vi ändrar deras position i JS. */
+    .cat { transition: transform 2.5s ease-in-out; }
+    @keyframes cat-jump {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-18px); }
+    }
+    .cat.jump { animation: cat-jump .6s ease-in-out 2; }
+    /* Biografen tonas fram först när katterna bestämt sig för att gå dit. */
+    #cinema { opacity: 0; transition: opacity 2s ease-in-out; }
+    #cinema.show { opacity: 1; }
+    /* Filmduken ligger ovanpå scenen och tonas fram bara i sista scenen. */
+    #movie-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(20, 15, 10, 0.92);
+      border-radius: var(--radius);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.2s ease-in-out;
+    }
+    #movie-screen.show { opacity: 1; }
+  </style>
+
+  <script>
+    // Filmens scener: varje steg flyttar katterna och byter texten.
+    // translate-värdena är samma koordinatsystem som SVG:ns viewBox (300x180).
+    // Varje katts textfärg matchar dess egen färg i SVG:n.
+    var catColors = { cat1: "#3f7fd6", cat2: "#e34b4b", cat3: "#3fae5c" };
+    var scenes = [
+      { text: "Tre katter vaknar en solig morgon.", pos: { cat1: [40,110], cat2: [150,110], cat3: [260,110] } },
+      { text: "Den blå katten springer fram för att säga hej.", pos: { cat1: [110,110], cat2: [150,110], cat3: [260,110] }, jump: "cat1", color: "cat1" },
+      { text: "Den röda katten hoppar av glädje!", pos: { cat1: [110,110], cat2: [150,110], cat3: [260,110] }, jump: "cat2", color: "cat2" },
+      { text: "Den gröna katten kommer springande också.", pos: { cat1: [110,110], cat2: [150,110], cat3: [180,110] }, jump: "cat3", color: "cat3" },
+      { text: "Nu är alla tre bästa vänner.", pos: { cat1: [100,110], cat2: [150,90], cat3: [200,110] }, jump: "cat2" },
+      { text: "De bestämmer sig: nu ska de gå på bio och se Pinokio!", pos: { cat1: [170,110], cat2: [200,110], cat3: [230,110] }, showCinema: true },
+      { text: "Pinokio börjar. Slut på vår film om tre katter! 🎬🍿", pos: { cat1: [190,110], cat2: [215,105], cat3: [240,110] }, showCinema: true, showMovie: true }
+    ];
+
+    var sceneText = document.getElementById("scene-text");
+    var playBtn = document.getElementById("play-btn");
+
+    // Läser upp texten högt med webbläsarens inbyggda röst (Speech Synthesis).
+    // Finns rösten inte (väldigt gamla webbläsare) gör vi ingenting — filmen
+    // funkar ändå, den blir bara tyst.
+    function speak(text) {
+      if (!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel(); // avbryt ev. tidigare mening
+      // Ta bort emojis så rösten inte försöker läsa upp dem konstigt.
+      var cleanText = text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "").trim();
+      var utter = new SpeechSynthesisUtterance(cleanText);
+      utter.lang = "sv-SE";
+      window.speechSynthesis.speak(utter);
+    }
+
+    function showScene(i) {
+      var s = scenes[i];
+      sceneText.textContent = s.text;
+      sceneText.style.color = s.color ? catColors[s.color] : "var(--ink)";
+      speak(s.text);
+      document.getElementById("cinema").classList.toggle("show", !!s.showCinema);
+      document.getElementById("movie-screen").classList.toggle("show", !!s.showMovie);
+      ["cat1", "cat2", "cat3"].forEach(function (id) {
+        var el = document.getElementById(id);
+        var p = s.pos[id];
+        el.setAttribute("transform", "translate(" + p[0] + "," + p[1] + ")");
+        el.classList.remove("jump");
+      });
+      if (s.jump) {
+        // Liten fördröjning så klassen hinner tas bort innan den läggs på igen,
+        // annars kör inte animationen om samma katt hoppar två gånger i rad.
+        var jumpEl = document.getElementById(s.jump);
+        void jumpEl.offsetWidth; // tvingar webbläsaren att "glömma" gamla animationen
+        jumpEl.classList.add("jump");
+      }
+    }
+
+    playBtn.addEventListener("click", function () {
+      playBtn.disabled = true;
+      playBtn.textContent = "Spelar...";
+      var i = 0;
+      showScene(0);
+      var timer = setInterval(function () {
+        i++;
+        if (i >= scenes.length) {
+          clearInterval(timer);
+          playBtn.disabled = false;
+          playBtn.textContent = "Spela igen";
+          return;
         }
-        window.addEventListener("message", function (e) {
-          var d = e && e.data;
-          if (d && typeof d === "object" && d.type === "workshop:chat-opened") {
-            dismiss();
-          }
-        });
-      })();
-    </script>
-  </section>
+        showScene(i);
+      }, 5500);
+    });
+  </script>
 </body>
 </html>
