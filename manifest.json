@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-09T14:08:40Z",
+  "generated_at": "2026-07-09T14:08:47Z",
   "entries": [
+    {
+      "slug": "hela-makrillen",
+      "title": "Labyrinten 3D",
+      "display_name": "student04",
+      "thumbnail": "students/pilot/hela-makrillen/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/hela-makrillen/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/hela-makrillen",
+      "date": "2026-07-09T14:08:47Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "milda-muslan",
       "title": "min sida",

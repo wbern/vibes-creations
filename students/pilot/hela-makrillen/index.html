@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Labyrinten 3D</title>
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js" } }
+  </script>
+  <style>
+    :root {
+      --ink: #2b2b2b;
+      --accent: #ff7a5a;
+      --accent-2: #58a4ff;
+      --radius: 16px;
+      --lip: 6px;
+    }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
+    body {
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+      touch-action: none;
+      font-family: system-ui, sans-serif;
+      color: #fff;
+    }
+    canvas { display: block; }
+    #hud {
+      position: fixed; top: .75rem; left: .75rem; right: .75rem;
+      display: flex; justify-content: center; z-index: 5; pointer-events: none;
+    }
+    .pill {
+      display: inline-block; padding: .4rem .9rem;
+      background: rgba(0,0,0,.55); color: #fff;
+      border-radius: 999px; font: 700 .95rem/1 system-ui, sans-serif;
+      text-align: center;
+    }
+    #crosshair {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,.85); box-shadow: 0 0 0 2px rgba(0,0,0,.4);
+      z-index: 5; pointer-events: none !important;
+    }
+    .btn-chunky {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 56px; min-width: 56px; padding: 0;
+      border: 0; border-radius: 12px;
+      font: 800 22px/1 system-ui, sans-serif; color: #fff;
+      background: var(--c, var(--accent));
+      box-shadow: 0 6px 0 color-mix(in srgb, var(--c, var(--accent)) 70%, black);
+    }
+    .btn-chunky:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
+    #turn {
+      position: fixed; left: 1rem; bottom: 1rem;
+      display: grid; grid-template-columns: repeat(4, 56px); grid-template-rows: repeat(2, 56px);
+      gap: 8px;
+      z-index: 6;
+    }
+  </style>
+</head>
+<body>
+  <div id="hud"><span class="pill" id="status">Hitta ut! Akta fällor och lasrar. 🐹</span></div>
+  <div id="crosshair"></div>
+
+  <div id="turn">
+    <button id="topBtn" data-act="top" class="btn-chunky pop" style="--c:#ff7a5a; grid-column:4; grid-row:1;" aria-label="Titta uppifrån">⬆</button>
+    <button data-act="left"  class="btn-chunky pop" style="grid-column:1; grid-row:2; --c:#58a4ff" aria-label="Sväng vänster">⟲</button>
+    <button data-act="right" class="btn-chunky pop" style="grid-column:2; grid-row:2; --c:#58a4ff" aria-label="Sväng höger">⟳</button>
+    <button data-act="back"  class="btn-chunky pop" style="grid-column:3; grid-row:2;" aria-label="Bakåt">▼</button>
+    <button data-act="fwd"   class="btn-chunky pop" style="grid-column:4; grid-row:2;" aria-label="Framåt">▲</button>
+  </div>
+
+  <script type="module">
+    import * as THREE from "three";
+
+    // ---- Labyrintgenerator (samma som tidigare — riktig slumpad
+    // labyrint med "randomiserad djupet-först" + inflätade genvägar) ----
+    const LCOLS = 8, LROWS = 11;
+    const ROWS = LROWS * 2 + 1, COLS = LCOLS * 2 + 1;
+
+    function generateMaze(cols, rows) {
+      const cells = [];
+      for (let r = 0; r < rows; r++) {
+        const row = [];
+        for (let c = 0; c < cols; c++) row.push({ N:false,S:false,E:false,W:false, visited:false });
+        cells.push(row);
+      }
+      function neighbors(r, c) {
+        const list = [];
+        if (r > 0)      list.push([r-1,c,"N","S"]);
+        if (r < rows-1) list.push([r+1,c,"S","N"]);
+        if (c > 0)      list.push([r,c-1,"W","E"]);
+        if (c < cols-1) list.push([r,c+1,"E","W"]);
+        return list;
+      }
+      const stack = [[0,0]];
+      cells[0][0].visited = true;
+      while (stack.length) {
+        const [r,c] = stack[stack.length-1];
+        const options = neighbors(r,c).filter(([nr,nc]) => !cells[nr][nc].visited);
+        if (!options.length) { stack.pop(); continue; }
+        const [nr,nc,dir,opp] = options[Math.floor(Math.random()*options.length)];
+        cells[r][c][dir] = true; cells[nr][nc][opp] = true;
+        cells[nr][nc].visited = true;
+        stack.push([nr,nc]);
+      }
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const cell = cells[r][c];
+        const openCount = ["N","S","E","W"].filter(d => cell[d]).length;
+        if (openCount === 1 && Math.random() < 0.65) {
+          const closed = neighbors(r,c).filter(([,,dir]) => !cell[dir]);
+          if (closed.length) {
+            const [nr,nc,dir,opp] = closed[Math.floor(Math.random()*closed.length)];
+            cell[dir] = true; cells[nr][nc][opp] = true;
+          }
+        }
+      }
+      return cells;
+    }
+    function toRenderGrid(cells, cols, rows) {
+      const grid = [];
+      for (let y = 0; y < rows*2+1; y++) grid.push(new Array(cols*2+1).fill("#"));
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const y = r*2+1, x = c*2+1;
+        grid[y][x] = ".";
+        const cell = cells[r][c];
+        if (cell.E) grid[y][x+1] = ".";
+        if (cell.S) grid[y+1][x] = ".";
+      }
+      return grid;
+    }
+    function scatterHazards(grid, cols, rows, opts) {
+      const spots = [];
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        if (r === 0 && c === 0) continue;
+        if (r === rows-1 && c === cols-1) continue;
+        spots.push([r*2+1, c*2+1]);
+      }
+      for (let i = spots.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random()*(i+1));
+        [spots[i], spots[j]] = [spots[j], spots[i]];
+      }
+      let idx = 0;
+      const placed = { D: null };
+      for (let i = 0; i < opts.traps && idx < spots.length; i++, idx++) { const [y,x] = spots[idx]; grid[y][x] = "T"; }
+      for (let i = 0; i < opts.lasers && idx < spots.length; i++, idx++) { const [y,x] = spots[idx]; grid[y][x] = "L"; }
+      if (opts.hole && idx < spots.length) { const [y,x] = spots[idx]; grid[y][x] = "D"; placed.D = { r: y, c: x }; idx++; }
+      return placed;
+    }
+
+    const SURFACE = toRenderGrid(generateMaze(LCOLS, LROWS), LCOLS, LROWS);
+    const UNDERGROUND = toRenderGrid(generateMaze(LCOLS, LROWS), LCOLS, LROWS);
+    const holePos = scatterHazards(SURFACE, LCOLS, LROWS, { traps: 7, lasers: 5, hole: true });
+    scatterHazards(UNDERGROUND, LCOLS, LROWS, { traps: 6, lasers: 5, hole: false });
+    if (holePos.D) UNDERGROUND[holePos.D.r][holePos.D.c] = "U";
+    const LEVELS = [
+      { grid: SURFACE, goal: { r: ROWS-2, c: COLS-2 } },
+      { grid: UNDERGROUND, goal: null },
+    ];
+
+    const statusEl = document.getElementById("status");
+    const crosshairEl = document.getElementById("crosshair");
+    const CELL = 2;      // en rutas storlek i 3D-världen
+    const EYE_H = 1.15;  // ögonhöjd
+
+    // ---- Three.js grundscen ----
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 100);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    // Himmelsljus: blått ovanifrån, grönt underifrån (studsljus från
+    // gräset) — ger en naturlig färgskillnad mellan himmel/mark/häck
+    // istället för att allt blir platt enfärgat.
+    scene.add(new THREE.HemisphereLight(0x9fd8ff, 0x4f8a38, 0.9));
+    const sun = new THREE.DirectionalLight(0xfff3d6, 0.8);
+    sun.position.set(5, 10, 3);
+    scene.add(sun);
+
+    const worldW = (COLS - 1) * CELL;
+    const worldD = (ROWS - 1) * CELL;
+
+    const floorGeo = new THREE.PlaneGeometry(worldW + CELL, worldD + CELL);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0xbfe89a });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(worldW / 2, 0, worldD / 2);
+    scene.add(floor);
+
+    // En liten rutig "löv"-textur ritad i en canvas, så häckarna inte
+    // blir en platt grön kloss utan ser bladiga och taggiga ut.
+    function leafTexture() {
+      const cv = document.createElement("canvas");
+      cv.width = cv.height = 64;
+      const ctx = cv.getContext("2d");
+      ctx.fillStyle = "#3f7a28";
+      ctx.fillRect(0, 0, 64, 64);
+      for (let i = 0; i < 140; i++) {
+        ctx.fillStyle = Math.random() < 0.5 ? "#5a9c3a" : "#2f6420";
+        const x = Math.random()*64, y = Math.random()*64, s = 2 + Math.random()*3;
+        ctx.beginPath();
+        ctx.ellipse(x, y, s, s*0.6, Math.random()*Math.PI, 0, Math.PI*2);
+        ctx.fill();
+      }
+      const tex = new THREE.CanvasTexture(cv);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(1, 1);
+      return tex;
+    }
+
+    // Häckarna är lite SMALARE än sina rutor — det lämnar en tunn
+    // luftspringa mellan klossarna så man ser att de är enskilda
+    // buskar, inte en enda solid vägg.
+    const WALL_SIZE = CELL * 0.82;
+
+    // Räkna väggrutor och bygg en InstancedMesh per nivå (snabbt att rita
+    // även för en stor labyrint, eftersom alla häckar delar samma geometri).
+    function buildWalls(grid) {
+      let count = 0;
+      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (grid[r][c] === "#") count++;
+      const geo = new THREE.BoxGeometry(WALL_SIZE, 2.2, WALL_SIZE);
+      const mat = new THREE.MeshStandardMaterial({ map: leafTexture(), roughness: 0.9 });
+      const mesh = new THREE.InstancedMesh(geo, mat, count);
+      let i = 0;
+      const dummy = new THREE.Object3D();
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[r][c] !== "#") continue;
+          dummy.position.set(c * CELL, 1.1, r * CELL);
+          dummy.updateMatrix();
+          mesh.setMatrixAt(i++, dummy.matrix);
+        }
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      return mesh;
+    }
+    const surfaceWalls = buildWalls(SURFACE);
+    const undergroundWalls = buildWalls(UNDERGROUND);
+    scene.add(surfaceWalls, undergroundWalls);
+
+    addEventListener("resize", () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    // ---- Fällor, lasrar, hål och mål ----
+    const trapGeo   = new THREE.ConeGeometry(0.32, 0.6, 5);
+    const trapMat   = new THREE.MeshStandardMaterial({ color: 0xcc2222 });
+    const laserGeo  = new THREE.BoxGeometry(0.14, 2.2, CELL * 0.8);
+    const laserMat  = new THREE.MeshStandardMaterial({ color: 0xff3344, emissive: 0x880000 });
+    const holeGeo   = new THREE.CircleGeometry(0.65, 20);
+    const holeMat   = new THREE.MeshStandardMaterial({ color: 0x1c1108 });
+    const ladderMat = new THREE.MeshStandardMaterial({ color: 0xc8a165 });
+    const flagPoleGeo = new THREE.CylinderGeometry(0.05, 0.05, 1.6, 8);
+    const flagGeo = new THREE.PlaneGeometry(0.5, 0.32);
+    const flagMat = new THREE.MeshStandardMaterial({ color: 0xff7a5a, side: THREE.DoubleSide });
+
+    function buildMarkers(grid, goal) {
+      const group = new THREE.Group();
+      const lasers = [];
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const ch = grid[r][c];
+          const x = c * CELL, z = r * CELL;
+          if (ch === "T") {
+            const m = new THREE.Mesh(trapGeo, trapMat);
+            m.position.set(x, 0.3, z);
+            group.add(m);
+          } else if (ch === "L") {
+            const m = new THREE.Mesh(laserGeo, laserMat.clone());
+            m.position.set(x, 1.1, z);
+            group.add(m);
+            lasers.push(m);
+          } else if (ch === "D") {
+            const m = new THREE.Mesh(holeGeo, holeMat);
+            m.rotation.x = -Math.PI / 2;
+            m.position.set(x, 0.02, z);
+            group.add(m);
+          } else if (ch === "U") {
+            const m = new THREE.Mesh(holeGeo, ladderMat);
+            m.rotation.x = -Math.PI / 2;
+            m.position.set(x, 0.02, z);
+            group.add(m);
+          }
+        }
+      }
+      if (goal) {
+        const pole = new THREE.Mesh(flagPoleGeo, ladderMat);
+        pole.position.set(goal.c * CELL, 0.8, goal.r * CELL);
+        group.add(pole);
+        const flag = new THREE.Mesh(flagGeo, flagMat);
+        flag.position.set(goal.c * CELL + 0.28, 1.4, goal.r * CELL);
+        group.add(flag);
+      }
+      scene.add(group);
+      return { group, lasers };
+    }
+    const surfaceMarkers = buildMarkers(SURFACE, LEVELS[0].goal);
+    const undergroundMarkers = buildMarkers(UNDERGROUND, null);
+
+    // En platt orange pil som ligger på marken vid spelaren och pekar dit
+    // man tittar — syns tydligast i fågelvyn där man annars inte kan se
+    // vilket håll man är vänd åt.
+    const arrowGeo = new THREE.BufferGeometry();
+    arrowGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array([
+      0, 0.03, -0.7,   // spets, pekar framåt (-Z vid yaw = 0)
+      -0.4, 0.03, 0.4, // bakre vänster hörn
+      0.4, 0.03, 0.4,  // bakre höger hörn
+    ]), 3));
+    arrowGeo.setIndex([0, 1, 2]);
+    const arrowMat = new THREE.MeshBasicMaterial({ color: 0xff7a5a, side: THREE.DoubleSide });
+    const playerArrow = new THREE.Mesh(arrowGeo, arrowMat);
+    scene.add(playerArrow);
+
+    // ---- Spelarens läge ----
+    let level = 0;
+    let px = CELL, pz = CELL, yaw = 0; // startar vid rad1,kol1
+    let lastSafeX = px, lastSafeZ = pz;
+    let laserOn = true;
+    let won = false;
+    let hazardCooldown = 0;
+
+    function currentGrid() { return LEVELS[level].grid; }
+    function cellAt(x, z) {
+      const grid = currentGrid();
+      const r = Math.round(z / CELL), c = Math.round(x / CELL);
+      if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return "#";
+      return grid[r][c];
+    }
+
+    function applyLevelVisibility() {
+      surfaceWalls.visible = level === 0;
+      undergroundWalls.visible = level === 1;
+      surfaceMarkers.group.visible = level === 0;
+      undergroundMarkers.group.visible = level === 1;
+      floorMat.color.set(level === 1 ? 0x3a2a1f : 0x8fce62);
+      scene.background = new THREE.Color(level === 1 ? 0x110b06 : 0x9fd8ff);
+      scene.fog = new THREE.Fog(level === 1 ? 0x110b06 : 0x9fd8ff, 4, level === 1 ? 14 : 22);
+    }
+    applyLevelVisibility();
+
+    function bounceBack(msg) {
+      statusEl.textContent = msg;
+      px = lastSafeX; pz = lastSafeZ;
+      hazardCooldown = 0.5;
+    }
+
+    function handleCell() {
+      const ch = cellAt(px, pz);
+      if (ch === "T" && hazardCooldown <= 0) { bounceBack("Aj, en fälla! Gå runt istället."); return; }
+      if (ch === "L" && laserOn && hazardCooldown <= 0) { bounceBack("Bzzzt! Vänta tills lasern slocknar."); return; }
+      if (ch === "D" && level === 0) { level = 1; applyLevelVisibility(); statusEl.textContent = "Ner i underjorden! 🕳️"; return; }
+      if (ch === "U" && level === 1) { level = 0; applyLevelVisibility(); statusEl.textContent = "Tillbaka på ytan! ☀️"; return; }
+      if (ch !== "T" && ch !== "L") { lastSafeX = px; lastSafeZ = pz; }
+      const goal = LEVELS[level].goal;
+      if (goal && !won && Math.round(pz/CELL) === goal.r && Math.round(px/CELL) === goal.c) {
+        won = true;
+        statusEl.textContent = "Du hittade ut! 🎉";
+      }
+    }
+
+    // Lasrarna blinkar.
+    setInterval(() => {
+      laserOn = !laserOn;
+      [...surfaceMarkers.lasers, ...undergroundMarkers.lasers].forEach(m => {
+        m.material.opacity = laserOn ? 1 : 0.25;
+        m.material.transparent = true;
+        m.material.emissiveIntensity = laserOn ? 1 : 0.15;
+      });
+    }, 700);
+
+    // ---- Styrning: piltangenter/WASD + touch-knappar ----
+    const keys = {};
+    addEventListener("keydown", e => { keys[e.key.toLowerCase()] = true; });
+    addEventListener("keyup",   e => { keys[e.key.toLowerCase()] = false; });
+    const held = { fwd: false, back: false, left: false, right: false, top: false };
+    document.querySelectorAll("#turn button, #topBtn").forEach(btn => {
+      const act = btn.dataset.act;
+      const set = v => e => { e.preventDefault(); held[act] = v; };
+      btn.addEventListener("pointerdown", set(true));
+      btn.addEventListener("pointerup", set(false));
+      btn.addEventListener("pointerleave", set(false));
+      btn.addEventListener("pointercancel", set(false));
+    });
+
+    const MOVE_SPEED = 3.2;   // enheter/sekund
+    const TURN_SPEED = 2.0;   // radianer/sekund
+    const RADIUS = 0.35;      // spelarens "kroppsbredd" mot väggar
+
+    // ---- Dra med fingret för att svänga kameran (touch-look) ----
+    // "YXZ"-ordning är standard för förstapersonskameror: kameran svänger
+    // först i sidled (yaw, runt världens Y-axel) och sedan upp/ner
+    // (pitch, runt sin egen X-axel) — annars vrider den snett.
+    camera.rotation.order = "YXZ";
+    let pitch = 0;
+    let dragging = false, lastX = 0, lastY = 0;
+    // I fågelvy flyttar draget kameran över kartan istället för att
+    // svänga blicken — så man kan "flyga" runt och se väldigt långt.
+    let topOffsetX = 0, topOffsetZ = 0;
+    function isControlButton(el) { return !!(el && el.closest && el.closest("button")); }
+    renderer.domElement.addEventListener("pointerdown", e => {
+      if (isControlButton(e.target)) return;
+      dragging = true; lastX = e.clientX; lastY = e.clientY;
+    });
+    addEventListener("pointermove", e => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX, dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      if (keys["t"] || held.top) {
+        topOffsetX -= dx * 0.08;
+        topOffsetZ -= dy * 0.08;
+      } else {
+        yaw -= dx * 0.005;
+        pitch = Math.max(-0.6, Math.min(0.6, pitch - dy * 0.004));
+      }
+    });
+    addEventListener("pointerup", () => { dragging = false; });
+    addEventListener("pointercancel", () => { dragging = false; });
+
+    function tryAxisMove(dx, dz) {
+      if (dx !== 0) {
+        const nx = px + dx;
+        if (cellAt(nx + Math.sign(dx) * RADIUS, pz) !== "#") px = nx;
+      }
+      if (dz !== 0) {
+        const nz = pz + dz;
+        if (cellAt(px, nz + Math.sign(dz) * RADIUS) !== "#") pz = nz;
+      }
+    }
+
+    let lastT = null;
+    function loop(t) {
+      if (lastT === null) lastT = t;
+      const dt = Math.min((t - lastT) / 1000, 0.1);
+      lastT = t;
+      if (hazardCooldown > 0) hazardCooldown -= dt;
+
+      if (!won) {
+        const turnL = keys["arrowleft"] || keys["a"] || held.left;
+        const turnR = keys["arrowright"] || keys["d"] || held.right;
+        if (turnL) yaw += TURN_SPEED * dt;
+        if (turnR) yaw -= TURN_SPEED * dt;
+
+        const goFwd  = keys["arrowup"]   || keys["w"] || held.fwd;
+        const goBack = keys["arrowdown"] || keys["s"] || held.back;
+        let dir = 0;
+        if (goFwd) dir += 1;
+        if (goBack) dir -= 1;
+        if (dir !== 0) {
+          // Kamerans "framåt" i three.js (vid rotation.y = yaw) är
+          // vektorn (-sin(yaw), 0, -cos(yaw)) — måste matcha annars
+          // går man baklänges jämfört med det man ser på skärmen.
+          const dx = -Math.sin(yaw) * MOVE_SPEED * dt * dir;
+          const dz = -Math.cos(yaw) * MOVE_SPEED * dt * dir;
+          tryAxisMove(dx, dz);
+          handleCell();
+        }
+      }
+
+      playerArrow.position.set(px, 0.05, pz);
+      playerArrow.rotation.y = yaw;
+
+      const lookingFromTop = keys["t"] || held.top;
+      crosshairEl.style.display = lookingFromTop ? "none" : "block";
+      if (lookingFromTop) {
+        // Fågelvy: kameran flyger högt ovanför spelaren och tittar rakt
+        // ner. Dra med fingret för att flyga runt (topOffsetX/Z) och se
+        // väldigt långt över hela banan. Stänger av dimman så inget
+        // bleknar bort på avstånd.
+        scene.fog = null;
+        camera.position.set(px + topOffsetX, 26, pz + topOffsetZ + 0.001);
+        camera.rotation.order = "YXZ";
+        camera.rotation.y = 0;
+        camera.rotation.x = -Math.PI / 2;
+      } else {
+        if (!scene.fog) applyLevelVisibility();
+        topOffsetX = 0; topOffsetZ = 0;
+        camera.position.set(px, EYE_H, pz);
+        camera.rotation.y = yaw;
+        camera.rotation.x = pitch;
+      }
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

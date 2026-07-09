@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "hela-makrillen",
+          "boilerplate": false,
+          "student": "student04",
+          "created_at": 1783600058.8531098,
+          "display_name": "student04",
+          "title": "Labyrinten 3D",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T14:08:42Z",
+          "published_at": "2026-07-09T14:08:47Z",
+          "thumbnail": "students/pilot/hela-makrillen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "milda-muslan",
           "boilerplate": false,
           "student": "william1",
