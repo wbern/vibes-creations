@@ -5,6 +5,42 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "ivriga-radjuret",
+          "boilerplate": false,
+          "student": "student06",
+          "created_at": 1783600061.9923666,
+          "display_name": "student06",
+          "title": "Ballerinan och Baletten! 🩰",
+          "description": "En balettdansande hamster och en ballerina i tiara snurrar, hoppar och gör splitt på en riktig teaterscen till egen komponerad vals.",
+          "tags": [
+            "balett",
+            "dans",
+            "hamster",
+            "teater",
+            "animation",
+            "musik"
+          ],
+          "level": "medel",
+          "model": "claude-opus-4-6",
+          "persona": "kladd",
+          "archived_at": "2026-07-09T13:28:43Z",
+          "published_at": "2026-07-09T13:28:48Z",
+          "thumbnail": "students/pilot/ivriga-radjuret/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "talmodiga-lejonet",
           "boilerplate": false,
           "student": "student08",

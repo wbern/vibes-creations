@@ -1,6 +1,27 @@
 {
-  "generated_at": "2026-07-09T13:27:53Z",
+  "generated_at": "2026-07-09T13:28:48Z",
   "entries": [
+    {
+      "slug": "ivriga-radjuret",
+      "title": "Ballerinan och Baletten! 🩰",
+      "display_name": "student06",
+      "thumbnail": "students/pilot/ivriga-radjuret/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/ivriga-radjuret/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/ivriga-radjuret",
+      "date": "2026-07-09T13:28:48Z",
+      "persona": "kladd",
+      "tags": [
+        "balett",
+        "dans",
+        "hamster",
+        "teater",
+        "animation",
+        "musik"
+      ],
+      "description": "En balettdansande hamster och en ballerina i tiara snurrar, hoppar och gör splitt på en riktig teaterscen till egen komponerad vals.",
+      "level": "medel",
+      "model": "claude-opus-4-6"
+    },
     {
       "slug": "talmodiga-lejonet",
       "title": "Klossbanan",
