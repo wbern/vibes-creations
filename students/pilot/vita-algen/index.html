@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Den Utvalde - Blockvärlden</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; background:#87CEEB; }
+    body { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:none; }
+    canvas { display:block; touch-action: none; }
+    #joystick {
+      position: fixed; left: 18px; bottom: 18px; width: 110px; height: 110px;
+      border-radius: 50%; background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.4); touch-action: none; z-index: 5;
+    }
+    #joystick-knob {
+      position: absolute; left: 50%; top: 50%; width: 46px; height: 46px;
+      margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(255,255,255,0.65);
+    }
+    .enemy-tag {
+      position: fixed; transform: translate(-50%, -100%); pointer-events: none;
+      font: 800 12px system-ui, sans-serif; color: #fff; text-align: center;
+      text-shadow: 0 1px 2px #000; z-index: 4; width: 90px;
+    }
+    .enemy-tag .bar-bg { background: #00000066; border-radius: 999px; height: 8px; margin-top: 2px; overflow: hidden; }
+    .enemy-tag .bar-fg { height: 100%; background: #ff3ea5; }
+    /* HUD: en smal rad längst ner, tar minsta möjliga plats så man ser spelet */
+    #hud {
+      position: fixed; left: 0; right: 0; bottom: 0; padding: 6px 8px;
+      display: flex; flex-direction: row; gap: 6px; align-items: center;
+      justify-content: center; flex-wrap: nowrap; z-index: 6;
+      font-family: system-ui, sans-serif; color: #fff;
+      pointer-events: none; /* låt tryck gå igenom till joysticken bakom */
+    }
+    #hud #spellbar, #hud .spell-btn { pointer-events: auto; }
+    #hud .bars { width: 74px; flex-shrink: 0; }
+    #hud .bar-bg { background: #00000055; border-radius: 999px; height: 7px; overflow: hidden; margin-bottom: 3px; }
+    #hero-bar { height: 100%; background: #3ef0ff; }
+    #mana-bar-fg { height: 100%; background: #ff3ea5; }
+    #hud-log {
+      position: fixed; top: 6px; left: 50%; transform: translateX(-50%);
+      background: #000000aa; padding: 4px 10px; border-radius: 10px;
+      font: 700 12px system-ui, sans-serif; color: #fff;
+      max-width: 80vw; text-align: center; z-index: 6; pointer-events: none;
+    }
+    #spellbar { display: flex; gap: 5px; }
+    .spell-btn {
+      min-width: 44px; min-height: 44px; padding: 2px 8px; border: 0; border-radius: 10px;
+      font: 800 10px system-ui, sans-serif; color: #fff; text-transform: uppercase;
+      line-height: 1.15; box-shadow: 0 4px 0 rgba(0,0,0,0.35); cursor: pointer;
+    }
+    .spell-btn:active { transform: translateY(4px); box-shadow: none; }
+    #restart-btn { min-width: 44px; font-size: 16px; padding: 2px; }
+  </style>
+  <script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"
+  } }
+  </script>
+</head>
+<body>
+<div id="joystick"><div id="joystick-knob"></div></div>
+<div id="hud-log">Ranrok och Harlow väntar därframme...</div>
+<div id="hud">
+  <div class="bars">
+    <div class="bar-bg"><div id="hero-bar" style="width:100%"></div></div>
+    <div class="bar-bg"><div id="mana-bar-fg" style="width:30%"></div></div>
+  </div>
+  <div id="spellbar">
+    <button class="spell-btn" style="background:#8a1fc9" id="spell-spark">😖 Crucio</button>
+    <button class="spell-btn" style="background:#3ef0ff" id="spell-blast">🌀 Imperio</button>
+    <button class="spell-btn" style="background:#1a1a1a" id="spell-ultra">☠️ Avada Kedavra</button>
+    <button class="spell-btn" style="background:#7a8a99" id="spell-basic">✨ Basic Cast</button>
+  </div>
+  <button class="spell-btn" style="background:#8a5cf6" id="restart-btn">↺</button>
+  <button class="spell-btn" style="background:#2ecc71" id="jump-btn">⬆️ Hoppa</button>
+  <button class="spell-btn" style="background:#607d8b" id="pause-btn">⏸️</button>
+</div>
+<script type="module">
+import * as THREE from "three";
+
+// ---- Grundscen: himmel, ljus, kamera ----
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB);
+scene.fog = new THREE.Fog(0x87CEEB, 15, 45);
+
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 200);
+camera.position.set(0, 1.7, 6);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+sun.position.set(10, 20, 10);
+scene.add(sun);
+
+// ---- Marken: en jämn gräsmatta, som skolgården framför ett slott ----
+const groundMesh = new THREE.Mesh(
+  new THREE.CircleGeometry(40, 32),
+  new THREE.MeshStandardMaterial({ color: 0x4a7c3f })
+);
+groundMesh.rotation.x = -Math.PI / 2;
+scene.add(groundMesh);
+
+// ---- Ett litet slott i bakgrunden: torn med spetsiga tak ----
+const stoneMat = new THREE.MeshStandardMaterial({ color: 0x8a8a8f });
+const roofMat = new THREE.MeshStandardMaterial({ color: 0x4a3f6a });
+function makeTower(x, z, h) {
+  const tower = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.8, h, 12), stoneMat);
+  body.position.y = h / 2;
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(2.1, 2.5, 12), roofMat);
+  roof.position.y = h + 1.25;
+  tower.add(body, roof);
+  tower.position.set(x, 0, z);
+  scene.add(tower);
+  return tower;
+}
+makeTower(-10, -22, 9);
+makeTower(-3, -25, 13);
+makeTower(5, -23, 10);
+makeTower(12, -20, 8);
+const hall = new THREE.Mesh(new THREE.BoxGeometry(22, 8, 6), stoneMat);
+hall.position.set(1, 4, -21);
+scene.add(hall);
+
+// ---- Fiender: Ranrok och Harlow, klossiga figurer i världen ----
+function makeEnemy(color, x, z) {
+  const group = new THREE.Group();
+  // Kappa/kropp: en rundad cape-form (kon) istället för en fyrkant
+  const robe = new THREE.Mesh(new THREE.ConeGeometry(0.62, 1.5, 16), new THREE.MeshStandardMaterial({ color }));
+  robe.position.y = 0.95;
+  // Huvud: ett klot med hudfärg
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffd9b3 }));
+  head.position.y = 1.95;
+  // Armar: tunna rundade cylindrar
+  const armGeo = new THREE.CapsuleGeometry(0.09, 0.7, 4, 8);
+  const armMat = new THREE.MeshStandardMaterial({ color });
+  const armL = new THREE.Mesh(armGeo, armMat); armL.position.set(-0.55, 1.2, 0); armL.rotation.z = 0.5;
+  const armR = new THREE.Mesh(armGeo, armMat); armR.position.set(0.55, 1.2, 0); armR.rotation.z = -0.5;
+  group.add(robe, head, armL, armR);
+  group.position.set(x, 0, z);
+  scene.add(group);
+  return group;
+}
+
+function baseEnemy(name, mesh, hp, x, z) {
+  // homeX/homeZ = platsen den vandrar runt. wander = nästa mål att gå mot.
+  // controlled/controlledTimer = Imperio. dot = Crucio-skadan över tid.
+  return { name, mesh, hp, maxHp: hp, homeX: x, homeZ: z, wander: null, wanderWait: 0,
+           controlled: false, controlledTimer: 0, dot: null };
+}
+const enemies = [
+  baseEnemy("Ranrok",   makeEnemy(0xd94a1e, 5, -8),   300, 5, -8),
+  baseEnemy("Harlow",   makeEnemy(0x6a3fb5, -6, -10), 200, -6, -10),
+  baseEnemy("Ashwinder", makeEnemy(0xb5401e, 9, -4),  100, 9, -4),
+  baseEnemy("Ashwinder", makeEnemy(0xb5401e, -9, -3), 100, -9, -3),
+  baseEnemy("Poacher",  makeEnemy(0x4f5a3a, 3, -2),   100, 3, -2),
+  baseEnemy("Poacher",  makeEnemy(0x4f5a3a, -3, -1.5), 100, -3, -1.5),
+];
+
+// Varje fiende får en namnlapp + hälsobalk som svävar ovanför i skärmen
+for (const en of enemies) {
+  const tag = document.createElement("div");
+  tag.className = "enemy-tag";
+  tag.innerHTML = `<div>${en.name}</div><div class="bar-bg"><div class="bar-fg" style="width:100%"></div></div>`;
+  document.body.appendChild(tag);
+  en.tag = tag;
+}
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ---- Rörelse: WASD på dator, joystick + drag på touch ----
+const keys = {};
+addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+let yaw = 0, pitch = 0;
+let joyVec = { x: 0, y: 0 };
+
+// Joystick (vänster tumme) styr rörelse
+const joyEl = document.getElementById("joystick");
+const knobEl = document.getElementById("joystick-knob");
+let joyTouchId = null;
+joyEl.addEventListener("pointerdown", e => {
+  joyTouchId = e.pointerId;
+  joyEl.setPointerCapture(e.pointerId);
+});
+joyEl.addEventListener("pointermove", e => {
+  if (e.pointerId !== joyTouchId) return;
+  const r = joyEl.getBoundingClientRect();
+  let dx = (e.clientX - (r.left + r.width/2)) / (r.width/2);
+  let dy = (e.clientY - (r.top + r.height/2)) / (r.height/2);
+  const len = Math.hypot(dx, dy);
+  if (len > 1) { dx /= len; dy /= len; }
+  joyVec.x = dx; joyVec.y = dy;
+  knobEl.style.transform = `translate(${dx*30}px, ${dy*30}px)`;
+});
+function resetJoy(e) {
+  if (e.pointerId !== joyTouchId) return;
+  joyTouchId = null; joyVec.x = 0; joyVec.y = 0;
+  knobEl.style.transform = "translate(0,0)";
+}
+joyEl.addEventListener("pointerup", resetJoy);
+joyEl.addEventListener("pointercancel", resetJoy);
+
+// Drag på resten av skärmen (höger sida) svänger kameran / blicken
+let lookTouchId = null, lastX = 0, lastY = 0;
+renderer.domElement.addEventListener("pointerdown", e => {
+  lookTouchId = e.pointerId; lastX = e.clientX; lastY = e.clientY;
+});
+renderer.domElement.addEventListener("pointermove", e => {
+  if (e.pointerId !== lookTouchId) return;
+  yaw -= (e.clientX - lastX) * 0.005;
+  pitch -= (e.clientY - lastY) * 0.005;
+  pitch = Math.max(-1.2, Math.min(1.2, pitch));
+  lastX = e.clientX; lastY = e.clientY;
+});
+renderer.domElement.addEventListener("pointerup", e => { if (e.pointerId === lookTouchId) lookTouchId = null; });
+
+const forward = new THREE.Vector3();
+const strafe = new THREE.Vector3();
+const moveSpeed = 5.5;
+let lastTime = 0;
+
+// ---- Hopp: enkel gravitation upp och ner ----
+const GROUND_Y = 1.7;
+let vSpeed = 0;       // hastighet uppåt/nedåt
+let onGround = true;
+const GRAVITY = 18;
+const JUMP_POWER = 6.5;
+function doJump() {
+  if (onGround && !combat.gameOver && !paused) { vSpeed = JUMP_POWER; onGround = false; }
+}
+// pointerdown (inte click) - så hoppet fungerar även om ett annat finger
+// redan håller joysticken nedtryckt samtidigt
+document.getElementById("jump-btn").addEventListener("pointerdown", e => { e.preventDefault(); doJump(); });
+addEventListener("keydown", e => { if (e.code === "Space") doJump(); });
+
+// ---- Paus: fryser spelet, knappen byter ikon ----
+let paused = false;
+const pauseBtn = document.getElementById("pause-btn");
+pauseBtn.addEventListener("pointerdown", e => {
+  e.preventDefault();
+  paused = !paused;
+  pauseBtn.textContent = paused ? "▶️" : "⏸️";
+  log(paused ? "Pausat." : "Fortsätter!");
+});
+
+// ---- Stridssystem: hälsa, mana, besvärjelser ----
+const combat = { heroHp: 100, heroMaxHp: 100, mana: 30, maxMana: 100, gameOver: false, score: 0 };
+const heroBar = document.getElementById("hero-bar");
+const manaBar = document.getElementById("mana-bar-fg");
+const logEl = document.getElementById("hud-log");
+
+function log(msg) { logEl.textContent = msg; }
+
+setInterval(() => {
+  if (combat.gameOver || paused) return;
+  combat.mana = Math.min(combat.maxMana, combat.mana + 1);
+  manaBar.style.width = (combat.mana / combat.maxMana * 100) + "%";
+}, 250);
+
+function updateHeroBar() {
+  heroBar.style.width = Math.max(0, combat.heroHp / combat.heroMaxHp * 100) + "%";
+}
+
+// Hitta fienden du är närmast OCH tittar ungefär mot
+function findTarget() {
+  // Siktet bryr sig bara om vilket håll du VÄNDER dig (yaw) - inte om du
+  // tittar lite uppåt eller nedåt (pitch). Mycket snällare att träffa med.
+  const camDir = new THREE.Vector2(-Math.sin(yaw), -Math.cos(yaw));
+  let best = null, bestScore = -Infinity;
+  for (const en of enemies) {
+    if (en.hp <= 0) continue;
+    const dx = en.mesh.position.x - camera.position.x;
+    const dz = en.mesh.position.z - camera.position.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist > 16) continue;
+    const toEnemy = new THREE.Vector2(dx, dz).normalize();
+    const facing = toEnemy.dot(camDir);
+    if (facing < 0.25) continue; // måste vara ungefär framför dig
+    const score = facing - dist * 0.02;
+    if (score > bestScore) { bestScore = score; best = en; }
+  }
+  return best;
+}
+
+function killEnemy(en, silent) {
+  en.hp = 0;
+  en.tag.style.display = "none";
+  en.mesh.visible = false;
+  en.controlled = false;
+  en.dot = null;
+  combat.score += 10;
+  if (!silent) log(en.name + " är besegrad!");
+}
+
+function enemyCounterattack(en) {
+  if (combat.gameOver || en.hp <= 0) return;
+  const dmg = 3 + Math.round(Math.random() * 7);
+  combat.heroHp -= dmg;
+  log(en.name + " slår tillbaka för " + dmg + " skada!");
+  updateHeroBar();
+  if (combat.heroHp <= 0) {
+    combat.heroHp = 0;
+    combat.gameOver = true;
+    updateHeroBar();
+    log("Du föll... men Den Utvalde reser sig alltid igen!");
+    setTimeout(respawn, 1800);
+  }
+}
+
+function respawn() {
+  combat.heroHp = combat.heroMaxHp;
+  combat.mana = 30;
+  combat.gameOver = false;
+  camera.position.set(0, 1.7, 6);
+  yaw = 0; pitch = 0;
+  updateHeroBar();
+  log("Du reser dig igen, starkare än förut.");
+}
+
+function spendMana(cost) {
+  combat.mana -= cost;
+  manaBar.style.width = (combat.mana / combat.maxMana * 100) + "%";
+}
+
+function castCrucio(target) {
+  if (combat.mana < 5) { log("Inte nog med mana för Crucio än..."); return; }
+  spendMana(5);
+  target.dot = { seconds: 6 }; // -2 hälsa per sekund i 6 sekunder
+  log("Du castar Crucio på " + target.name + " - den plågas!");
+}
+
+function castImperio(target) {
+  if (combat.mana < 20) { log("Inte nog med mana för Imperio än..."); return; }
+  spendMana(20);
+  target.controlled = true;
+  target.controlledTimer = 8; // 8 sekunder under din kontroll
+  target.dot = null;
+  log("Du kontrollerar " + target.name + " - den vänder sig mot sina egna!");
+}
+
+function castBasic(target) {
+  // Ingen mana behövs alls - en enkel liten attack man alltid kan använda
+  const dmg = 4 + Math.round(Math.random() * 5);
+  target.hp = Math.max(0, target.hp - dmg);
+  log("Du castar Basic Cast på " + target.name + " - " + dmg + " skada!");
+  if (target.hp <= 0) killEnemy(target);
+}
+
+function castAvadaKedavra(target) {
+  if (combat.mana < 80) { log("Inte nog med mana för Avada Kedavra än..."); return; }
+  spendMana(80);
+  log("AVADA KEDAVRA! " + target.name + " dör direkt!");
+  killEnemy(target, true);
+  log(target.name + " dör direkt av Avada Kedavra!");
+}
+
+function cast(spell) {
+  if (combat.gameOver || paused) return;
+  const target = findTarget();
+  if (!target) { log("Ingen fiende framför dig - vänd dig mot en!"); return; }
+  if (spell === "crucio") castCrucio(target);
+  else if (spell === "imperio") castImperio(target);
+  else if (spell === "avada") castAvadaKedavra(target);
+  else if (spell === "basic") castBasic(target);
+  // Efter besvärjelsen kan fienden slå tillbaka, om den lever och inte är kontrollerad
+  setTimeout(() => { if (target.hp > 0 && !target.controlled) enemyCounterattack(target); }, 400);
+}
+
+document.getElementById("spell-spark").addEventListener("pointerdown", e => { e.preventDefault(); cast("crucio"); });
+document.getElementById("spell-blast").addEventListener("pointerdown", e => { e.preventDefault(); cast("imperio"); });
+document.getElementById("spell-ultra").addEventListener("pointerdown", e => { e.preventDefault(); cast("avada"); });
+document.getElementById("spell-basic").addEventListener("pointerdown", e => { e.preventDefault(); cast("basic"); });
+addEventListener("keydown", e => {
+  if (e.key === "1") cast("crucio");
+  if (e.key === "2") cast("imperio");
+  if (e.key === "3") cast("avada");
+  if (e.key === "4") cast("basic");
+});
+
+function fullRestart() {
+  combat.heroHp = combat.heroMaxHp;
+  combat.mana = 30;
+  combat.gameOver = false;
+  combat.score = 0;
+  camera.position.set(0, 1.7, 6);
+  yaw = 0; pitch = 0;
+  for (const en of enemies) {
+    en.hp = en.maxHp;
+    en.controlled = false; en.controlledTimer = 0; en.dot = null;
+    en.mesh.visible = true;
+    en.mesh.position.set(en.homeX, 0, en.homeZ);
+    en.tag.style.display = "block";
+  }
+  updateHeroBar();
+  manaBar.style.width = (combat.mana / combat.maxMana * 100) + "%";
+  log("Ny runda! Alla fiender är tillbaka.");
+}
+document.getElementById("restart-btn").addEventListener("pointerdown", e => { e.preventDefault(); fullRestart(); });
+
+renderer.setAnimationLoop((time) => {
+  const dt = paused ? 0 : Math.min(0.05, (time - lastTime) / 1000 || 0);
+  lastTime = time;
+
+  // Räkna ut rörelseriktning: tangentbord + joystick tillsammans
+  let mx = joyVec.x, mz = joyVec.y;
+  if (keys["w"] || keys["arrowup"]) mz -= 1;
+  if (keys["s"] || keys["arrowdown"]) mz += 1;
+  if (keys["a"] || keys["arrowleft"]) mx -= 1;
+  if (keys["d"] || keys["arrowright"]) mx += 1;
+
+  // forward pekar dit kameran faktiskt tittar (därför minustecknen)
+  forward.set(-Math.sin(yaw), 0, -Math.cos(yaw));
+  strafe.set(Math.cos(yaw), 0, -Math.sin(yaw));
+  camera.position.addScaledVector(forward, -mz * moveSpeed * dt);
+  camera.position.addScaledVector(strafe, mx * moveSpeed * dt);
+
+  // Gravitation: hopp upp, sen falla ner till marken igen
+  vSpeed -= GRAVITY * dt;
+  camera.position.y += vSpeed * dt;
+  if (camera.position.y <= GROUND_Y) {
+    camera.position.y = GROUND_Y;
+    vSpeed = 0;
+    onGround = true;
+  }
+
+  camera.rotation.order = "YXZ";
+  camera.rotation.y = yaw;
+  camera.rotation.x = pitch;
+
+  // ---- Fiende-AI: vandra runt hemmaplatsen, eller om kontrollerad, attackera andra ----
+  for (const en of enemies) {
+    if (en.hp <= 0) continue;
+
+    // Crucio: -2 hälsa per sekund tills tiden tar slut
+    if (en.dot) {
+      en.dot.seconds -= dt;
+      en.hp = Math.max(0, en.hp - 2 * dt);
+      if (en.hp <= 0) { killEnemy(en); continue; }
+      if (en.dot.seconds <= 0) en.dot = null;
+    }
+
+    if (en.controlled) {
+      // Imperio: gå mot närmsta andra levande fiende och attackera den
+      en.controlledTimer -= dt;
+      if (en.controlledTimer <= 0) { en.controlled = false; log(en.name + " lyder inte längre dig."); continue; }
+      let other = null, bestDist = Infinity;
+      for (const o of enemies) {
+        if (o === en || o.hp <= 0) continue;
+        const d = o.mesh.position.distanceTo(en.mesh.position);
+        if (d < bestDist) { bestDist = d; other = o; }
+      }
+      if (other) {
+        if (bestDist > 1.4) {
+          const dir = other.mesh.position.clone().sub(en.mesh.position).setY(0).normalize();
+          en.mesh.position.addScaledVector(dir, 2.5 * dt);
+        } else {
+          other.hp = Math.max(0, other.hp - 18 * dt); // attackerar den andra fienden
+          if (other.hp <= 0) killEnemy(other);
+        }
+      }
+    } else {
+      // Ser fienden dig? Då springer den emot dig och attackerar!
+      const pdx = camera.position.x - en.mesh.position.x, pdz = camera.position.z - en.mesh.position.z;
+      const distPlayer = Math.hypot(pdx, pdz);
+      const SEE_RANGE = 9, MELEE_RANGE = 1.7;
+
+      if (distPlayer < SEE_RANGE && !combat.gameOver) {
+        if (distPlayer > MELEE_RANGE) {
+          en.mesh.position.x += (pdx / distPlayer) * 2.4 * dt;
+          en.mesh.position.z += (pdz / distPlayer) * 2.4 * dt;
+          en.mesh.rotation.y = Math.atan2(pdx, pdz);
+        } else {
+          en.atkCooldown = (en.atkCooldown || 0) - dt;
+          if (en.atkCooldown <= 0) {
+            en.atkCooldown = 1.2;
+            const dmg = 4 + Math.round(Math.random() * 6);
+            combat.heroHp -= dmg;
+            updateHeroBar();
+            log(en.name + " anfaller dig för " + dmg + " skada!");
+            if (combat.heroHp <= 0) {
+              combat.heroHp = 0; combat.gameOver = true; updateHeroBar();
+              log("Du föll... men Den Utvalde reser sig alltid igen!");
+              setTimeout(respawn, 1800);
+            }
+          }
+        }
+      } else {
+        // Annars: vandra slumpmässigt runt sin hemmaplats
+        en.wanderWait -= dt;
+        if (!en.wander || en.wanderWait <= 0) {
+          const angle = Math.random() * Math.PI * 2;
+          const r = Math.random() * 3;
+          en.wander = { x: en.homeX + Math.cos(angle) * r, z: en.homeZ + Math.sin(angle) * r };
+          en.wanderWait = 3 + Math.random() * 3;
+        }
+        const dx = en.wander.x - en.mesh.position.x, dz = en.wander.z - en.mesh.position.z;
+        const d = Math.hypot(dx, dz);
+        if (d > 0.2) {
+          en.mesh.position.x += (dx / d) * 0.8 * dt;
+          en.mesh.position.z += (dz / d) * 0.8 * dt;
+          en.mesh.rotation.y = Math.atan2(dx, dz);
+        }
+      }
+    }
+  }
+
+  // Placera varje fiendes namnlapp ovanför huvudet, projicerat till skärmen
+  for (const en of enemies) {
+    if (en.hp <= 0) continue;
+    const pos = en.mesh.position.clone();
+    pos.y += 2.3;
+    pos.project(camera);
+    if (pos.z > 1) { en.tag.style.display = "none"; continue; }
+    en.tag.style.display = "block";
+    en.tag.style.left = ((pos.x * 0.5 + 0.5) * innerWidth) + "px";
+    en.tag.style.top = ((-pos.y * 0.5 + 0.5) * innerHeight) + "px";
+    en.tag.querySelector(".bar-fg").style.width = (en.hp / en.maxHp * 100) + "%";
+  }
+
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>

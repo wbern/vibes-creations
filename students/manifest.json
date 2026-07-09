@@ -5,6 +5,35 @@
       "display_name": "pilot",
       "published": [
         {
+          "slug": "vita-algen",
+          "boilerplate": false,
+          "student": "student14",
+          "created_at": 1783601018.6308985,
+          "display_name": "student14",
+          "title": "Den Utvalde - Blockvärlden",
+          "description": null,
+          "tags": [],
+          "level": null,
+          "model": null,
+          "persona": "kladd",
+          "archived_at": "2026-07-09T14:10:20Z",
+          "published_at": "2026-07-09T14:10:30Z",
+          "thumbnail": "students/pilot/vita-algen/thumbnail.webp",
+          "scan": {
+            "counts": {
+              "personnummer": 0,
+              "secrets": 0,
+              "ner": 0,
+              "total": 0
+            },
+            "finding_count": 0,
+            "moderation": {
+              "action": "error",
+              "soft_flag_categories": []
+            }
+          }
+        },
+        {
           "slug": "vana-haren",
           "boilerplate": false,
           "student": "student13",

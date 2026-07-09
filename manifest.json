@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-07-09T14:10:18Z",
+  "generated_at": "2026-07-09T14:10:30Z",
   "entries": [
+    {
+      "slug": "vita-algen",
+      "title": "Den Utvalde - Blockvärlden",
+      "display_name": "student14",
+      "thumbnail": "students/pilot/vita-algen/thumbnail.webp",
+      "live_url": "https://public.vibe.enmansbyra.se/students/pilot/vita-algen/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/pilot/vita-algen",
+      "date": "2026-07-09T14:10:30Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "vana-haren",
       "title": "min sida",
