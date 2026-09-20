@@ -1,0 +1,87 @@
+body {
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  margin: 0;
+  padding: 24px;
+  background: radial-gradient(circle at top, #5b4bdb, #171044 75%);
+  color: #241447;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.game-card {
+  background: #fff8dc;
+  padding: 34px;
+  border: 6px solid #ffd93d;
+  border-radius: 30px;
+  box-shadow: 0 12px 0 #ff8c42, 0 22px 45px rgba(0, 0, 0, 0.35);
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+h1 {
+  color: #6639a6;
+  font-size: clamp(2rem, 8vw, 3.2rem);
+  margin: 8px 0;
+}
+
+.stars {
+  font-size: 2rem;
+  animation: float 2s ease-in-out infinite;
+}
+
+.score-board {
+  margin: 24px auto;
+  padding: 14px;
+  border-radius: 18px;
+  background: #d9faff;
+  color: #007f8b;
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+#workshop-game-score {
+  display: inline-block;
+  min-width: 2ch;
+  color: #e83e8c;
+}
+
+#workshop-game-click {
+  border: 0;
+  border-radius: 50%;
+  width: 155px;
+  height: 155px;
+  background: linear-gradient(145deg, #ff5d8f, #ff9f1c);
+  color: white;
+  font: bold 1.35rem "Trebuchet MS", sans-serif;
+  cursor: pointer;
+  box-shadow: 0 9px 0 #bd2c66;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+#workshop-game-click::before {
+  content: "🚀 ";
+}
+
+#workshop-game-click:hover {
+  transform: scale(1.06) rotate(-2deg);
+}
+
+#workshop-game-click:active,
+#workshop-game-click.clicked {
+  transform: translateY(7px) scale(0.96);
+  box-shadow: 0 2px 0 #bd2c66;
+}
+
+#game-message {
+  min-height: 1.5em;
+  font-weight: bold;
+  color: #6639a6;
+}
+
+@keyframes float {
+  50% { transform: translateY(-8px); }
+}
