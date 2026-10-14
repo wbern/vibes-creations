@@ -1,0 +1,93 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  background-color: #1b1033;
+  color: #ffe9a8;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.container {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(1rem, 3vw, 2rem);
+  text-align: center;
+}
+
+.welcome {
+  width: min(100%, 48rem);
+}
+
+.workshop-welcome,
+.workshop-theme {
+  margin: 0 0 0.75rem;
+  color: #c7b8e0;
+  font-size: 1rem;
+}
+
+#canvas-area {
+  width: 100%;
+  min-height: 0;
+}
+
+#stage {
+  display: block;
+  width: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  outline: none;
+  border-radius: 16px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.toolbar button {
+  font: inherit;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border: 2px solid #ff7a18;
+  border-radius: 12px;
+  background: #2d1b3d;
+  color: #ffe9a8;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.toolbar button.on {
+  background: #ff7a18;
+  color: #1b1033;
+}
+
+.toolbar button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+h1 {
+  color: #ff9f1c;
+  font-size: clamp(2rem, 5vw, 3rem);
+  margin: 0 0 0.75rem;
+}
+
+#desc {
+  margin: 0;
+  line-height: 1.6;
+}
