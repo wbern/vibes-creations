@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Halloween-bilen</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b0614; overflow: hidden; font-family: sans-serif; }
+    canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block;
+      touch-action: none; user-select: none; -webkit-user-select: none;
+      -webkit-touch-callout: none; }
+    #back { position: fixed; top: 0.75rem; left: 0.75rem; color: #fef3c7; z-index: 2; }
+    #pad { position: fixed; bottom: 1rem; left: 0; right: 0; display: flex;
+      justify-content: space-between; padding: 0 1rem; z-index: 2; }
+    #pad button { width: 72px; height: 72px; font-size: 1.8rem; border-radius: 16px;
+      border: 0; background: rgba(254, 243, 199, 0.25); color: #fef3c7;
+      touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    #pad button:focus-visible, #back:focus-visible { outline: 3px solid #fef3c7; }
+  </style>
+</head>
+<body>
+  <a id="back" href="index.html">← Tillbaka</a>
+  <div id="pad">
+    <div>
+      <button type="button" data-dir="-1" aria-label="Kör vänster">◀</button>
+    </div>
+    <div>
+      <button type="button" data-dir="1" aria-label="Kör höger">▶</button>
+    </div>
+  </div>
+  <script>
+    const canvas = document.createElement('canvas');
+    canvas.setAttribute('aria-label', 'Pumpa mot spöke-AI, kör bollen in i målet');
+    canvas.tabIndex = 0;
+    document.body.insertBefore(canvas, document.getElementById('pad'));
+    const ctx = canvas.getContext('2d');
+
+    let W = 0, H = 0;
+    const held = { left: false, right: false };
+    const touchHeld = { left: false, right: false };
+    let player, ai, ball, playerScore, aiScore, goalFlash;
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (player) resetWorld();
+    }
+
+    function resetWorld() {
+      const floor = H * 0.85;
+      const size = Math.min(W, H);
+      player = { x: W * 0.2, y: floor, w: size * 0.12, h: size * 0.07, color: '#f97316' };
+      ai = { x: W * 0.7, y: floor, w: size * 0.12, h: size * 0.07, color: '#a855f7' };
+      ball = { r: size * 0.04 };
+      playerScore = 0;
+      aiScore = 0;
+      goalFlash = 0;
+      resetBallOnly();
+    }
+
+    function resetBallOnly() {
+      ball.x = W * 0.5;
+      ball.y = H * 0.85 - 40;
+      ball.vx = 0;
+      ball.vy = 0;
+    }
+
+    // Goal on the right is the player's target; goal on the left is the AI's.
+    function goalRect(side) {
+      const gw = Math.min(W, H) * 0.12, gh = H * 0.2;
+      const x = side === 'right' ? W - gw - 8 : 8;
+      return { x, y: H * 0.85 - gh, w: gw, h: gh };
+    }
+
+    function steer() {
+      const left = held.left || touchHeld.left;
+      const right = held.right || touchHeld.right;
+      if (left === right) return 0;
+      return right ? 1 : -1;
+    }
+
+    function moveCar(car, dir, dt) {
+      car.x = Math.max(0, Math.min(W - car.w, car.x + dir * W * 0.5 * dt));
+    }
+
+    function hitBall(car, dir) {
+      const floor = H * 0.85;
+      const carTop = floor - car.h;
+      if (ball.x + ball.r > car.x && ball.x - ball.r < car.x + car.w &&
+          ball.y + ball.r > carTop) {
+        ball.vx = (dir || (ball.x > car.x + car.w / 2 ? 1 : -1)) * W * 0.6;
+        ball.vy = -H * 0.5;
+        ball.y = carTop - ball.r;
+      }
+    }
+
+    function aiDirection() {
+      const target = ball.x + ai.w * 0.3;
+      if (Math.abs(ai.x - target) < W * 0.01) return 0;
+      return target < ai.x ? -1 : 1;
+    }
+
+    function update(dt) {
+      const floor = H * 0.85;
+      const dir = steer();
+      moveCar(player, dir, dt);
+      moveCar(ai, aiDirection(), dt * 0.85);
+
+      ball.vy += H * 1.6 * dt;
+      ball.x += ball.vx * dt;
+      ball.y += ball.vy * dt;
+      if (ball.y + ball.r > floor) {
+        ball.y = floor - ball.r;
+        ball.vy = -ball.vy * 0.5;
+        ball.vx *= 0.97;
+      }
+      if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = Math.abs(ball.vx) * 0.6; }
+      if (ball.x + ball.r > W) { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx) * 0.6; }
+
+      hitBall(player, dir);
+      hitBall(ai, 0);
+
+      const pg = goalRect('right');
+      const ag = goalRect('left');
+      if (ball.x > pg.x && ball.y > pg.y && ball.x < pg.x + pg.w + ball.r) {
+        playerScore++;
+        goalFlash = 1;
+        resetBallOnly();
+      } else if (ball.x < ag.x + ag.w && ball.y > ag.y && ball.x > ag.x - ball.r) {
+        aiScore++;
+        goalFlash = 1;
+        resetBallOnly();
+      }
+      goalFlash = Math.max(0, goalFlash - dt);
+    }
+
+    function drawField() {
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#0f0a1f');
+      g.addColorStop(1, '#4c1d95');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#1c1917';
+      ctx.fillRect(0, H * 0.85, W, H * 0.15);
+    }
+
+    function drawGoal(side) {
+      const g = goalRect(side);
+      ctx.strokeStyle = goalFlash > 0 ? '#22c55e' : '#fef3c7';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(g.x, H * 0.85);
+      ctx.lineTo(g.x, g.y);
+      ctx.lineTo(g.x + g.w, g.y);
+      ctx.lineTo(g.x + g.w, H * 0.85);
+      ctx.stroke();
+    }
+
+    function drawCar(car, isPumpkin) {
+      const floor = H * 0.85;
+      const x = car.x, y = floor - car.h, w = car.w, h = car.h;
+      ctx.fillStyle = car.color;
+      ctx.beginPath();
+      ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      if (isPumpkin) {
+        ctx.fillStyle = '#16a34a';
+        ctx.fillRect(x + w / 2 - 3, y - 8, 6, 10);
+      } else {
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.arc(x + w / 2, y - 4, h * 0.35, Math.PI, 0);
+        ctx.lineTo(x + w / 2 + h * 0.35, y + h * 0.1);
+        ctx.lineTo(x + w / 2 - h * 0.35, y + h * 0.1);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = '#111827';
+      ctx.beginPath();
+      ctx.arc(x + w * 0.3, floor, h * 0.2, 0, Math.PI * 2);
+      ctx.arc(x + w * 0.7, floor, h * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawBall() {
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#111827';
+      ctx.beginPath();
+      ctx.arc(ball.x - ball.r * 0.3, ball.y - ball.r * 0.2, ball.r * 0.15, 0, Math.PI * 2);
+      ctx.arc(ball.x + ball.r * 0.3, ball.y - ball.r * 0.2, ball.r * 0.15, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawScore() {
+      const size = Math.min(W, H);
+      ctx.fillStyle = '#fef3c7';
+      ctx.textAlign = 'center';
+      ctx.font = `bold ${Math.round(size * 0.06)}px sans-serif`;
+      ctx.fillText(`Du ${playerScore} - ${aiScore} AI`, W / 2, H * 0.12);
+      ctx.font = `${Math.round(size * 0.03)}px sans-serif`;
+      ctx.fillText('Kör in bollen i högra målet. R startar om.', W / 2, H * 0.18);
+    }
+
+    let previous;
+    function frame(time) {
+      const dt = previous === undefined ? 0 : Math.min((time - previous) / 1000, 0.05);
+      previous = time;
+      update(dt);
+      drawField();
+      drawGoal('right');
+      drawGoal('left');
+      drawCar(player, true);
+      drawCar(ai, false);
+      drawBall();
+      drawScore();
+      requestAnimationFrame(frame);
+    }
+
+    function setKey(e, down) {
+      if (document.activeElement !== canvas && e.target !== document.body) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') held.left = down;
+      else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') held.right = down;
+      else return;
+      e.preventDefault();
+    }
+
+    window.addEventListener('keydown', e => {
+      const inGame = document.activeElement === canvas || e.target === document.body;
+      if (inGame && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'r' || e.key === 'R')) {
+        resetWorld();
+        return;
+      }
+      setKey(e, true);
+    });
+    window.addEventListener('keyup', e => setKey(e, false));
+    window.addEventListener('blur', () => { held.left = false; held.right = false; });
+    window.addEventListener('resize', resize);
+
+    document.querySelectorAll('#pad button').forEach(btn => {
+      const side = btn.dataset.dir === '-1' ? 'left' : 'right';
+      btn.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        btn.setPointerCapture(e.pointerId);
+        touchHeld[side] = true;
+      });
+      const release = () => { touchHeld[side] = false; };
+      btn.addEventListener('pointerup', release);
+      btn.addEventListener('pointercancel', release);
+      btn.addEventListener('lostpointercapture', release);
+    });
+
+    resize();
+    resetWorld();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

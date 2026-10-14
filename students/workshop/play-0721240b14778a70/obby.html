@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jag mot AI-obby</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b0614; overflow: hidden; font-family: sans-serif; }
+    canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block;
+      touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    #back { position: fixed; top: 0.75rem; left: 0.75rem; color: #fef3c7; z-index: 2; }
+    #pad { position: fixed; bottom: 1rem; left: 0; right: 0; display: flex;
+      justify-content: space-between; padding: 0 1rem; z-index: 2; }
+    #pad div { display: flex; gap: 0.75rem; }
+    #pad button { width: 72px; height: 72px; font-size: 1.6rem; border-radius: 16px;
+      border: 0; background: rgba(254, 243, 199, 0.25); color: #fef3c7;
+      touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    #pad button:focus-visible, #back:focus-visible { outline: 3px solid #fef3c7; }
+  </style>
+</head>
+<body>
+  <a id="back" href="index.html">← Tillbaka</a>
+  <div id="pad">
+    <div>
+      <button type="button" data-key="left" aria-label="Gå vänster">◀</button>
+      <button type="button" data-key="right" aria-label="Gå höger">▶</button>
+    </div>
+    <div>
+      <button type="button" data-key="jump" aria-label="Hoppa">⤒</button>
+    </div>
+  </div>
+  <script>
+    const canvas = document.createElement('canvas');
+    canvas.setAttribute('aria-label', 'Hinderbana mot AI, kom först till flaggan');
+    canvas.tabIndex = 0;
+    document.body.insertBefore(canvas, document.getElementById('pad'));
+    const ctx = canvas.getContext('2d');
+
+    let W = 0, H = 0, scale = 1;
+    const held = { left: false, right: false, jump: false };
+    const touchHeld = { left: false, right: false, jump: false };
+    let course, flagX, player, ai, status;
+
+    // Platforms in world units; the course is a long run with gaps.
+    const PLATFORMS = [
+      [0, 6], [8, 3], [13, 2], [18, 4], [24, 2], [28, 3], [33, 5], [40, 2], [44, 3], [49, 4],
+    ];
+    const GRAVITY = 40, JUMP = 15, SPEED = 8;
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      scale = H / 12;
+    }
+
+    function resetWorld() {
+      course = PLATFORMS.map(([x, w]) => ({ x, w, y: 8 }));
+      flagX = PLATFORMS[PLATFORMS.length - 1][0] + 2;
+      player = { x: 1, y: 6, vx: 0, vy: 0, w: 0.8, h: 1, color: '#f97316', onGround: false, done: false };
+      ai = { x: 1.2, y: 6, vx: 0, vy: 0, w: 0.8, h: 1, color: '#a855f7', onGround: false, done: false, jumpAt: 0 };
+      status = 'race';
+    }
+
+    function step(e, dt, input) {
+      if (e.done) return;
+      e.vx = input.dir * SPEED;
+      e.x += e.vx * dt;
+      e.vy += GRAVITY * dt;
+      e.y += e.vy * dt;
+      e.onGround = false;
+      for (const p of course) {
+        const feet = e.y + e.h;
+        const prev = feet - e.vy * dt;
+        if (e.vy >= 0 && prev <= p.y && feet >= p.y &&
+            e.x + e.w > p.x && e.x < p.x + p.w) {
+          e.y = p.y - e.h;
+          e.vy = 0;
+          e.onGround = true;
+        }
+      }
+      if (input.jump && e.onGround) e.vy = -JUMP;
+      if (e.y > 14) { e.x = 1; e.y = 6; e.vy = 0; } // fell into the pit
+      if (e.x + e.w >= flagX) e.done = true;
+    }
+
+    function update(dt) {
+      if (status !== 'race') return;
+      const left = held.left || touchHeld.left;
+      const right = held.right || touchHeld.right;
+      const dir = left === right ? 0 : right ? 1 : -1;
+      const jump = held.jump || touchHeld.jump;
+      step(player, dt, { dir, jump });
+
+      // AI: run right, jump when a gap is close ahead.
+      const aheadGap = !course.some(p => p.x <= ai.x + ai.w + 0.6 && p.x + p.w > ai.x + ai.w);
+      const aiJump = ai.onGround && aheadGap;
+      step(ai, dt, { dir: 1, jump: aiJump });
+
+      if (player.done) status = 'won';
+      else if (ai.done) status = 'lost';
+    }
+
+    function drawWorld() {
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#0f0a1f');
+      g.addColorStop(1, '#4c1d95');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+
+      // Camera follows the player to the right
+      const camX = Math.max(0, player.x - 4);
+      const ox = -camX * scale;
+      ctx.save();
+      ctx.translate(ox, 0);
+      ctx.fillStyle = '#1c1917';
+      for (const p of course) {
+        ctx.fillRect(p.x * scale, p.y * scale, p.w * scale, H);
+      }
+      ctx.fillStyle = '#fef3c7';
+      ctx.fillRect(flagX * scale, 4 * scale, 4, 4 * scale);
+      ctx.fillStyle = '#f97316';
+      ctx.beginPath();
+      ctx.moveTo(flagX * scale + 4, 4 * scale);
+      ctx.lineTo(flagX * scale + 40, 4.5 * scale);
+      ctx.lineTo(flagX * scale + 4, 5 * scale);
+      ctx.fill();
+
+      drawRunner(ai, '#a855f7');
+      drawRunner(player, '#f97316');
+      ctx.restore();
+
+      ctx.fillStyle = '#fef3c7';
+      ctx.textAlign = 'center';
+      ctx.font = `bold ${Math.round(Math.min(W, H) * 0.05)}px sans-serif`;
+      if (status === 'won') ctx.fillText('Du vann! 🎃', W / 2, H * 0.2);
+      else if (status === 'lost') ctx.fillText('AI:n vann! Tryck R', W / 2, H * 0.2);
+      else ctx.fillText('Hinderbanan: kom först till flaggan!', W / 2, H * 0.12);
+    }
+
+    function drawRunner(r, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(r.x * scale, r.y * scale, r.w * scale, r.h * scale);
+      ctx.fillStyle = '#111827';
+      ctx.fillRect((r.x + 0.2) * scale, (r.y + 0.25) * scale, 0.15 * scale, 0.15 * scale);
+      ctx.fillRect((r.x + 0.5) * scale, (r.y + 0.25) * scale, 0.15 * scale, 0.15 * scale);
+    }
+
+    let previous;
+    function frame(time) {
+      const dt = previous === undefined ? 0 : Math.min((time - previous) / 1000, 0.05);
+      previous = time;
+      update(dt);
+      drawWorld();
+      requestAnimationFrame(frame);
+    }
+
+    function setKey(e, down) {
+      if (document.activeElement !== canvas && e.target !== document.body) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') held.left = down;
+      else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') held.right = down;
+      else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') held.jump = down;
+      else return;
+      e.preventDefault();
+    }
+
+    window.addEventListener('keydown', e => {
+      const inGame = document.activeElement === canvas || e.target === document.body;
+      if (inGame && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'r' || e.key === 'R')) {
+        resetWorld();
+        return;
+      }
+      setKey(e, true);
+    });
+    window.addEventListener('keyup', e => setKey(e, false));
+    window.addEventListener('blur', () => { held.left = held.right = held.jump = false; });
+    window.addEventListener('resize', resize);
+
+    document.querySelectorAll('#pad button').forEach(btn => {
+      const k = btn.dataset.key;
+      btn.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        btn.setPointerCapture(e.pointerId);
+        touchHeld[k] = true;
+      });
+      const release = () => { touchHeld[k] = false; };
+      btn.addEventListener('pointerup', release);
+      btn.addEventListener('pointercancel', release);
+      btn.addEventListener('lostpointercapture', release);
+    });
+
+    resize();
+    resetWorld();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
