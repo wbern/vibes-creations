@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-14T10:43:16Z",
+  "generated_at": "2026-10-14T12:08:49.089366Z",
   "entries": [
     {
       "slug": "play-05f5c128d604303b",
@@ -123,17 +123,6 @@
       "tags": []
     },
     {
-      "slug": "play-8a5b1c06d3a73ce8",
-      "title": "Pumpajakten",
-      "display_name": "Anonym kreatör",
-      "thumbnail": "students/workshop/play-8a5b1c06d3a73ce8/thumbnail.png",
-      "live_url": "https://public.vibe.enmansbyra.se/students/workshop/play-8a5b1c06d3a73ce8/",
-      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/workshop/play-8a5b1c06d3a73ce8",
-      "date": "2026-10-14T09:12:36Z",
-      "persona": "kladd",
-      "tags": []
-    },
-    {
       "slug": "play-f925909cffe8576d",
       "title": "Ecep",
       "display_name": "Anonym kreatör",
@@ -251,17 +240,6 @@
       "live_url": "https://public.vibe.enmansbyra.se/students/workshop/play-85ef2af4bbb39fcf/",
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/workshop/play-85ef2af4bbb39fcf",
       "date": "2026-10-14T07:26:43Z",
-      "persona": "kladd",
-      "tags": []
-    },
-    {
-      "slug": "play-c071c362dc5ed4c7",
-      "title": "Monsterlabyrinten",
-      "display_name": "Anonym kreatör",
-      "thumbnail": "students/workshop/play-c071c362dc5ed4c7/thumbnail.png",
-      "live_url": "https://public.vibe.enmansbyra.se/students/workshop/play-c071c362dc5ed4c7/",
-      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/workshop/play-c071c362dc5ed4c7",
-      "date": "2026-10-14T07:26:36Z",
       "persona": "kladd",
       "tags": []
     },
