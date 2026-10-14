@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-10-14T07:27:20Z",
+  "generated_at": "2026-10-14T07:27:27Z",
   "entries": [
+    {
+      "slug": "play-e3cfd41b2a177972",
+      "title": "Spöklabyrinten",
+      "display_name": "Anonym kreatör",
+      "thumbnail": "students/workshop/play-e3cfd41b2a177972/thumbnail.png",
+      "live_url": "https://public.vibe.enmansbyra.se/students/workshop/play-e3cfd41b2a177972/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/workshop/play-e3cfd41b2a177972",
+      "date": "2026-10-14T07:27:27Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "play-dadf90f8c8f883c5",
       "title": "Spökjakten",
