@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-14T12:08:49.089366Z",
+  "generated_at": "2026-10-14T12:09:19.767044Z",
   "entries": [
     {
       "slug": "play-05f5c128d604303b",
@@ -266,17 +266,6 @@
       "tags": []
     },
     {
-      "slug": "play-b8ebc660e87037e3",
-      "title": "Spöktanken",
-      "display_name": "Anonym kreatör",
-      "thumbnail": "students/workshop/play-b8ebc660e87037e3/thumbnail.png",
-      "live_url": "https://public.vibe.enmansbyra.se/students/workshop/play-b8ebc660e87037e3/",
-      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/workshop/play-b8ebc660e87037e3",
-      "date": "2026-10-13T14:10:28Z",
-      "persona": "kladd",
-      "tags": []
-    },
-    {
       "slug": "play-7d8304425cca9b67",
       "title": "Bollen och formregnet",
       "display_name": "Anonym kreatör",
@@ -284,17 +273,6 @@
       "live_url": "https://public.vibe.enmansbyra.se/students/workshop/play-7d8304425cca9b67/",
       "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/workshop/play-7d8304425cca9b67",
       "date": "2026-10-13T07:43:35Z",
-      "persona": "kladd",
-      "tags": []
-    },
-    {
-      "slug": "play-e67f268971a8e719",
-      "title": "Min Hund",
-      "display_name": "Anonym kreatör",
-      "thumbnail": "students/workshop/play-e67f268971a8e719/thumbnail.png",
-      "live_url": "https://public.vibe.enmansbyra.se/students/workshop/play-e67f268971a8e719/",
-      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/workshop/play-e67f268971a8e719",
-      "date": "2026-10-08T12:24:21Z",
       "persona": "kladd",
       "tags": []
     },
