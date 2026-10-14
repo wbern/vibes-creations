@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-10-14T07:26:43Z",
+  "generated_at": "2026-10-14T07:26:50Z",
   "entries": [
+    {
+      "slug": "play-da49013260e0b1f9",
+      "title": "Spökjakten",
+      "display_name": "Anonym kreatör",
+      "thumbnail": "students/workshop/play-da49013260e0b1f9/thumbnail.png",
+      "live_url": "https://public.vibe.enmansbyra.se/students/workshop/play-da49013260e0b1f9/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/workshop/play-da49013260e0b1f9",
+      "date": "2026-10-14T07:26:50Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "play-85ef2af4bbb39fcf",
       "title": "Pumpatävlingen",
