@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-10-14T09:17:01Z",
+  "generated_at": "2026-10-14T09:17:09Z",
   "entries": [
+    {
+      "slug": "play-8a3889cb64988386",
+      "title": "Blockvärlden",
+      "display_name": "Anonym kreatör",
+      "thumbnail": "students/workshop/play-8a3889cb64988386/thumbnail.png",
+      "live_url": "https://public.vibe.enmansbyra.se/students/workshop/play-8a3889cb64988386/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/workshop/play-8a3889cb64988386",
+      "date": "2026-10-14T09:17:09Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "play-8d1f61f2ca5de2fe",
       "title": "Spindelhoppet",
