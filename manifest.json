@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-10-14T07:26:36Z",
+  "generated_at": "2026-10-14T07:26:43Z",
   "entries": [
+    {
+      "slug": "play-85ef2af4bbb39fcf",
+      "title": "Pumpatävlingen",
+      "display_name": "Anonym kreatör",
+      "thumbnail": "students/workshop/play-85ef2af4bbb39fcf/thumbnail.png",
+      "live_url": "https://public.vibe.enmansbyra.se/students/workshop/play-85ef2af4bbb39fcf/",
+      "repo_url": "https://github.com/wbern/vibes-creations/tree/main/students/workshop/play-85ef2af4bbb39fcf",
+      "date": "2026-10-14T07:26:43Z",
+      "persona": "kladd",
+      "tags": []
+    },
     {
       "slug": "play-c071c362dc5ed4c7",
       "title": "Monsterlabyrinten",
